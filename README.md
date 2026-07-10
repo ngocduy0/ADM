@@ -9,15 +9,6 @@ npm install
 npm run dev
 ```
 
-Public site: `http://localhost:3000/en` or `http://localhost:3000/vi`.
-Admin: `http://localhost:3000/login`.
-
-Demo admin:
-
-```text
-admin@duytconcierge.com
-admin123
-```
 
 ## Environment
 
