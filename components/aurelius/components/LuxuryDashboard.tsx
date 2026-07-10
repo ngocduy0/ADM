@@ -63,6 +63,7 @@ import { formatVnd, localizeVenue } from "../localize";
 import LanguageSelector from "./LanguageSelector";
 import TableMapManagerModal from "./TableMapManagerModal";
 import BannerVideoManager from "./BannerVideoManager";
+import { getSupabaseBrowserClient } from "../supabaseBrowser";
 import {
   DEFAULT_SITE_SETTINGS,
   loadSiteSettingsFromServer,
@@ -369,28 +370,43 @@ async function uploadMediaFile(
   file: File,
   folder: "venues" | "venues/menus" | "reels" | "reels/posters" | "brand/logo",
 ) {
-  const formData = new FormData();
-
-  formData.append("file", file, file.name);
-  formData.append("folder", folder);
-
-  const response = await fetch("/api/upload-media", {
+  const prepareResponse = await fetch("/api/upload-media-url", {
     method: "POST",
-    body: formData,
+    headers: {
+      "Content-Type": "application/json",
+    },
     cache: "no-store",
     credentials: "same-origin",
+    body: JSON.stringify({
+      folder,
+      fileName: file.name,
+      contentType: file.type || "application/octet-stream",
+    }),
   });
 
-  const json = await response.json().catch(() => null);
+  const prepareJson = await prepareResponse.json().catch(() => null);
 
-  if (!response.ok || !json?.ok || !json?.url) {
+  if (!prepareResponse.ok || !prepareJson?.ok) {
     throw new Error(
-      json?.error ||
-        "Upload thất bại. Vui lòng kiểm tra Supabase Storage bucket và service role key.",
+      prepareJson?.error ||
+        "Không tạo được đường dẫn upload. Kiểm tra Supabase Storage bucket và service role key.",
     );
   }
 
-  return String(json.url);
+  const supabase = getSupabaseBrowserClient();
+
+  const { error } = await supabase.storage
+    .from(prepareJson.bucket)
+    .uploadToSignedUrl(prepareJson.path, prepareJson.token, file, {
+      contentType: file.type || prepareJson.contentType || "application/octet-stream",
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(error.message || "Upload file lên Supabase Storage thất bại.");
+  }
+
+  return String(prepareJson.publicUrl);
 }
 
 function isStorageQuotaError(error: unknown) {
