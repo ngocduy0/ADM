@@ -1140,94 +1140,6 @@ export default function HomepageView({
           <div className="absolute inset-x-0 bottom-0 h-[28vh] bg-gradient-to-t from-[#05070A] via-[#05070A]/45 to-transparent" />
         </div>
       </section>
-      <section className="px-6 md:px-16 max-w-[1440px] mx-auto py-16">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-serif text-on-surface tracking-wide mb-3 break-words">
-            {t("threeVenues")}
-          </h2>
-          <p className="text-xs text-on-surface-variant tracking-wider uppercase font-light">
-            {t("pickWhere")}
-          </p>
-        </div>
-        <div className="glass-card rounded-2xl overflow-hidden border border-gold/10">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm font-sans border-collapse">
-              <thead>
-                <tr className="border-b border-gold/10 text-[10px] sans-label text-on-surface-variant uppercase tracking-widest bg-deep-black/60">
-                  {c.venueTable.map((head, idx) => (
-                    <th
-                      key={head}
-                      className={`p-5 font-bold ${idx === 3 ? "text-right" : ""}`}
-                    >
-                      {head}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {featuredVenues.slice(0, 3).map((v) => {
-                  const displayVenue = localizeVenue(v, locale);
-                  return (
-                    <tr
-                      key={v.id}
-                      onClick={() => onSelectVenue(v.id)}
-                      className="border-b border-gold/5 hover:bg-gold/5 transition-colors cursor-pointer last:border-0"
-                    >
-                      <td className="p-5 font-medium text-gold">
-                        {displayVenue.name}
-                      </td>
-                      <td className="p-5 text-on-surface-variant/90 font-light">
-                        {displayVenue.shortDescription}
-                      </td>
-                      <td className="p-5 text-on-surface font-light">
-                        {v.openingHours?.label ||
-                          (v.openingHours?.open && v.openingHours?.close
-                            ? `${v.openingHours.open}–${v.openingHours.close}`
-                            : "Liên hệ xác nhận")}
-                      </td>
-                      <td className="p-5 text-right text-on-surface font-light">
-                        {displayVenue.location}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="how-it-works"
-        className="px-6 md:px-16 max-w-[1440px] mx-auto py-24 border-t border-gold/10 scroll-mt-28"
-      >
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="text-xs sans-label text-gold tracking-widest uppercase mb-2 block">
-            {t("seamless")}
-          </span>
-          <h2 className="text-3xl md:text-5xl font-serif text-on-surface tracking-wide break-words">
-            {t("stepsTitle")}
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {[1, 2, 3].map((step) => (
-            <div
-              key={step}
-              className="glass-card p-8 rounded-2xl border border-gold/15 flex flex-col gap-5 justify-between"
-            >
-              <div className="text-4xl font-serif text-gold/30">0{step}</div>
-              <div>
-                <h3 className="text-lg font-serif tracking-wide text-on-surface mb-2">
-                  {t(`step${step}Title`)}
-                </h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed font-light">
-                  {t(`step${step}Text`)}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       <section className="px-6 md:px-16 max-w-[1440px] mx-auto py-24 border-t border-gold/10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
@@ -1268,16 +1180,12 @@ export default function HomepageView({
                   <div>
                     <div className="mb-4 flex items-center justify-between text-xs text-gold">
                       <span>★ {v.rating.toFixed(1)}</span>
-                      <span>
-                        {c.minSpend}{" "}
-                        {formatVnd(v.preferredTables[0]?.minimumSpend || 0)}
-                      </span>
                     </div>
                     <h3 className="text-2xl font-serif text-on-surface mb-2 break-words">
                       {displayVenue.name}
                     </h3>
                     <p className="text-xs text-on-surface-variant font-light line-clamp-2 leading-relaxed mb-6">
-                      {displayVenue.shortDescription}
+                      {displayVenue.location}
                     </p>
                     <button className="text-[11px] sans-label text-gold font-bold tracking-widest group-hover:translate-x-2 transition-transform duration-300">
                       {t("discover")} →

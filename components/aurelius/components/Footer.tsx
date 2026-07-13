@@ -51,15 +51,6 @@ export default function Footer({ onNavigate, logoUrl }: FooterProps) {
             </button>
           </ul>
         </div>
-
-        <div>
-          <h4 className="text-xs sans-label text-gold tracking-widest uppercase mb-6 font-bold">{t('legal')}</h4>
-          <ul className="space-y-4 flex flex-col text-left">
-            <a href="#" className="text-xs sans-label text-on-surface-variant hover:text-gold transition-colors">{t('privacy')}</a>
-            <a href="#" className="text-xs sans-label text-on-surface-variant hover:text-gold transition-colors">{t('terms')}</a>
-            <a href="#" className="text-xs sans-label text-on-surface-variant hover:text-gold transition-colors">{t('membership')}</a>
-          </ul>
-        </div>
       </div>
     </footer>
   );
