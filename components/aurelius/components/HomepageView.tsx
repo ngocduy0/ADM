@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Phone,
 } from "lucide-react";
 import { HomepageReel, Venue } from "../types";
 import { useI18n, Locale } from "../i18n";
@@ -44,7 +45,7 @@ export const pageCopy: Record<Locale, Copy> = {
     whyEyebrow: "Concierge standard",
     whyTitle: "A refined way to reserve curated venues",
     whyText:
-      "DuyT Concierge supports every active venue added from the admin dashboard. Tables, rooms, arrival time, guest count and special requests are checked directly with the venue before confirmation.",
+      "DuyT Booking supports every active venue added from the admin dashboard. Tables, rooms, arrival time, guest count and special requests are checked directly with the venue before confirmation.",
     testimonialsEyebrow: "Guest experience",
     testimonialsTitle: "Trusted for premium nights and private gatherings",
     faqEyebrow: "Reservation guide",
@@ -95,7 +96,7 @@ export const pageCopy: Record<Locale, Copy> = {
     faqs: [
       [
         "Which venues are available through DuyT?",
-        "All active venues added in the admin dashboard can be shown on the website and handled by DuyT Concierge.",
+        "All active venues added in the admin dashboard can be shown on the website and handled by DuyT Booking.",
       ],
       [
         "Are tables or rooms confirmed instantly?",
@@ -117,9 +118,10 @@ export const pageCopy: Record<Locale, Copy> = {
     whyEyebrow: "Tiêu chuẩn concierge",
     whyTitle: "Đặt chỗ các địa điểm chọn lọc chỉn chu hơn",
     whyText:
-      "DuyT Concierge hỗ trợ mọi địa điểm trong hệ thống. Mỗi khu bàn, phòng riêng, giờ đến, số khách và yêu cầu đặc biệt đều được kiểm tra trực tiếp với địa điểm trước khi xác nhận.",
+      "DuyT Booking hỗ trợ mọi địa điểm trong hệ thống. Mỗi khu bàn, phòng riêng, giờ đến, số khách và yêu cầu đặc biệt đều được kiểm tra trực tiếp với địa điểm trước khi xác nhận.",
     testimonialsEyebrow: "Trải nghiệm khách hàng",
-    testimonialsTitle: "Sự hài lòng của khách hàng cho các buổi tối cao cấp và nhóm riêng",
+    testimonialsTitle:
+      "Sự hài lòng của khách hàng cho các buổi tối cao cấp và nhóm riêng",
     faqEyebrow: "Hướng dẫn đặt chỗ",
     faqTitle: "Câu hỏi thường gặp",
     faqIntro:
@@ -168,7 +170,7 @@ export const pageCopy: Record<Locale, Copy> = {
     faqs: [
       [
         "DuyT hiện hỗ trợ những địa điểm nào?",
-        "Tất cả địa điểm đang được hiển thị ở đây và được DuyT Concierge hỗ trợ.",
+        "Tất cả địa điểm đang được hiển thị ở đây và được DuyT Booking hỗ trợ.",
       ],
       [
         "Bàn hoặc phòng có được xác nhận ngay không?",
@@ -190,7 +192,7 @@ export const pageCopy: Record<Locale, Copy> = {
     whyEyebrow: "컨시어지 기준",
     whyTitle: "엄선된 장소를 더 정교하게 예약",
     whyText:
-      "관리자 대시보드에 추가된 모든 활성 장소를 DuyT Concierge가 지원합니다. 테이블, 룸, 도착 시간, 인원, 특별 요청을 현장과 직접 확인한 뒤 확정합니다.",
+      "관리자 대시보드에 추가된 모든 활성 장소를 DuyT Booking가 지원합니다. 테이블, 룸, 도착 시간, 인원, 특별 요청을 현장과 직접 확인한 뒤 확정합니다.",
     testimonialsEyebrow: "고객 경험",
     testimonialsTitle: "프리미엄 나이트와 프라이빗 모임을 위한 선택",
     faqEyebrow: "예약 안내",
@@ -259,7 +261,7 @@ export const pageCopy: Record<Locale, Copy> = {
     whyEyebrow: "礼宾标准",
     whyTitle: "更精致地预订精选场地",
     whyText:
-      "DuyT Concierge 支持后台已添加并启用的所有场地。桌位、包厢、到达时间、人数和特殊需求都会先与场地方直接确认。",
+      "DuyT Booking 支持后台已添加并启用的所有场地。桌位、包厢、到达时间、人数和特殊需求都会先与场地方直接确认。",
     testimonialsEyebrow: "客户体验",
     testimonialsTitle: "适合高级夜晚与私人聚会的选择",
     faqEyebrow: "预订指南",
@@ -297,7 +299,7 @@ export const pageCopy: Record<Locale, Copy> = {
     faqs: [
       [
         "DuyT 目前支持哪些场地？",
-        "后台添加并启用的所有场地都可以显示在网站并由 DuyT Concierge 支持。",
+        "后台添加并启用的所有场地都可以显示在网站并由 DuyT Booking 支持。",
       ],
       ["桌位或包厢会立即确认吗？", "不会。礼宾会先与场地确认实际可用情况。"],
       [
@@ -315,7 +317,7 @@ export const pageCopy: Record<Locale, Copy> = {
     whyEyebrow: "มาตรฐานคอนเซียร์จ",
     whyTitle: "จองสถานที่คัดสรรอย่างเป็นระบบกว่าเดิม",
     whyText:
-      "DuyT Concierge รองรับทุกสถานที่ที่เพิ่มและเปิดใช้งานในแดชบอร์ดแอดมิน โดยตรวจสอบโต๊ะ ห้อง เวลา จำนวนแขก และคำขอพิเศษกับสถานที่ก่อนยืนยัน",
+      "DuyT Booking รองรับทุกสถานที่ที่เพิ่มและเปิดใช้งานในแดชบอร์ดแอดมิน โดยตรวจสอบโต๊ะ ห้อง เวลา จำนวนแขก และคำขอพิเศษกับสถานที่ก่อนยืนยัน",
     testimonialsEyebrow: "ประสบการณ์ลูกค้า",
     testimonialsTitle: "ตัวเลือกสำหรับค่ำคืนพรีเมียมและงานส่วนตัว",
     faqEyebrow: "คู่มือการจอง",
@@ -366,7 +368,7 @@ export const pageCopy: Record<Locale, Copy> = {
     faqs: [
       [
         "DuyT รองรับสถานที่ใดบ้าง?",
-        "ทุกสถานที่ที่เพิ่มและเปิดใช้งานในแดชบอร์ดแอดมินสามารถแสดงบนเว็บไซต์และให้ DuyT Concierge ดูแลได้",
+        "ทุกสถานที่ที่เพิ่มและเปิดใช้งานในแดชบอร์ดแอดมินสามารถแสดงบนเว็บไซต์และให้ DuyT Booking ดูแลได้",
       ],
       [
         "โต๊ะหรือห้องยืนยันได้ทันทีไหม?",
@@ -387,7 +389,7 @@ export const pageCopy: Record<Locale, Copy> = {
     whyEyebrow: "コンシェルジュ基準",
     whyTitle: "厳選会場をより丁寧に予約",
     whyText:
-      "DuyT Conciergeは管理者ダッシュボードに追加され有効化されたすべての会場に対応します。席、個室、到着時間、人数、特別リクエストを会場と直接確認してから確定します。",
+      "DuyT Bookingは管理者ダッシュボードに追加され有効化されたすべての会場に対応します。席、個室、到着時間、人数、特別リクエストを会場と直接確認してから確定します。",
     testimonialsEyebrow: "ゲスト体験",
     testimonialsTitle: "プレミアムな夜とプライベートな集まりに選ばれるサービス",
     faqEyebrow: "予約ガイド",
@@ -460,7 +462,7 @@ export const pageCopy: Record<Locale, Copy> = {
     whyEyebrow: "कंसीयर्ज मानक",
     whyTitle: "Curated venues की अधिक सटीक बुकिंग",
     whyText:
-      "DuyT Concierge admin dashboard में जोड़े और active किए गए सभी venues को support करता है। Table, private room, arrival time, guest count और special requests की venue से directly confirmation होती है।",
+      "DuyT Booking admin dashboard में जोड़े और active किए गए सभी venues को support करता है। Table, private room, arrival time, guest count और special requests की venue से directly confirmation होती है।",
     testimonialsEyebrow: "अतिथि अनुभव",
     testimonialsTitle: "Premium nights और private gatherings के लिए भरोसेमंद",
     faqEyebrow: "आरक्षण मार्गदर्शिका",
@@ -511,7 +513,7 @@ export const pageCopy: Record<Locale, Copy> = {
     faqs: [
       [
         "DuyT किन स्थानों को संभालता है?",
-        "Admin dashboard में जोड़े और active किए गए सभी venues website पर दिख सकते हैं और DuyT Concierge handle कर सकता है।",
+        "Admin dashboard में जोड़े और active किए गए सभी venues website पर दिख सकते हैं और DuyT Booking handle कर सकता है।",
       ],
       [
         "टेबल या कक्ष तुरंत पुष्टि होता है?",
@@ -539,48 +541,47 @@ const homeConciergeCopy: Record<Locale, ConciergeCopy> = {
   en: {
     curatedBy: "Curated by",
     description:
-      "DuyT Concierge supports curated venue reservations with real availability checked before confirmation.",
+      "DuyT Booking supports curated venue reservations with real availability checked before confirmation.",
     guidance:
       "Message DuyT for table area, private room, group size, arrival time and special setup guidance.",
   },
   vi: {
     curatedBy: "Điều phối bởi",
     description:
-      "DuyT Concierge hỗ trợ đặt chỗ các địa điểm chọn lọc, kiểm tra tình trạng thực tế trước khi xác nhận.",
+      "DuyT Booking hỗ trợ đặt chỗ các địa điểm chọn lọc, kiểm tra tình trạng thực tế trước khi xác nhận.",
     guidance:
       "Nhắn DuyT để được tư vấn khu bàn, phòng riêng, số lượng khách, khung giờ đến và các yêu cầu setup riêng.",
   },
   ko: {
     curatedBy: "큐레이션",
     description:
-      "DuyT Concierge는 엄선된 장소 예약을 지원하며, 확정 전 실제 가능 여부를 확인합니다.",
+      "DuyT Booking는 엄선된 장소 예약을 지원하며, 확정 전 실제 가능 여부를 확인합니다.",
     guidance:
       "테이블 구역, 프라이빗 룸, 인원, 도착 시간, 특별 세팅은 DuyT로 문의하세요.",
   },
   zh: {
     curatedBy: "礼宾策划",
-    description:
-      "DuyT Concierge 支持精选场地预订，并在确认前检查真实可用情况。",
+    description: "DuyT Booking 支持精选场地预订，并在确认前检查真实可用情况。",
     guidance: "如需桌位区域、私人包厢、人数、到达时间或特殊布置，请联系 DuyT。",
   },
   th: {
     curatedBy: "ดูแลโดย",
     description:
-      "DuyT Concierge รองรับการจองสถานที่คัดสรร โดยตรวจสอบสถานะจริงก่อนยืนยัน",
+      "DuyT Booking รองรับการจองสถานที่คัดสรร โดยตรวจสอบสถานะจริงก่อนยืนยัน",
     guidance:
       "ทัก DuyT เพื่อปรึกษาโซนโต๊ะ ห้องส่วนตัว จำนวนแขก เวลามาถึง และเซ็ตอัพพิเศษ",
   },
   ja: {
     curatedBy: "キュレーション",
     description:
-      "DuyT Conciergeは厳選会場の予約をサポートし、確定前に実際の空き状況を確認します。",
+      "DuyT Bookingは厳選会場の予約をサポートし、確定前に実際の空き状況を確認します。",
     guidance:
       "テーブルエリア、個室、人数、到着時間、特別セットアップはDuyTへご相談ください。",
   },
   hi: {
     curatedBy: "क्यूरेटेड",
     description:
-      "DuyT Concierge curated venue reservations में सहायता करता है और confirmation से पहले real availability check करता है।",
+      "DuyT Booking curated venue reservations में सहायता करता है और confirmation से पहले real availability check करता है।",
     guidance:
       "Table area, private room, group size, arrival time और special setup के लिए DuyT को message करें।",
   },
@@ -899,6 +900,150 @@ function HomepageReelsSection({
   );
 }
 
+type FloatingContactItem = {
+  name: string;
+  href: string;
+  icon?: string;
+  isPhone?: boolean;
+};
+
+function FloatingContactBar() {
+  const phoneDisplay = CONTACT_INFO.whatsappPhone || "";
+  const phoneHref = phoneDisplay.replace(/[^\d+]/g, "");
+  const contactOrder = [
+    "WhatsApp",
+    "Zalo",
+    "Telegram",
+    "Instagram",
+    "Facebook",
+    "Email",
+  ];
+
+  const contactChannels: FloatingContactItem[] = CONTACT_CHANNELS.filter(
+    (channel) => contactOrder.includes(channel.name),
+  )
+    .sort(
+      (a, b) =>
+        contactOrder.indexOf(a.name) - contactOrder.indexOf(b.name),
+    )
+    .map((channel) => ({
+      name: channel.name,
+      href: channel.href,
+      icon: channel.icon,
+    }));
+
+  const contacts: FloatingContactItem[] = [
+    {
+      name: "Gọi ngay",
+      href: `tel:${phoneHref}`,
+      isPhone: true,
+    },
+    ...contactChannels,
+  ];
+
+  return (
+    <>
+      <style>{`
+        @keyframes duyt-contact-float {
+          0%, 100% {
+            transform: translate3d(0, 0, 0);
+          }
+          50% {
+            transform: translate3d(0, -6px, 0);
+          }
+        }
+
+        @keyframes duyt-contact-ring {
+          0% {
+            transform: scale(0.75);
+            opacity: 0.75;
+          }
+          75%, 100% {
+            transform: scale(1.65);
+            opacity: 0;
+          }
+        }
+
+        .duyt-contact-float {
+          animation-name: duyt-contact-float;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+          will-change: transform;
+        }
+
+        .duyt-contact-ring {
+          animation: duyt-contact-ring 1.8s ease-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .duyt-contact-float,
+          .duyt-contact-ring {
+            animation: none !important;
+          }
+        }
+      `}</style>
+
+      <nav
+        aria-label="Liên hệ nhanh"
+        className="pointer-events-none fixed inset-x-0 bottom-3 z-[90] px-3 sm:bottom-5 sm:px-6"
+      >
+        <div className="mx-auto flex max-w-[1100px] justify-center">
+          <div className="pointer-events-auto flex max-w-full items-end gap-1.5 overflow-x-auto rounded-[28px] border border-white/10 bg-black/[0.08] px-2.5 py-2 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-[10px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:gap-2 sm:px-3">
+            {contacts.map((channel, index) => {
+              const isInternalAction =
+                channel.href.startsWith("mailto:") ||
+                channel.href.startsWith("tel:");
+
+              return (
+                <a
+                  key={channel.name}
+                  href={channel.href}
+                  target={isInternalAction ? undefined : "_blank"}
+                  rel={isInternalAction ? undefined : "noopener noreferrer"}
+                  aria-label={
+                    channel.isPhone
+                      ? `Gọi ${phoneDisplay}`
+                      : `Liên hệ qua ${channel.name}`
+                  }
+                  title={channel.isPhone ? phoneDisplay : channel.name}
+                  className="group flex min-w-[58px] shrink-0 flex-col items-center justify-end gap-1.5 rounded-2xl px-1.5 py-1.5 text-center transition duration-300 hover:-translate-y-1 hover:bg-white/[0.07] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 sm:min-w-[76px] sm:px-2"
+                >
+                  <span
+                    className="duyt-contact-float relative grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/20 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md transition duration-300 group-hover:border-gold/60 group-hover:bg-black/35 group-hover:shadow-[0_10px_28px_rgba(214,173,76,0.16)] sm:h-12 sm:w-12"
+                    style={{
+                      animationDuration: `${3.1 + (index % 3) * 0.45}s`,
+                      animationDelay: `${index * 120}ms`,
+                    }}
+                  >
+                    {channel.isPhone ? (
+                      <>
+                        <span className="duyt-contact-ring absolute inset-0 rounded-full border border-emerald-400/70" />
+                        <Phone className="relative z-10 h-5 w-5 text-white transition duration-300 group-hover:rotate-12 group-hover:text-gold sm:h-6 sm:w-6" />
+                        <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#090B0F] bg-emerald-400" />
+                      </>
+                    ) : (
+                      <img
+                        src={channel.icon}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-7 w-7 object-contain transition duration-300 group-hover:scale-110 sm:h-8 sm:w-8"
+                      />
+                    )}
+                  </span>
+
+                  <span className="max-w-[70px] truncate text-[9px] font-semibold leading-none text-white/80 transition group-hover:text-gold sm:text-[10px]">
+                    {channel.name}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+    </>
+  );
+}
+
 function HomeConciergeSection({
   locale,
   conciergeCards,
@@ -909,38 +1054,27 @@ function HomeConciergeSection({
   logoUrl?: string;
 }) {
   const c = homeConciergeCopy[locale] || homeConciergeCopy.en;
-  const contactCards = CONTACT_CHANNELS.filter((channel) =>
-    ["Instagram", "WhatsApp", "Zalo", "Telegram"].includes(channel.name),
-  ).slice(0, 4);
   return (
     <section className="px-6 md:px-16 max-w-[1440px] mx-auto py-20 border-t border-gold/10 text-center">
       <div className="mx-auto max-w-3xl rounded-[34px] border border-gold/10 bg-dark-navy/35 px-6 py-12 shadow-2xl shadow-black/20">
         <div className="mb-8 flex items-center justify-center gap-8 text-center">
           <div>
             <p className="text-[11px] sans-label text-gold font-bold uppercase tracking-[0.28em]">
-              English
+              Booking Concierge
             </p>
-            <p className="mt-2 font-serif italic text-on-surface">Hello</p>
-          </div>
-          <div>
-            <p className="text-[11px] sans-label text-gold font-bold uppercase tracking-[0.28em]">
-              Vietnamese
+            <p className="mt-2 font-serif italic text-on-surface">
+              DuyT Booking
             </p>
-            <p className="mt-2 font-serif italic text-on-surface">Xin chào</p>
           </div>
         </div>
 
-        <div className="mx-auto mb-5 grid h-20 w-20 place-items-center overflow-hidden rounded-full border border-gold/30 bg-[#090B0F] p-2">
+        <div className="mx-auto mb-5 h-24 w-24 overflow-hidden rounded-full border border-gold/30">
           <img
-            src={logoUrl || "/duyt-logo.png"}
-            alt="DuyT concierge"
-            className="h-full w-full object-contain"
+            src={logoUrl || "/avatar DuyT.jpg"}
+            alt="DuyT Booking"
+            className="h-full w-full object-cover"
           />
         </div>
-        <p className="text-xs sans-label text-gold font-bold uppercase tracking-[0.28em]">
-          {c.curatedBy}
-        </p>
-        <h3 className="mt-2 font-serif text-2xl text-on-surface">DuyT</h3>
         <p className="mx-auto mt-4 max-w-md font-serif text-sm italic leading-relaxed text-on-surface-variant">
           {c.description}
         </p>
@@ -983,52 +1117,6 @@ function HomeConciergeSection({
           </div>
         )}
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm font-bold text-on-surface">
-          {contactCards.map((channel, index) => (
-            <React.Fragment key={channel.name}>
-              <a
-                href={channel.href}
-                target={
-                  channel.href.startsWith("mailto:") ? undefined : "_blank"
-                }
-                rel="noopener noreferrer"
-                className="transition hover:text-gold"
-              >
-                {channel.name}
-              </a>
-              {index < contactCards.length - 1 && (
-                <span className="text-gold/50">·</span>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-
-        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {contactCards.map((channel) => (
-            <a
-              key={channel.name}
-              href={channel.href}
-              target={channel.href.startsWith("mailto:") ? undefined : "_blank"}
-              rel="noopener noreferrer"
-              className="group rounded-2xl border border-gold/10 bg-deep-black/35 p-4 transition hover:border-gold/35 hover:bg-gold/5"
-            >
-              <div className="mx-auto grid h-20 w-20 place-items-center rounded-xl bg-white p-3">
-                <img
-                  src={channel.icon}
-                  alt={channel.name}
-                  className="h-12 w-12 object-contain transition group-hover:scale-105"
-                />
-              </div>
-              <p className="mt-3 text-[10px] sans-label text-gold font-bold uppercase tracking-[0.22em]">
-                {channel.name}
-              </p>
-            </a>
-          ))}
-        </div>
-
-        <p className="mt-6 text-[11px] text-on-surface-variant">
-          Hotline/Zalo/WhatsApp: {CONTACT_INFO.whatsappPhone}
-        </p>
       </div>
     </section>
   );
@@ -1110,7 +1198,7 @@ export default function HomepageView({
     siteSettings?.heroPosterUrl?.trim() || heroFallbackImage;
 
   return (
-    <div className="text-left font-sans text-on-surface">
+    <div className="pb-28 text-left font-sans text-on-surface sm:pb-32">
       <section className="relative min-h-screen w-full overflow-hidden flex flex-col justify-center items-start px-6 md:px-16">
         <div className="absolute inset-0 z-0 overflow-hidden">
           {heroVideoUrl ? (
@@ -1128,7 +1216,7 @@ export default function HomepageView({
           ) : (
             <img
               src={heroFallbackImage}
-              alt="DuyT Concierge"
+              alt="DuyT Booking"
               referrerPolicy="no-referrer"
               className="h-full w-full object-cover brightness-[1.18] contrast-[1.05] saturate-[1.08]"
             />
@@ -1317,6 +1405,8 @@ export default function HomepageView({
           </div>
         </div>
       </section>
+
+      <FloatingContactBar />
     </div>
   );
 }

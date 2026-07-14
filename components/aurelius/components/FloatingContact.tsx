@@ -38,23 +38,6 @@ export default function FloatingContact() {
           </div>
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-label={t("openContacts")}
-        className="flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-transparent text-white shadow-2xl shadow-black/40 backdrop-blur-sm transition hover:scale-105 hover:bg-white/10"
-      >
-        {open ? (
-          <X className="h-7 w-7" />
-        ) : (
-          <img
-            src="/icons/headphone.svg"
-            alt=""
-            aria-hidden="true"
-            className="h-9 w-9 object-contain brightness-0 invert"
-          />
-        )}
-      </button>
     </div>
   );
 }
