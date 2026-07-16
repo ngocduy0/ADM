@@ -39,6 +39,10 @@ import {
   TrendingUp,
   UserCheck,
   Wallet,
+  Menu,
+  MoreHorizontal,
+  ChevronRight,
+  CircleHelp,
 } from "lucide-react";
 import {
   ConciergeDataPayload,
@@ -2317,6 +2321,28 @@ function DashboardContent({
     loadNotificationHistory(),
   );
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    const overlayOpen = mobileMenuOpen || moreOpen || notificationOpen;
+    if (!overlayOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+        setMoreOpen(false);
+        setNotificationOpen(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMenuOpen, moreOpen, notificationOpen]);
   const knownReservationIdsRef = useRef<Set<string> | null>(null);
   const hydratedNotificationsRef = useRef(false);
   const loginUnreadToastShownRef = useRef(false);
@@ -3554,19 +3580,17 @@ function DashboardContent({
             : null;
 
   return (
-    <div className="duyt-admin-app flex min-h-screen bg-surface text-on-surface font-sans selection:bg-primary/20 print:block">
+    <div className={`duyt-admin-app admin-shell flex min-h-screen bg-surface text-on-surface font-sans selection:bg-primary/20 print:block ${sidebarCollapsed ? "admin-shell--collapsed" : ""}`}>
       <aside
         id="sidebar-navigation"
-        className="hidden fixed left-0 top-0 z-50 h-screen w-[280px] flex-col justify-between overflow-y-auto border-r border-outline-variant bg-on-secondary-fixed px-3 pb-4 pt-6 text-white shadow-xl print:hidden lg:flex"
+        className={`fixed left-0 top-0 z-50 h-screen w-[240px] flex-col overflow-hidden border-r border-outline-variant bg-surface-container-low p-4 print:hidden lg:flex ${mobileMenuOpen ? "flex admin-drawer-open" : "hidden"}`}
       >
-        <div className="min-h-0">
-          <div className="mb-8 flex select-none flex-col items-center px-3">
-            <div className="font-serif text-4xl font-extrabold italic tracking-wider text-white transition-all duration-300 hover:scale-105">
-              Duy<span className="text-primary-container">T</span>
-            </div>
+          <div className="mb-8 flex h-10 shrink-0 select-none items-center gap-3 px-2">
+            <button type="button" onClick={() => setSidebarCollapsed((value) => !value)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-sm font-extrabold text-white" aria-label="Thu gọn thanh điều hướng">DT</button>
+            <div className="admin-sidebar-label min-w-0"><p className="truncate text-sm font-extrabold text-primary">DuyT Concierge</p><p className="text-[10px] font-medium uppercase tracking-wider text-outline">Hệ thống quản trị</p></div>
           </div>
 
-          <nav className="space-y-1.5 overflow-y-auto pr-1">
+          <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const selected = activeTab === tab.id;
@@ -3575,17 +3599,15 @@ function DashboardContent({
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+                  className={`group flex h-12 w-full cursor-pointer items-center justify-between rounded-xl px-3 text-sm font-semibold transition-colors ${
                     selected
-                      ? "scale-[1.02] bg-primary text-on-primary shadow-md shadow-primary/20"
-                      : "text-outline-variant hover:bg-on-secondary-fixed-variant hover:text-white"
+                      ? "bg-[#d9dff5] text-[#003fa4]"
+                      : "text-[#404758] hover:bg-[#e8e8ed]"
                   }`}
                 >
                   <span className="flex items-center gap-3">
-                    <Icon
-                      className={`h-5 w-5 transition-transform duration-300 ${selected ? "scale-110" : "group-hover:scale-110"}`}
-                    />
-                    {tab.label}
+                    <Icon className="h-5 w-5" />
+                    <span className="admin-sidebar-label">{tab.label}</span>
                   </span>
                   {!!tab.badge && tab.badge > 0 && (
                     <span
@@ -3598,27 +3620,28 @@ function DashboardContent({
               );
             })}
           </nav>
-        </div>
 
-        <div className="mt-auto border-t border-on-secondary-fixed-variant/30 px-1 pt-4">
+        <div className="mt-auto shrink-0 border-t border-outline-variant/30 px-1 pt-4">
           <button
             type="button"
             onClick={onExit}
             id="logout-button"
-            className="group flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-outline-variant transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+            className="group flex h-12 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-sm font-semibold text-error transition-colors hover:bg-error-container/20"
           >
             <LogOut className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            {t("logout")}
+            <span className="admin-sidebar-label">{t("logout")}</span>
           </button>
         </div>
       </aside>
 
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-hidden lg:ml-[280px] print:block">
+      <div className="admin-shell-content flex min-h-screen min-w-0 flex-1 flex-col overflow-hidden lg:ml-[240px] print:block">
         <header
           id="top-app-bar"
-          className="sticky top-0 z-40 flex h-20 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface/90 px-8 backdrop-blur-md print:static print:bg-white"
+          className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-white/80 px-4 backdrop-blur-md md:px-6 lg:px-8 print:static print:bg-white"
         >
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
+            <button type="button" onClick={() => setMobileMenuOpen(true)} className="grid h-10 w-10 place-items-center rounded-full hover:bg-surface-container-high lg:hidden" aria-label="Mở điều hướng"><Menu className="h-5 w-5" /></button>
+            <div className="min-w-0">
             <div className="mt-1 flex items-center gap-3">
               <h1 className="mt-0.5 truncate text-2xl font-extrabold tracking-tight text-on-surface">
                 {tabs.find((tab) => tab.id === activeTab)?.label}
@@ -3627,24 +3650,36 @@ function DashboardContent({
             <select
               value={activeTab}
               onChange={(event) => setActiveTab(event.target.value as TabId)}
-              className="mt-3 w-full rounded-xl border border-outline-variant/40 bg-white px-3 py-2 text-sm font-bold text-on-surface outline-none lg:hidden"
+              className="hidden"
             >
               {tabs.map((tab) => (
                 <option key={tab.id} value={tab.id}>
                   {tab.label}
                 </option>
               ))}
-            </select>
+            </select></div>
+          </div>
+
+          <div className="hidden min-w-0 flex-1 items-center gap-8 pl-8 lg:flex">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-outline" />
+              <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="w-full rounded-full border-none bg-surface-container-low py-2 pl-10 pr-4 text-sm text-on-surface outline-none placeholder:text-outline/60 focus:ring-2 focus:ring-primary/20" placeholder="Tìm kiếm dịch vụ, khách hàng..." type="search" />
+            </div>
           </div>
 
           <div className="flex items-center gap-4 print:hidden">
+            <button type="button" onClick={(pageAction?.action || openNewBooking)} className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-primary/20 transition-colors hover:bg-primary-container lg:flex">
+              <Plus className="h-4 w-4" />
+              {pageAction?.label || "Tạo đặt chỗ mới"}
+            </button>
+            <div className="mx-2 hidden h-8 w-px bg-outline-variant/50 lg:block" />
             <div className="relative">
               <button
                 type="button"
                 onClick={() => {
                   setNotificationOpen((value) => !value);
                 }}
-                className="relative grid h-11 w-11 cursor-pointer place-items-center rounded-full border border-outline-variant/40 bg-surface-container-lowest text-on-surface transition-colors hover:border-primary hover:bg-surface-container"
+                className="relative grid h-10 w-10 cursor-pointer place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container-high"
                 aria-label="Thông báo đặt chỗ"
               >
                 <Bell className="h-4 w-4" />
@@ -3730,10 +3765,15 @@ function DashboardContent({
                 </div>
               )}
             </div>
+            <button type="button" className="hidden h-10 w-10 place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container-high lg:grid" aria-label="Trợ giúp"><CircleHelp className="h-5 w-5" /></button>
+            <div className="hidden items-center gap-3 pl-2 lg:flex">
+              <div className="h-10 w-10 rounded-full border-2 border-white bg-cover bg-center shadow-md" style={{ backgroundImage: 'url("/avatar%20DuyT.jpg")' }} aria-hidden="true" />
+              <div className="hidden xl:block"><p className="text-xs font-semibold leading-none text-on-surface">Duy T.</p><p className="mt-0.5 text-[11px] text-outline">Quản trị viên</p></div>
+            </div>
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto p-8 print:overflow-visible print:p-4">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-24 md:p-6 lg:p-8 lg:pb-8 print:overflow-visible print:p-4">
           <div className="mx-auto max-w-[1580px] space-y-6 animate-in fade-in duration-300">
             <div className="flex flex-wrap items-center justify-end gap-3 print:hidden">
               {activeTab === "files" && (
@@ -3749,7 +3789,7 @@ function DashboardContent({
                 <button
                   type="button"
                   onClick={pageAction.action}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-on-surface px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-on-surface-variant"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-on-surface px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-on-surface-variant lg:hidden"
                 >
                   <Plus className="h-4 w-4" />
                   {pageAction.label}
@@ -3853,6 +3893,15 @@ function DashboardContent({
           </div>
         </main>
       </div>
+
+      {mobileMenuOpen && <button type="button" aria-label="Đóng điều hướng" className="fixed inset-0 z-40 bg-on-surface/20 backdrop-blur-[2px] lg:hidden" onClick={() => setMobileMenuOpen(false)} />}
+
+      <nav className="admin-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-black/5 bg-white/80 px-2 backdrop-blur-xl lg:hidden">
+        {tabs.slice(0, 4).map((tab) => { const Icon = tab.icon; const selected = activeTab === tab.id; return <button type="button" key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold ${selected ? "text-primary" : "text-on-surface-variant"}`}><Icon className="h-5 w-5" /><span>{tab.label}</span></button>; })}
+        <button type="button" onClick={() => setMoreOpen(true)} className="flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold text-on-surface-variant"><MoreHorizontal className="h-5 w-5" /><span>Thêm</span></button>
+      </nav>
+
+      {moreOpen && <><button type="button" aria-label="Đóng menu thêm" className="fixed inset-0 z-[70] bg-on-surface/35 backdrop-blur-[8px]" onClick={() => setMoreOpen(false)} /><section role="dialog" aria-modal="true" aria-label="Điều hướng thêm" className="admin-more-sheet fixed inset-x-0 bottom-0 z-[80] max-h-[calc(100dvh-56px)] overflow-y-auto rounded-t-[2rem] bg-white px-4 pb-8 shadow-[0_-8px_40px_rgba(0,0,0,0.12)]"><div className="mx-auto my-3 h-1.5 w-10 rounded-full bg-surface-container-highest" /><div className="flex items-center gap-4 py-5"><div className="grid h-14 w-14 place-items-center rounded-full bg-primary-fixed font-extrabold text-primary">DT</div><div><h2 className="text-xl font-bold">Quản trị viên</h2><p className="text-on-surface-variant">DuyT Concierge Premium</p></div></div>{tabs.slice(4).map((tab) => { const Icon=tab.icon; return <button type="button" key={tab.id} onClick={() => {setActiveTab(tab.id);setMoreOpen(false)}} className="flex h-14 w-full items-center gap-4 rounded-xl px-4 text-left hover:bg-surface-container-high"><Icon className="h-6 w-6 text-primary"/><span className="flex-1 text-base font-medium">{tab.label}</span><ChevronRight className="h-4 w-4 text-outline"/></button>})}<div className="my-2 h-px bg-surface-variant"/><button type="button" onClick={onExit} className="mt-4 flex h-14 w-full items-center gap-4 rounded-xl bg-error-container/20 px-4 font-bold text-error"><LogOut className="h-6 w-6"/>Đăng xuất</button></section></>}
 
       <input
         ref={importInputRef}

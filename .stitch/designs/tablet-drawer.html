@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DuyT Concierge - Tablet Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#1a1c1f",
+                    "primary-fixed": "#dae1ff",
+                    "on-secondary-container": "#5c6274",
+                    "on-primary": "#ffffff",
+                    "on-surface-variant": "#424656",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#141b2b",
+                    "surface": "#f9f9fe",
+                    "background": "#f9f9fe",
+                    "bg-light": "#FBFBFD",
+                    "surface-container-lowest": "#ffffff",
+                    "status-error": "#FF3B30",
+                    "on-background": "#1a1c1f",
+                    "surface-variant": "#e2e2e7",
+                    "on-tertiary-fixed": "#281800",
+                    "inverse-primary": "#b3c5ff",
+                    "surface-dim": "#d9dade",
+                    "surface-dark": "#1C1C1E",
+                    "status-warning": "#FF9500",
+                    "on-tertiary-fixed-variant": "#604100",
+                    "primary": "#0050cb",
+                    "on-primary-container": "#f8f7ff",
+                    "secondary": "#575e70",
+                    "surface-tint": "#0054d6",
+                    "on-secondary-fixed-variant": "#404758",
+                    "status-success": "#34C759",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f9f9fe",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f3f3f8",
+                    "outline": "#727687",
+                    "tertiary": "#765311",
+                    "surface-container-highest": "#e2e2e7",
+                    "tertiary-fixed": "#ffdeae",
+                    "primary-container": "#0066ff",
+                    "on-error-container": "#93000a",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "surface-container-high": "#e8e8ed",
+                    "bg-dark": "#000000",
+                    "surface-container": "#ededf2",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-container": "#fff7f0",
+                    "outline-variant": "#c2c6d8",
+                    "on-primary-fixed-variant": "#003fa4",
+                    "on-primary-fixed": "#001849",
+                    "secondary-fixed-dim": "#c0c6db",
+                    "tertiary-fixed-dim": "#efbf73",
+                    "secondary-fixed": "#dce2f7",
+                    "secondary-container": "#d9dff5",
+                    "inverse-surface": "#2e3034",
+                    "tertiary-container": "#926b28",
+                    "surface-light": "#FFFFFF",
+                    "inverse-on-surface": "#f0f0f5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width": "1440px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "unit": "4px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-lg": ["13px", {"lineHeight": "18px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f9f9fe;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .drawer-shadow {
+            box-shadow: 20px 0 60px -15px rgba(0, 80, 203, 0.1);
+        }
+        .apple-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .active-pill {
+            position: relative;
+        }
+        .active-pill::before {
+            content: '';
+            position: absolute;
+            left: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 20px;
+            background-color: #0050cb;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- TopAppBar -->
+<header class="sticky top-0 w-full z-40 bg-surface/80 apple-blur shadow-sm">
+<div class="flex justify-between items-center h-16 px-6 w-full">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container-low transition-colors rounded-full active:scale-95 duration-200" onclick="toggleDrawer()">
+<span class="material-symbols-outlined text-on-surface">menu</span>
+</button>
+<h1 class="font-display-lg text-headline-md tracking-tight text-primary">DuyT Concierge</h1>
+</div>
+<div class="flex-1 max-w-md mx-8">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="Tìm kiếm dịch vụ, khách hàng..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container-low transition-colors rounded-full relative">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-status-error rounded-full ring-2 ring-surface"></span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A professional high-end headshot of a corporate manager, clean minimal aesthetic, soft studio lighting on a neutral grey background, representing premium concierge service management." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAuoJZzjFhRBOMPr5cFcNXbL8nduvM98a1GI_R7zQEMGYLjrykO8wZ6Yn_q5Os-DwMD1YPBGnqPpfs2FyN_UFSx2QhsTy1ytnT0yTfD2lOEucypcHNaeZBXRGFT17IhzutHaToaNVtw0Ke-ss8Oj52HsJ3ClWFNoqpfFPOvqUwBhPXw2xKi3yqNb0oBy-fDuUAIQ5OlBys1dfQaISm-flnrkF93dQzX9b34NF488vQ60Zms_3omy7L03STdabXU_kg1EV4z-KT_3A"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex min-h-[calc(100vh-64px)]">
+<!-- SideNavBar (Drawer State: Open) -->
+<aside class="h-screen w-[280px] fixed left-0 top-0 z-50 bg-surface-container-lowest drawer-shadow flex flex-col py-6 px-4 transition-transform duration-300 ease-out translate-x-0 border-r border-outline-variant/20" id="side-drawer">
+<div class="flex items-center gap-3 mb-8 px-2">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined">concierge</span>
+</div>
+<div>
+<h2 class="font-headline-md text-body-lg font-extrabold text-primary">DuyT Admin</h2>
+<p class="text-label-md text-secondary leading-tight">Quản trị hệ thống</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
+<!-- Navigation Items -->
+<a class="flex items-center gap-3 h-[48px] px-4 bg-primary-fixed text-on-primary-fixed-variant rounded-xl font-bold active-pill group" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-label-lg">Tổng quan</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="text-label-lg">Đặt chỗ</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-label-lg">Khách hàng</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">location_on</span>
+<span class="text-label-lg">Địa điểm</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">movie_filter</span>
+<span class="text-label-lg">Reels</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-label-lg">Thanh toán</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="text-label-lg">Đánh giá</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80 relative" href="#">
+<span class="material-symbols-outlined">chat</span>
+<span class="text-label-lg">Tin nhắn</span>
+<span class="ml-auto bg-primary text-[10px] text-white px-1.5 rounded-full">3</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-lg">Phân tích</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="text-label-lg">Tệp dữ liệu</span>
+</a>
+<a class="flex items-center gap-3 h-[48px] px-4 text-secondary hover:bg-surface-container transition-all rounded-xl active:opacity-80" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-lg">Cài đặt</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant/30">
+<button class="flex items-center gap-3 h-[48px] w-full px-4 text-status-error hover:bg-error-container/20 transition-all rounded-xl active:opacity-80">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-label-lg">Đăng xuất</span>
+</button>
+</div>
+</aside>
+<!-- Overlay for Drawer -->
+<div class="fixed inset-0 bg-on-surface/20 z-40 backdrop-blur-[2px] transition-opacity duration-300 opacity-100" id="drawer-overlay" onclick="toggleDrawer()"></div>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-6 md:p-8 ml-0 md:ml-0 overflow-x-hidden">
+<div class="max-w-5xl mx-auto space-y-8">
+<!-- Page Header with Bento Elements -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<h2 class="font-headline-lg text-display-lg-mobile text-on-surface tracking-tight">Danh sách yêu cầu</h2>
+<p class="text-body-md text-secondary mt-1">Quản lý các yêu cầu dịch vụ cao cấp đang chờ xử lý.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-5 h-11 bg-surface-container-high text-on-surface rounded-full font-label-lg hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                            Xuất dữ liệu
+                        </button>
+<button class="px-5 h-11 bg-primary text-on-primary rounded-full font-label-lg hover:bg-primary-container transition-all flex items-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                            Thêm mới
+                        </button>
+</div>
+</div>
+<!-- Stats Cards (Bento Style) -->
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10">
+<p class="text-label-md text-secondary uppercase tracking-wider">Tổng đặt chỗ</p>
+<div class="flex items-baseline gap-2 mt-2">
+<h3 class="text-headline-lg font-extrabold">1,284</h3>
+<span class="text-status-success text-label-md font-bold">+12%</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10">
+<p class="text-label-md text-secondary uppercase tracking-wider">Doanh thu</p>
+<div class="flex items-baseline gap-2 mt-2">
+<h3 class="text-headline-lg font-extrabold">428M</h3>
+<span class="text-status-success text-label-md font-bold">+5.4%</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10">
+<p class="text-label-md text-secondary uppercase tracking-wider">Hài lòng</p>
+<div class="flex items-baseline gap-2 mt-2">
+<h3 class="text-headline-lg font-extrabold">98%</h3>
+<span class="text-primary text-label-md font-bold">Ổn định</span>
+</div>
+</div>
+</div>
+<!-- Main Table Section -->
+<div class="bg-surface-container-lowest rounded-3xl shadow-lg shadow-blue-900/5 overflow-hidden border border-outline-variant/10">
+<!-- Table Header/Filter -->
+<div class="px-6 py-4 flex items-center justify-between border-b border-outline-variant/10">
+<div class="flex gap-4 items-center">
+<div class="flex border border-outline-variant/40 rounded-full p-1 bg-surface-container-low">
+<button class="px-4 py-1.5 rounded-full text-label-md bg-white shadow-sm font-bold text-primary">Tất cả</button>
+<button class="px-4 py-1.5 rounded-full text-label-md text-secondary hover:text-on-surface">Đang chờ</button>
+<button class="px-4 py-1.5 rounded-full text-label-md text-secondary hover:text-on-surface">Hoàn tất</button>
+</div>
+</div>
+<button class="p-2 hover:bg-surface-container-low rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant">tune</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 text-left text-label-md text-secondary uppercase tracking-wider">Khách hàng</th>
+<th class="px-6 py-4 text-left text-label-md text-secondary uppercase tracking-wider">Dịch vụ</th>
+<th class="px-6 py-4 text-left text-label-md text-secondary uppercase tracking-wider">Thời gian</th>
+<th class="px-6 py-4 text-left text-label-md text-secondary uppercase tracking-wider">Trạng thái</th>
+<th class="px-6 py-4 text-right text-label-md text-secondary uppercase tracking-wider">Hành động</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of an elegant Vietnamese businessman in his 40s, high-end professional photography, clean background, modern office lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVTzE2LfR3nxLniXV5gdgU3C1Y_ZliYQJYnOAlIHt2_7hFQOMlRRnLz1W2ZSnQDFGXcHfZ1I1pqMU9t_A9QKF-nezK-PVlUZfLMul-pCuRpPGrlgGX6T1hV4c740DSMclJ8U1tgW3wY7n6KYsrm6IjqaEXKhD7lahGZ3rxY4vBlfrNvYb2qHhw3IyGVPNF24WXabLGUfX68Di16dWNR0G1P1ww585ZelkRWR3b72IpiaPwZzjkLasV4j0K7hK0IlVsGKXrgjwDooU"/>
+</div>
+<div>
+<p class="text-body-md font-bold">Nguyễn Minh Hoàng</p>
+<p class="text-label-md text-secondary">Premium Member</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-body-md text-on-surface-variant">Đặt xe Maybach S680</td>
+<td class="px-6 py-4 text-body-md text-on-surface-variant">14:30, 24/10</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-status-warning/10 text-status-warning text-label-md">Đang xử lý</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-primary/10 rounded-full text-primary transition-colors">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a sophisticated Vietnamese woman in a luxury dress, minimal jewelry, soft daylight, premium lifestyle aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAGGO4ox82V0jwX3UK05x2q082UgYVZYgJJTMl5xGH0ARPAHDmzZNq5ZQJNaID0_Edj-1mUgKpXqCP9NoZ6cCyKPKy6sZoNaDGHTJlVnBEFVlWReiTBFLSFQl1uGeqdIeVLGaCsgvnVleuiAKlq0-s36tOAa9RQrySrbiegm-S5P-Cj4pOMEP5ukVuXb0E9Dgg8lWtoW71CQBO7tKA7yFmeCeHYGhM7CWybwFqYuxrwvbhAn0N7z72ZtW_fYakyk6yl5Fj7yQ_LXw"/>
+</div>
+<div>
+<p class="text-body-md font-bold">Lê Thuỳ Trang</p>
+<p class="text-label-md text-secondary">VIP Member</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-body-md text-on-surface-variant">Tiệc tối tại Park Hyatt</td>
+<td class="px-6 py-4 text-body-md text-on-surface-variant">19:00, 24/10</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-status-success/10 text-status-success text-label-md">Hoàn tất</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-primary/10 rounded-full text-primary transition-colors">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant overflow-hidden text-center flex items-center justify-center font-bold text-primary">
+                                                TD
+                                            </div>
+<div>
+<p class="text-body-md font-bold">Trần Đức Anh</p>
+<p class="text-label-md text-secondary">Standard Member</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-body-md text-on-surface-variant">Vé trực thăng Vũng Tàu</td>
+<td class="px-6 py-4 text-body-md text-on-surface-variant">08:00, 25/10</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-label-md">Mới</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-primary/10 rounded-full text-primary transition-colors">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-low/30 border-t border-outline-variant/10 flex items-center justify-between">
+<p class="text-label-md text-secondary">Hiển thị 1-10 trên 42 kết quả</p>
+<div class="flex gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant/30 text-secondary hover:bg-surface-container-lowest transition-all">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-on-primary font-bold shadow-md shadow-primary/20">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl text-on-surface hover:bg-surface-container-lowest transition-all font-medium">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl text-on-surface hover:bg-surface-container-lowest transition-all font-medium">3</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant/30 text-secondary hover:bg-surface-container-lowest transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Subtle Background Grid/Pattern for Premium feel -->
+<div class="fixed inset-0 pointer-events-none -z-10 opacity-[0.03]">
+<div class="absolute inset-0" style="background-image: radial-gradient(#0050cb 1px, transparent 1px); background-size: 40px 40px;"></div>
+</div>
+</div>
+</main>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        function toggleDrawer() {
+            const drawer = document.getElementById('side-drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            const isOpen = !drawer.classList.contains('-translate-x-full');
+            
+            if (isOpen) {
+                drawer.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                overlay.classList.add('pointer-events-none');
+            } else {
+                drawer.classList.remove('-translate-x-full');
+                overlay.classList.remove('opacity-0');
+                overlay.classList.remove('pointer-events-none');
+            }
+        }
+
+        // Initialize state for the demo
+        document.addEventListener('DOMContentLoaded', () => {
+            // Uncomment the line below to start with drawer closed
+            // toggleDrawer();
+        });
+    </script>
+</body></html>

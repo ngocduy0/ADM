@@ -378,8 +378,9 @@ h3,
 }
 
 .duyt-admin-app #sidebar-navigation {
-  background-color: #111827 !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background-color: #f3f3f8 !important;
+  border-right: 1px solid rgba(194, 198, 216, 0.5) !important;
+  color: #1a1c1f !important;
 }
 
 .duyt-admin-app #top-app-bar {
@@ -454,6 +455,61 @@ h3,
 
 .duyt-admin-app .shadow-sm {
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Stitch Batch 1 admin-shell contract. */
+.admin-shell-content,
+#sidebar-navigation {
+  transition: margin-left 200ms ease, width 200ms ease, transform 200ms ease;
+}
+
+.admin-shell--collapsed #sidebar-navigation {
+  width: 72px !important;
+  padding-inline: 12px !important;
+  align-items: center;
+}
+
+.admin-shell--collapsed .admin-shell-content {
+  margin-left: 72px !important;
+}
+
+.admin-shell--collapsed .admin-sidebar-label,
+.admin-shell--collapsed #sidebar-navigation nav button > span:last-child,
+.admin-shell--collapsed #sidebar-navigation nav button > span + span {
+  display: none;
+}
+
+.admin-shell--collapsed #sidebar-navigation nav button,
+.admin-shell--collapsed #logout-button {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.admin-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.admin-more-sheet {
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+  #sidebar-navigation {
+    width: 280px !important;
+    background: #fff !important;
+    transform: translateX(-100%);
+  }
+
+  #sidebar-navigation.admin-drawer-open {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 767px) {
+  #top-app-bar {
+    height: calc(56px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 .duyt-admin-app .hover\:bg-\[\#f8fafc\]:hover,

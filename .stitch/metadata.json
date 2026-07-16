@@ -1,0 +1,12 @@
+{
+  "projectId": "8133016219890591615",
+  "title": "ADM Admin Responsive Redesign",
+  "deviceType": "DESKTOP",
+  "Last Sync Time": "2026-07-16T14:00:00+07:00",
+  "screens": {
+    "design-system": { "id": "917947ec84eb459baec316a0f704fb0b", "label": "ADM / Design System / Desktop / Component Library", "sourceScreen": "projects/8133016219890591615/screens/917947ec84eb459baec316a0f704fb0b", "dimensions": [1280, 1755], "canvasPosition": [0, 19421] },
+    "desktop-shell": { "id": "b5ceed9ea9474848bff445f08c6b6657", "label": "ADM / Shell / Desktop / Expanded and Collapsed", "sourceScreen": "projects/8133016219890591615/screens/b5ceed9ea9474848bff445f08c6b6657", "dimensions": [1280, 1024], "canvasPosition": [0, 21432] },
+    "tablet-drawer": { "id": "c715b25d8e0f49809398ebc4e31197fe", "label": "ADM / Shell / Tablet / Drawer", "sourceScreen": "projects/8133016219890591615/screens/c715b25d8e0f49809398ebc4e31197fe", "dimensions": [1280, 1024], "canvasPosition": [0, 22712] },
+    "mobile-shell": { "id": "b3d95077bcc2432abefa6ea9b8049f78", "label": "ADM / Shell / Mobile / Navigation and More", "sourceScreen": "projects/8133016219890591615/screens/b3d95077bcc2432abefa6ea9b8049f78", "dimensions": [390, 884], "canvasPosition": [0, 23992] }
+  }
+}
