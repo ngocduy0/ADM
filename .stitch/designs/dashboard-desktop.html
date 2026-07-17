@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DuyT Concierge - Quản trị viên</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ba1a1a",
+                    "outline": "#727687",
+                    "tertiary": "#765311",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#141b2b",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#e2e2e7",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#2e3034",
+                    "surface-dim": "#d9dade",
+                    "on-tertiary-fixed-variant": "#604100",
+                    "surface-container-low": "#f3f3f8",
+                    "inverse-on-surface": "#f0f0f5",
+                    "inverse-primary": "#b3c5ff",
+                    "on-tertiary-fixed": "#281800",
+                    "primary-container": "#0066ff",
+                    "status-error": "#FF3B30",
+                    "secondary": "#575e70",
+                    "surface-container": "#ededf2",
+                    "primary-fixed": "#dae1ff",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#f9f9fe",
+                    "secondary-container": "#d9dff5",
+                    "outline-variant": "#c2c6d8",
+                    "bg-light": "#FBFBFD",
+                    "surface-container-high": "#e8e8ed",
+                    "surface": "#f9f9fe",
+                    "background": "#f9f9fe",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed": "#dce2f7",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "bg-dark": "#000000",
+                    "primary": "#0050cb",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#1a1c1f",
+                    "surface-light": "#FFFFFF",
+                    "on-background": "#1a1c1f",
+                    "on-tertiary-container": "#fff7f0",
+                    "secondary-fixed-dim": "#c0c6db",
+                    "on-primary-fixed-variant": "#003fa4",
+                    "surface-tint": "#0054d6",
+                    "status-warning": "#FF9500",
+                    "tertiary-fixed-dim": "#efbf73",
+                    "surface-dark": "#1C1C1E",
+                    "tertiary-fixed": "#ffdeae",
+                    "tertiary-container": "#926b28",
+                    "surface-container-highest": "#e2e2e7",
+                    "on-secondary-fixed-variant": "#404758",
+                    "on-primary": "#ffffff",
+                    "on-surface-variant": "#424656",
+                    "status-success": "#34C759",
+                    "on-primary-fixed": "#001849",
+                    "on-secondary-container": "#5c6274",
+                    "on-primary-container": "#f8f7ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "12px",
+                    "2xl": "24px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "margin-desktop": "32px",
+                    "max-width": "1440px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e2e7;
+            border-radius: 10px;
+        }
+        .premium-card {
+            background: #ffffff;
+            box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.03);
+            border-radius: 24px;
+            transition: transform 0.2s ease;
+        }
+        .premium-card:hover {
+            transform: translateY(-2px);
+        }
+        .chart-bar {
+            transition: height 1s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-hidden">
+<!-- SideNavBar -->
+<aside class="w-[240px] h-screen fixed left-0 top-0 bg-surface-container-low flex flex-col p-4 gap-2 z-50">
+<div class="mb-8 px-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">DuyT Concierge</h1>
+<p class="text-xs text-on-surface-variant font-medium tracking-wider">Hệ thống quản trị</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1 overflow-y-auto custom-scrollbar">
+<!-- Active Tab: Tổng quan -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary-container text-on-secondary-container transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md text-body-md font-semibold">Tổng quan</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-body-md text-body-md font-medium">Đặt chỗ</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-body-md text-body-md font-medium">Khách hàng</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">location_on</span>
+<span class="font-body-md text-body-md font-medium">Địa điểm</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">movie</span>
+<span class="font-body-md text-body-md font-medium">Reels</span>
+</a>
+<div class="h-px bg-outline-variant/30 my-2 mx-4"></div>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-body-md text-body-md font-medium">Thanh toán</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="font-body-md text-body-md font-medium">Đánh giá</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">chat</span>
+<span class="font-body-md text-body-md font-medium">Tin nhắn</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body-md text-body-md font-medium">Phân tích</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-body-md text-body-md font-medium">Tệp dữ liệu</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors transition-all duration-200 ease-in-out active:scale-95 mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md font-medium">Cài đặt</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[240px] w-[calc(100%-240px)] h-screen overflow-y-auto bg-surface custom-scrollbar">
+<!-- TopNavBar -->
+<header class="h-16 fixed top-0 right-0 left-[240px] bg-surface/80 backdrop-blur-md flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Quản trị viên</h2>
+<div class="h-6 w-px bg-outline-variant/50"></div>
+<div class="relative flex items-center bg-surface-container rounded-full px-4 py-2 w-80">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-lg font-medium w-full ml-2" placeholder="Tìm kiếm đặt chỗ, khách hàng..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant/30">
+<div class="text-right">
+<p class="font-label-lg text-label-lg font-bold">Duy Anh</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Quản trị hệ thống</p>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container">
+<img class="w-full h-full object-cover" data-alt="A sophisticated headshot of a young Vietnamese professional male in his 30s wearing a high-end tailored navy blue suit against a minimalist studio background with soft warm lighting. The aesthetic is clean, luxurious, and highly corporate, reflecting a prestigious management persona for a concierge service. High-fidelity photography style with deep focus and professional lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwcPh7WWYu8EDQQNp4UbGrLdKD-k8DfHcoffI58P0coBwnYfsz7EoC6PK3IDTlyE4ZYY-OY9ltzuk2IBbvh6fDmwlSJ9jjhObETsrJTNIocC8K881RwBN4UPAVt-CSNVYtHOiD1K_g6aqmYPy9sU_vl0KWavYvzKu3eTSwS-03e_MvoGktW9Vbpp05Vv-jYQyGoOqM4smlyfdm7oQje8E5teBCH0WbySwlNzxLZH6PthKcb0oY3ysfaNNPVmYmrenAdyJLvFyZxyw"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="pt-24 px-8 pb-12 max-w-[1440px] mx-auto">
+<!-- Quick Actions Header -->
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Tổng quan hệ thống</h3>
+<p class="text-on-surface-variant font-medium">Hôm nay, 24 Tháng 10, 2023</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3 rounded-xl bg-surface-container-highest text-on-surface font-bold text-label-lg flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add_location</span>
+                        Mở Địa điểm
+                    </button>
+<button class="px-6 py-3 rounded-xl bg-surface-container-highest text-on-surface font-bold text-label-lg flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-95">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                        Mở Đặt chỗ
+                    </button>
+<button class="px-6 py-3 rounded-xl bg-primary text-white font-bold text-label-lg flex items-center gap-2 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        Tạo booking
+                    </button>
+</div>
+</div>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-6 gap-6 mb-8">
+<!-- Tổng đặt chỗ -->
+<div class="premium-card p-6 flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-primary mb-4">analytics</span>
+<p class="text-label-md text-on-surface-variant mb-1">Tổng đặt chỗ</p>
+</div>
+<div class="flex items-baseline gap-2">
+<h4 class="text-headline-lg font-extrabold">2,840</h4>
+<span class="text-[12px] font-bold text-status-success">+12%</span>
+</div>
+</div>
+<!-- Đặt chỗ hôm nay -->
+<div class="premium-card p-6 flex flex-col justify-between border-l-4 border-primary">
+<div>
+<span class="material-symbols-outlined text-primary mb-4">today</span>
+<p class="text-label-md text-on-surface-variant mb-1">Đặt chỗ hôm nay</p>
+</div>
+<div class="flex items-baseline gap-2">
+<h4 class="text-headline-lg font-extrabold">42</h4>
+<span class="text-[12px] font-bold text-status-success">Tốt</span>
+</div>
+</div>
+<!-- Doanh thu dự kiến -->
+<div class="premium-card p-6 flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-status-success mb-4">payments</span>
+<p class="text-label-md text-on-surface-variant mb-1">Dự kiến (Min. spend)</p>
+</div>
+<div class="flex flex-col">
+<h4 class="text-headline-md font-extrabold">124M</h4>
+<p class="text-[10px] text-on-surface-variant">VNĐ</p>
+</div>
+</div>
+<!-- Cần xử lý -->
+<div class="premium-card p-6 flex flex-col justify-between bg-error-container/20">
+<div>
+<span class="material-symbols-outlined text-error mb-4">priority_high</span>
+<p class="text-label-md text-error mb-1 font-bold">Cần xử lý</p>
+</div>
+<div class="flex items-baseline gap-2">
+<h4 class="text-headline-lg font-extrabold text-error">08</h4>
+</div>
+</div>
+<!-- Lượt xem địa điểm -->
+<div class="premium-card p-6 flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-secondary mb-4">visibility</span>
+<p class="text-label-md text-on-surface-variant mb-1">Lượt xem địa điểm</p>
+</div>
+<div class="flex items-baseline gap-2">
+<h4 class="text-headline-lg font-extrabold">15.2k</h4>
+</div>
+</div>
+<!-- Đánh giá trung bình -->
+<div class="premium-card p-6 flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-status-warning mb-4">star</span>
+<p class="text-label-md text-on-surface-variant mb-1">Đánh giá TB</p>
+</div>
+<div class="flex items-baseline gap-2">
+<h4 class="text-headline-lg font-extrabold">4.9</h4>
+<span class="text-[12px] font-bold text-on-surface-variant">/5.0</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Section -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Chart Section -->
+<div class="col-span-8 premium-card p-8">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h5 class="text-headline-sm font-bold">Booking mới trong tuần</h5>
+<p class="text-body-md text-on-surface-variant">Thống kê dữ liệu từ 17/10 - 24/10</p>
+</div>
+<div class="flex bg-surface-container rounded-lg p-1">
+<button class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm">Tuần</button>
+<button class="px-3 py-1.5 text-xs font-bold rounded-md text-on-surface-variant hover:bg-white/50">Tháng</button>
+</div>
+</div>
+<div class="h-[280px] flex items-end justify-between gap-4 px-4 relative">
+<!-- Chart Grid Lines -->
+<div class="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-between pointer-events-none opacity-10">
+<div class="border-t border-on-surface w-full"></div>
+<div class="border-t border-on-surface w-full"></div>
+<div class="border-t border-on-surface w-full"></div>
+<div class="border-t border-on-surface w-full"></div>
+</div>
+<!-- Bars -->
+<div class="flex-1 flex flex-col items-center gap-2 group">
+<div class="w-full bg-primary/10 rounded-t-lg relative chart-bar" style="height: 60%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">45</div>
+</div>
+<p class="text-[11px] font-bold text-on-surface-variant">T2</p>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 group">
+<div class="w-full bg-primary/10 rounded-t-lg relative chart-bar" style="height: 45%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">32</div>
+</div>
+<p class="text-[11px] font-bold text-on-surface-variant">T3</p>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 group">
+<div class="w-full bg-primary/10 rounded-t-lg relative chart-bar" style="height: 75%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">58</div>
+</div>
+<p class="text-[11px] font-bold text-on-surface-variant">T4</p>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 group">
+<div class="w-full bg-primary/10 rounded-t-lg relative chart-bar" style="height: 55%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">40</div>
+</div>
+<p class="text-[11px] font-bold text-on-surface-variant">T5</p>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 group">
+<div class="w-full bg-primary/10 rounded-t-lg relative chart-bar" style="height: 90%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">72</div>
+</div>
+<p class="text-[11px] font-bold text-on-surface-variant">T6</p>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 group">
+<div class="w-full bg-primary rounded-t-lg relative chart-bar" style="height: 100%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">85</div>
+</div>
+<p class="text-[11px] font-bold text-primary">T7</p>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 group">
+<div class="w-full bg-primary/10 rounded-t-lg relative chart-bar" style="height: 80%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">64</div>
+</div>
+<p class="text-[11px] font-bold text-on-surface-variant">CN</p>
+</div>
+</div>
+</div>
+<!-- Status Distribution -->
+<div class="col-span-4 premium-card p-8">
+<h5 class="text-headline-sm font-bold mb-6">Trạng thái Booking</h5>
+<div class="space-y-4">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-label-md">
+<span class="font-semibold">Mới (Cần duyệt)</span>
+<span class="text-primary font-bold">15%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[15%]"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-label-md">
+<span class="font-semibold">Đã liên hệ</span>
+<span class="text-secondary font-bold">25%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[25%]"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-label-md">
+<span class="font-semibold text-status-success">Đã xác nhận</span>
+<span class="text-status-success font-bold">40%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-status-success w-[40%]"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-label-md">
+<span class="font-semibold">Hoàn tất</span>
+<span class="text-on-surface font-bold">12%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-on-surface w-[12%]"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-label-md">
+<span class="font-semibold text-error">Đã hủy</span>
+<span class="text-error font-bold">5%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-error w-[5%]"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-label-md">
+<span class="font-semibold text-outline">Không đến</span>
+<span class="text-outline font-bold">3%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-outline w-[3%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity Table -->
+<div class="col-span-8 premium-card p-8">
+<div class="flex items-center justify-between mb-6">
+<h5 class="text-headline-sm font-bold">Danh sách đặt chỗ mới nhất</h5>
+<a class="text-primary font-bold text-label-lg hover:underline flex items-center gap-1" href="#">
+                            Xem tất cả
+                            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead>
+<tr class="text-left border-b border-outline-variant/30">
+<th class="pb-4 font-bold text-label-lg text-on-surface-variant">Khách hàng</th>
+<th class="pb-4 font-bold text-label-lg text-on-surface-variant">Địa điểm</th>
+<th class="pb-4 font-bold text-label-lg text-on-surface-variant">Thời gian</th>
+<th class="pb-4 font-bold text-label-lg text-on-surface-variant">Trạng thái</th>
+<th class="pb-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a elegant Vietnamese woman in her late 20s, high-end fashion, cinematic studio lighting, minimalist background, looking professional and wealthy. Shot in a premium editorial style for a luxury lifestyle service." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDED1RR20JGUgGjGi_2OzBN530bvXpjbG2jm-ZKkn3Yu7S6DvwRcfoGQr9iJago7sBZIAsOGyq45bFDVDu-alkH6zzrFJkCSYxUjnW2RG-3rojYMVZKGW6RMFBGiaMbxZ1RpcUvqZjs-N1Y3bmdVGzO4CBUx8H4rkBG1eyl_NRrCMpjB8veOUrmxAeJFhynKUw5mDxFmipwOzEqNmAvn2ToepPZ9pkTgxmfNJcXMiptnGCA6LUs7qtfb1fSIj3bfDFj4Sc59W5qor4"/>
+</div>
+<div>
+<p class="font-bold text-body-md">Trần Minh Thư</p>
+<p class="text-[11px] text-on-surface-variant">+84 901 ••• 456</p>
+</div>
+</div>
+</td>
+<td class="py-4">
+<p class="font-medium text-body-md">ADM Club</p>
+</td>
+<td class="py-4">
+<p class="text-body-md">22:30, Hôm nay</p>
+</td>
+<td class="py-4">
+<span class="px-3 py-1 rounded-full bg-primary-container/20 text-primary font-bold text-[11px]">Đang chờ</span>
+</td>
+<td class="py-4 text-right">
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a sharp Vietnamese businessman in a tailored suit, modern glasses, smiling confidently, high-key studio lighting, neutral minimal background. Professional corporate portraiture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz3GR-GYBbB8PRjehMoOeUNC1jkajeKhwqu6GEFSxUMqzTdnQ6mWj9GtGlcIXmLFJINqUTqUH3BVMi8-6tE_5v-e02HCzRqWGjngC6MwcEWIaOV1vQT_IYHcTj8ac_5do-Mc_n_HT3WbPvzAdjnBFiETOwfAaVhq68Nxico8HCe9y9nwF7sQHNKEtRoO4KM3TCLbXzpemOAT9DReRKKR_SoHT64ZijuONgH1ClwsNvU5pWqg5sw6tVBW8OypRo-IIPRa2DEb3ZjR8"/>
+</div>
+<div>
+<p class="font-bold text-body-md">Nguyễn Hoàng Nam</p>
+<p class="text-[11px] text-on-surface-variant">+84 988 ••• 123</p>
+</div>
+</div>
+</td>
+<td class="py-4">
+<p class="font-medium text-body-md">Karaoke Lasvegas 1</p>
+</td>
+<td class="py-4">
+<p class="text-body-md">20:00, Hôm nay</p>
+</td>
+<td class="py-4">
+<span class="px-3 py-1 rounded-full bg-status-success/20 text-status-success font-bold text-[11px]">Đã xác nhận</span>
+</td>
+<td class="py-4 text-right">
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young trendy Vietnamese couple, chic luxury streetwear, urban aesthetic, night city backdrop with blurred lights, high-end cinematic quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKudI-pd-YL9pKU9T-d3PnEN1k7VoUrVULZPBC3RSy-2l6cNGLuTIEvRsXjT3bbi1mpIqYFaiaEHxu6x2IbQZwadXITLsk4pN-tOCxwV7zA6B-sgwhjvuNfQ8ldnnqmdMAqE7np7_Ie8d4DZqx0pT1aPq4iiRZ8QO4Uy30zFBWXT7zdHmZmFVQ7ArIX6TxQDELY45xrWHKnUd72JVpor7pCEwpCBYyun5Rcjhz9TEB9f9wuTCS-yptLnTQvbrI0OfHrHpKYJ_W4kQ"/>
+</div>
+<div>
+<p class="font-bold text-body-md">Lê Kim Anh</p>
+<p class="text-[11px] text-on-surface-variant">+84 345 ••• 789</p>
+</div>
+</div>
+</td>
+<td class="py-4">
+<p class="font-medium text-body-md">ADM Club</p>
+</td>
+<td class="py-4">
+<p class="text-body-md">23:00, Hôm nay</p>
+</td>
+<td class="py-4">
+<span class="px-3 py-1 rounded-full bg-primary-container/20 text-primary font-bold text-[11px]">Đang chờ</span>
+</td>
+<td class="py-4 text-right">
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Featured Venues -->
+<div class="col-span-4 flex flex-col gap-6">
+<div class="premium-card p-6 relative overflow-hidden group">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover brightness-50 group-hover:scale-110 transition-transform duration-700" data-alt="A high-end, luxury nightlife club interior with dramatic blue and purple neon lighting, sleek modern furniture, crystalline structures, and a premium atmospheric vibe. Wide shot showing a sophisticated bar and lounge area in a modern Asian metropolitan style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5UU3eeuPFhcZrqLw_kWRFscSIwzomLBCzSwz9GEac21POIUo1MKJ7g6pp_Oh6W2_GaCkHVH_AnWmeW9C6woz5eLwx5v7nB_sF7kIljY4ChPznyirWZZNC3PutD5jLUyrCfwft7VE7Ep22sC_25FfbduchNk4F-_pcNcHzeG9iK9dx2liQRPk5XOp2NZTGn0ax7KTeLmyd-8Tv2XWYDVyTgUjz6-GWUvHSyzh03tGDnEvtqSY9vxRmA0Xxwm_wR5yhEEHdk9VqkPY"/>
+</div>
+<div class="relative z-10 flex flex-col h-full justify-between min-h-[140px]">
+<div>
+<span class="bg-primary text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Top Venue</span>
+<h6 class="text-white font-bold text-headline-sm mt-1">ADM Club</h6>
+</div>
+<div class="flex justify-between items-end">
+<div class="text-white/80">
+<p class="text-[10px] uppercase font-bold tracking-widest">Hiệu suất tuần</p>
+<p class="text-xl font-bold">142 Booking</p>
+</div>
+<div class="bg-white/10 backdrop-blur-md p-2 rounded-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-white text-[18px]">trending_up</span>
+<span class="text-white font-bold text-xs">+8%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="premium-card p-6 relative overflow-hidden group">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover brightness-50 group-hover:scale-110 transition-transform duration-700" data-alt="An opulent luxury karaoke suite interior with plush gold and velvet seating, high-tech large screen displays, intricate marble flooring, and warm sophisticated ambient lighting. A setting of extreme wealth and professional entertainment design in a modern city like Ho Chi Minh or Hanoi." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4hyJUN8UGBe1i_wZyUYBj0emyfqKegyLSRt2fsOgN5NrbSdLkKyaWlsImXJxVv2zen59lHqkSjQrGdlvRWLeIplJDBXV3rPUKkJTdwbpcYiVMVyQJhn4k2LLd4BEfyaKyjeBto3kGja2ra03YuBxBTHsoBTUB1hmMvHnlO7Ioq8b-xbzdTXdW-osJMRygf4Zddu7es5ho_ASKSz-HkU3C5jUkDwpYhfFedD7qGxasCOqvcaOFYfR3Vqz6FsiCfwA9X29aNQfRaIw"/>
+</div>
+<div class="relative z-10 flex flex-col h-full justify-between min-h-[140px]">
+<div>
+<span class="bg-status-warning text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Trending</span>
+<h6 class="text-white font-bold text-headline-sm mt-1">Karaoke Lasvegas 1</h6>
+</div>
+<div class="flex justify-between items-end">
+<div class="text-white/80">
+<p class="text-[10px] uppercase font-bold tracking-widest">Hiệu suất tuần</p>
+<p class="text-xl font-bold">98 Booking</p>
+</div>
+<div class="bg-white/10 backdrop-blur-md p-2 rounded-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-white text-[18px]">trending_up</span>
+<span class="text-white font-bold text-xs">+15%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for Quick Booking - Secondary UI interaction -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group">
+<span class="material-symbols-outlined text-[28px]">edit_square</span>
+<span class="absolute right-full mr-4 bg-on-surface text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-bold">Booking nhanh</span>
+</button>
+</div>
+<script>
+        // Simple micro-interaction for active state on hover
+        const navItems = document.querySelectorAll('nav a');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                navItems.forEach(i => {
+                    i.classList.remove('bg-secondary-container', 'text-on-secondary-container');
+                    i.classList.add('text-on-surface-variant');
+                });
+                item.classList.remove('text-on-surface-variant');
+                item.classList.add('bg-secondary-container', 'text-on-secondary-container');
+            });
+        });
+
+        // Animate chart bars on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.chart-bar');
+            bars.forEach(bar => {
+                const height = bar.style.height;
+                bar.style.height = '0';
+                setTimeout(() => {
+                    bar.style.height = height;
+                }, 100);
+            });
+        });
+    </script>
+</body></html>
