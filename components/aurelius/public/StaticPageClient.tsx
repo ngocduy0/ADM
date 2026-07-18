@@ -20,7 +20,7 @@ export default function StaticPageClient({
   }
 
   return (
-    <PublicShell initialLocale={initialLocale} activeView={view} logoUrl={siteSettings.logoUrl}>
+    <PublicShell initialLocale={initialLocale} activeView={view} logoUrl={siteSettings.logoUrl} siteSettings={siteSettings}>
       {view === 'ABOUT' ? <AboutView /> : <ContactView />}
     </PublicShell>
   );

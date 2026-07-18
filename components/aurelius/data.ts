@@ -295,9 +295,7 @@ function safeSetLocalStorage(key: string, value: unknown) {
 
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.warn(`[DuyT] Local cache skipped for ${key}. Storage quota exceeded.`, error);
-
+  } catch {
     try {
       localStorage.removeItem(key);
     } catch {
@@ -348,107 +346,146 @@ export interface ConciergeDataPayload {
   reservations: ReservationRequest[];
 }
 
-async function readApiData<T>(path: string, fallbackLabel: string): Promise<T> {
-  const response = await fetch(path, {
-    method: 'GET',
-    cache: 'no-store',
-  });
+const API_TIMEOUT_MS = 12_000;
 
-  const json = await response.json();
-
-  if (!response.ok || !json.ok || json.source === 'local-fallback') {
-    throw new Error(json.error || json.warning || `Unable to load ${fallbackLabel}`);
+async function requestApi<T>(
+  path: string,
+  init: RequestInit,
+  fallbackLabel: string,
+  allowFallback = false,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  try {
+    const response = await fetch(path, { ...init, cache: 'no-store', signal: controller.signal });
+    const json = await response.json().catch(() => null);
+    if (!response.ok || !json?.ok || (!allowFallback && json.source === 'local-fallback')) {
+      const issue = Array.isArray(json?.issues) ? json.issues[0]?.message : '';
+      throw new Error(issue || json?.error || json?.warning || `Không thể ${fallbackLabel}`);
+    }
+    return json.data as T;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Yêu cầu ${fallbackLabel} quá thời gian chờ. Vui lòng kiểm tra kết nối Supabase.`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
   }
+}
 
-  return json.data as T;
+async function readApiData<T>(path: string, fallbackLabel: string): Promise<T> {
+  return requestApi<T>(path, { method: 'GET' }, `tải ${fallbackLabel}`);
 }
 
 async function writeApiData<T>(path: string, body: unknown, fallbackLabel: string): Promise<T> {
-  const response = await fetch(path, {
+  return requestApi<T>(path, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    cache: 'no-store',
     body: JSON.stringify(body),
-  });
-
-  const json = await response.json();
-
-  if (!response.ok || !json.ok || json.source === 'local-fallback') {
-    throw new Error(json.error || json.warning || `Unable to sync ${fallbackLabel}`);
-  }
-
-  return json.data as T;
+  }, `đồng bộ ${fallbackLabel}`);
 }
 
-
 export async function loadVenuesFromServer(): Promise<Venue[]> {
-  const venues = await readApiData<Venue[]>('/api/venues', 'venues');
+  const venues = await readApiData<Venue[]>('/api/venues', 'địa điểm');
   return sanitizePayloadForStorage({ venues, customers: [], reservations: [] }).venues;
 }
 
 export async function loadVenueFromServer(venueId: string): Promise<Venue> {
-  const venue = await readApiData<Venue>(`/api/venues/${encodeURIComponent(venueId)}`, 'venue');
+  const venue = await readApiData<Venue>(`/api/venues/${encodeURIComponent(venueId)}`, 'địa điểm');
   return sanitizePayloadForStorage({ venues: [venue], customers: [], reservations: [] }).venues[0];
 }
 
 export async function loadCustomersFromServer(): Promise<Customer[]> {
-  const customers = await readApiData<Customer[]>('/api/customers', 'customers');
+  const customers = await readApiData<Customer[]>('/api/customers', 'khách hàng');
   return sanitizePayloadForStorage({ venues: [], customers, reservations: [] }).customers;
 }
 
 export async function loadReservationsFromServer(): Promise<ReservationRequest[]> {
-  const reservations = await readApiData<ReservationRequest[]>('/api/reservations', 'reservations');
+  const reservations = await readApiData<ReservationRequest[]>('/api/reservations', 'booking');
   return sanitizePayloadForStorage({ venues: [], customers: [], reservations }).reservations;
 }
 
 export async function loadDataFromServer(): Promise<ConciergeDataPayload> {
-  const data = await readApiData<ConciergeDataPayload>('/api/concierge', 'admin data');
+  const data = await readApiData<ConciergeDataPayload>('/api/concierge', 'dữ liệu quản trị');
   return sanitizePayloadForStorage(data);
 }
 
-export async function saveDataToServer(
-  payload: ConciergeDataPayload
-): Promise<ConciergeDataPayload> {
+export async function saveDataToServer(payload: ConciergeDataPayload): Promise<ConciergeDataPayload> {
   const safePayload = sanitizePayloadForStorage(payload);
-  const data = await writeApiData<ConciergeDataPayload>('/api/concierge', safePayload, 'admin data');
+  const data = await writeApiData<ConciergeDataPayload>('/api/concierge', safePayload, 'dữ liệu quản trị');
   return sanitizePayloadForStorage(data);
 }
 
-export async function createReservationOnServer(
-  reservation: ReservationRequest
-): Promise<ConciergeDataPayload> {
-  const response = await fetch('/api/reservations', {
+export async function createReservationOnServer(reservation: ReservationRequest): Promise<ReservationRequest> {
+  const data = await requestApi<ReservationRequest>('/api/reservations', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    cache: 'no-store',
     body: JSON.stringify(reservation),
-  });
-
-  const json = await response.json();
-
-  if (!response.ok || !json.ok || json.source === 'local-fallback') {
-    throw new Error(json.error || json.warning || 'Unable to create reservation');
-  }
-
-  return sanitizePayloadForStorage(json.data.payload as ConciergeDataPayload);
+  }, 'tạo booking');
+  return sanitizePayloadForStorage({ venues: [], customers: [], reservations: [data] }).reservations[0];
 }
 
-export async function updateVenueOnServer(
-  venueId: string,
-  patch: Partial<Venue>
-): Promise<Venue> {
-  const response = await fetch(`/api/venues/${encodeURIComponent(venueId)}`, {
+export async function updateReservationOnServer(
+  reservationId: string,
+  patch: Partial<ReservationRequest>,
+): Promise<ReservationRequest> {
+  const data = await requestApi<ReservationRequest>(`/api/reservations/${encodeURIComponent(reservationId)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    cache: 'no-store',
     body: JSON.stringify(patch),
-  });
+  }, 'cập nhật booking');
+  return sanitizePayloadForStorage({ venues: [], customers: [], reservations: [data] }).reservations[0];
+}
 
-  const json = await response.json();
+export async function deleteReservationOnServer(reservationId: string): Promise<void> {
+  await requestApi<{ id: string }>(`/api/reservations/${encodeURIComponent(reservationId)}`, {
+    method: 'DELETE',
+  }, 'xóa booking');
+}
 
-  if (!response.ok || !json.ok || json.source === 'local-fallback') {
-    throw new Error(json.error || json.warning || 'Unable to update venue');
-  }
+export async function createCustomerOnServer(customer: Customer): Promise<Customer> {
+  return requestApi<Customer>('/api/customers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(customer),
+  }, 'tạo khách hàng');
+}
 
-  return json.data as Venue;
+export async function updateCustomerOnServer(customerId: string, customer: Customer): Promise<Customer> {
+  return requestApi<Customer>(`/api/customers/${encodeURIComponent(customerId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(customer),
+  }, 'cập nhật khách hàng');
+}
+
+export async function deleteCustomerOnServer(customerId: string): Promise<void> {
+  await requestApi<{ id: string }>(`/api/customers/${encodeURIComponent(customerId)}`, {
+    method: 'DELETE',
+  }, 'xóa khách hàng');
+}
+
+export async function createVenueOnServer(venue: Venue): Promise<Venue> {
+  const data = await requestApi<Venue>('/api/venues', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(venue),
+  }, 'tạo địa điểm');
+  return sanitizePayloadForStorage({ venues: [data], customers: [], reservations: [] }).venues[0];
+}
+
+export async function updateVenueOnServer(venueId: string, patch: Partial<Venue>): Promise<Venue> {
+  const data = await requestApi<Venue>(`/api/venues/${encodeURIComponent(venueId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  }, 'cập nhật địa điểm');
+  return sanitizePayloadForStorage({ venues: [data], customers: [], reservations: [] }).venues[0];
+}
+
+export async function deleteVenueOnServer(venueId: string): Promise<void> {
+  await requestApi<{ id: string }>(`/api/venues/${encodeURIComponent(venueId)}`, {
+    method: 'DELETE',
+  }, 'xóa địa điểm');
 }

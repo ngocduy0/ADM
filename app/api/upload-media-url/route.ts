@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdminApi } from "@/lib/admin-api";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,8 @@ function safeFileName(name: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   try {
     const body = await request.json().catch(() => null);
 

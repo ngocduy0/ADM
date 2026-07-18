@@ -378,8 +378,9 @@ h3,
 }
 
 .duyt-admin-app #sidebar-navigation {
-  background-color: #111827 !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background-color: #f3f3f8 !important;
+  border-right: 1px solid rgba(194, 198, 216, 0.5) !important;
+  color: #1a1c1f !important;
 }
 
 .duyt-admin-app #top-app-bar {
@@ -456,6 +457,61 @@ h3,
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
 }
 
+/* Stitch Batch 1 admin-shell contract. */
+.admin-shell-content,
+#sidebar-navigation {
+  transition: margin-left 200ms ease, width 200ms ease, transform 200ms ease;
+}
+
+.admin-shell--collapsed #sidebar-navigation {
+  width: 72px !important;
+  padding-inline: 12px !important;
+  align-items: center;
+}
+
+.admin-shell--collapsed .admin-shell-content {
+  margin-left: 72px !important;
+}
+
+.admin-shell--collapsed .admin-sidebar-label,
+.admin-shell--collapsed #sidebar-navigation nav button > span:last-child,
+.admin-shell--collapsed #sidebar-navigation nav button > span + span {
+  display: none;
+}
+
+.admin-shell--collapsed #sidebar-navigation nav button,
+.admin-shell--collapsed #logout-button {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.admin-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.admin-more-sheet {
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+  #sidebar-navigation {
+    width: 280px !important;
+    background: #fff !important;
+    transform: translateX(-100%);
+  }
+
+  #sidebar-navigation.admin-drawer-open {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 767px) {
+  #top-app-bar {
+    height: calc(56px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
 .duyt-admin-app .hover\:bg-\[\#f8fafc\]:hover,
 .duyt-admin-app .hover\:bg-slate-50:hover,
 .duyt-admin-app .hover\:bg-gray-50:hover {
@@ -517,4 +573,82 @@ h3,
 
 .duyt-admin-app ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Route-based DuyT Booking admin (refactored from the legacy single-file dashboard). */
+.duyt-admin-app,
+.duyt-admin-login {
+  font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.duyt-admin-app {
+  color-scheme: light;
+  background: #f7f8fc;
+}
+
+.duyt-admin-app button,
+.duyt-admin-app input,
+.duyt-admin-app select,
+.duyt-admin-app textarea,
+.duyt-admin-login button,
+.duyt-admin-login input {
+  font: inherit;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #d7dce5; border-radius: 999px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #aeb7c5; }
+
+.duyt-admin-app input[type="date"]::-webkit-calendar-picker-indicator,
+.duyt-admin-app input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+@media (max-width: 640px) {
+  .duyt-admin-app table th,
+  .duyt-admin-app table td {
+    white-space: nowrap;
+  }
+}
+
+@keyframes duytContactEnter {
+  0% { opacity: 0; transform: translateY(28px) scale(.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes duytContactItemEnter {
+  0% { opacity: 0; transform: translateY(12px) scale(.88); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes duytContactFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes duytPhoneRing {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  74% { transform: rotate(13deg); }
+  78% { transform: rotate(-12deg); }
+  82% { transform: rotate(9deg); }
+  86% { transform: rotate(-7deg); }
+  90% { transform: rotate(0deg); }
+}
+@keyframes duytPhonePulse {
+  0%, 60%, 100% { opacity: 0; transform: scale(.9); }
+  70% { opacity: .7; transform: scale(1); }
+  90% { opacity: 0; transform: scale(1.55); }
+}
+.duyt-contact-bar {
+  animation: duytContactEnter .55s cubic-bezier(.22,1,.36,1) both, duytContactFloat 5s ease-in-out 1.2s infinite;
+}
+.duyt-contact-item { animation: duytContactItemEnter .42s cubic-bezier(.22,1,.36,1) both; }
+.duyt-phone-ring { animation: duytPhoneRing 3.2s ease-in-out infinite; transform-origin: 50% 50%; }
+.duyt-phone-pulse { animation: duytPhonePulse 3.2s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .duyt-contact-bar, .duyt-contact-item, .duyt-phone-ring, .duyt-phone-pulse { animation: none !important; }
 }

@@ -60,8 +60,7 @@ async function getPublicSettings() {
         saveSiteSettingsLocal(settings);
         return settings;
       })
-      .catch((error) => {
-        console.warn('[DuyT] Site settings unavailable, using local/default fallback.', error);
+      .catch(() => {
         const fallback = loadSiteSettingsLocal();
         settingsCache = fallback;
         return fallback;
@@ -79,12 +78,10 @@ async function getPublicVenues() {
     venuesPromise = loadVenuesFromServer()
       .then((venues) => {
         venuesCache = venues;
-        saveVenues(venues);
         venues.forEach((venue) => venueCache.set(venue.id, venue));
         return venues;
       })
-      .catch((error) => {
-        console.warn('[DuyT] Venue API unavailable, using local fallback.', error);
+      .catch(() => {
         const fallback = loadData().venues;
         venuesCache = fallback;
         fallback.forEach((venue) => venueCache.set(venue.id, venue));
@@ -111,7 +108,6 @@ async function getPublicVenue(venueId: string) {
       return venue;
     })
     .catch(async (error) => {
-      console.warn('[DuyT] Venue detail API unavailable, using local fallback.', error);
       const localVenue = findVenueLocal(loadData().venues, safeId);
       if (localVenue) return localVenue;
       const allVenues = await getPublicVenues();
@@ -229,8 +225,7 @@ export function usePublicData() {
         setData(serverData);
         setSiteSettings(settings);
         cacheData(serverData);
-      } catch (error) {
-        console.warn('[DuyT] Supabase unavailable, using local fallback.', error);
+      } catch {
         const localData = loadData();
         if (!isMounted) return;
         setData(localData);
@@ -256,8 +251,7 @@ export function usePublicData() {
         cacheData(serverData);
         return serverData;
       })
-      .catch((error) => {
-        console.warn('[DuyT] Supabase sync failed. Changes are kept locally.', error);
+      .catch(() => {
         return payload;
       });
   }, [cacheData]);

@@ -28,7 +28,7 @@ export default function HomePageClient({ initialLocale = 'vi' }: { initialLocale
   }
 
   return (
-    <PublicShell initialLocale={initialLocale} activeView="HOME" logoUrl={siteSettings.logoUrl}>
+    <PublicShell initialLocale={initialLocale} activeView="HOME" logoUrl={siteSettings.logoUrl} siteSettings={siteSettings}>
       <HomepageView
         featuredVenues={venues}
         siteSettings={siteSettings}

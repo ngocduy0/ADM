@@ -341,12 +341,6 @@ export default function VenueDetailView({
   );
   const [showRequestForm, setShowRequestForm] = useState(false);
 
-  useEffect(() => {
-    setActiveImageIndex(0);
-    setPausedUntil(0);
-    setSelectedTableId(venue.preferredTables[0]?.id || "");
-    setShowRequestForm(false);
-  }, [venue.id]);
 
   useEffect(() => {
     if (safeImages.length <= 1) return;

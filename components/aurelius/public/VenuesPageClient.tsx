@@ -71,7 +71,7 @@ export default function VenuesPageClient({ initialLocale = 'vi' }: { initialLoca
   }
 
   return (
-    <PublicShell initialLocale={initialLocale} activeView="VENUES" logoUrl={siteSettings.logoUrl}>
+    <PublicShell initialLocale={initialLocale} activeView="VENUES" logoUrl={siteSettings.logoUrl} siteSettings={siteSettings}>
       <VenuesPageBody initialLocale={initialLocale} venues={venues} />
     </PublicShell>
   );

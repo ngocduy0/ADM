@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { BookingStatus } from '@/components/aurelius/types';
 import { readAllData } from '@/lib/concierge-repository';
+import { requireAdminApi } from '@/lib/admin-api';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   try {
     const data = await readAllData();
     const confirmed = data.reservations.filter((booking) => booking.status === BookingStatus.CONFIRMED).length;

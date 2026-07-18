@@ -1,3 +1,5 @@
+import { DEFAULT_CONTACT_CHANNELS, type ContactChannel, type SiteSettings } from './siteSettings';
+
 export const CONTACT_INFO = {
   whatsappPhone: '0865251125',
   zaloPhone: '0865251125',
@@ -7,14 +9,12 @@ export const CONTACT_INFO = {
   email: 'duythai519@gmail.com',
 };
 
-export const CONTACT_CHANNELS = [
-  { name: 'WhatsApp', label: '0865251125', href: 'https://wa.me/84865251125', icon: '/brand-icons/whatsapp.svg' },
-  { name: 'Zalo', label: '0865251125', href: 'https://zalo.me/0865251125', icon: '/brand-icons/zalo.svg' },
-  { name: 'Telegram', label: '@duytadm', href: 'https://t.me/duytadm', icon: '/brand-icons/telegram.svg' },
-  { name: 'Instagram', label: 'duytadm', href: 'https://instagram.com/duytadm', icon: '/brand-icons/instagram.svg' },
-  { name: 'Facebook', label: 'Duy Thái', href: 'https://www.facebook.com/duy.thai.977475', icon: '/brand-icons/facebook.svg' },
-  { name: 'Email', label: 'duythai519@gmail.com', href: 'mailto:duythai519@gmail.com', icon: '/brand-icons/email.svg' },
-];
+export const CONTACT_CHANNELS = DEFAULT_CONTACT_CHANNELS;
+
+export function getContactChannels(settings?: Pick<SiteSettings, 'contactChannels'> | null): ContactChannel[] {
+  const items = settings?.contactChannels?.length ? settings.contactChannels : DEFAULT_CONTACT_CHANNELS;
+  return [...items].filter((item) => item.isActive !== false).sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+}
 
 export function buildReservationMessage(payload: {
   fullName: string;
@@ -28,7 +28,7 @@ export function buildReservationMessage(payload: {
   referenceCode?: string;
 }) {
   return [
-    'Xin chào DuyT Danang-Concierge, tôi muốn xác nhận yêu cầu đặt chỗ:',
+    'Xin chào DuyT Booking, tôi muốn xác nhận yêu cầu đặt chỗ:',
     payload.referenceCode ? `Mã tham chiếu: ${payload.referenceCode}` : '',
     `Tên khách: ${payload.fullName}`,
     payload.phoneNumber ? `Số điện thoại: ${payload.phoneNumber}` : '',
@@ -41,20 +41,19 @@ export function buildReservationMessage(payload: {
   ].filter(Boolean).join('\n');
 }
 
-export function buildContactUrl(channelName: string, message: string) {
+export function buildContactUrl(channelName: string, message: string, channels: ContactChannel[] = DEFAULT_CONTACT_CHANNELS) {
   const encoded = encodeURIComponent(message);
+  const channel = channels.find((item) => item.name.toLowerCase() === channelName.toLowerCase());
+  const configuredHref = channel?.href || '';
 
-  // Channels with official/supportable prefill behavior.
-  if (channelName === 'WhatsApp') return `https://wa.me/84865251125?text=${encoded}`;
-  if (channelName === 'Email') return `mailto:${CONTACT_INFO.email}?subject=${encodeURIComponent('DuyT Danang-Concierge Reservation Request')}&body=${encoded}`;
-
-  // Telegram supports share text reliably. Direct DM prefill is restricted by the platform.
-  if (channelName === 'Telegram') return `https://t.me/share/url?url=&text=${encoded}`;
-
-  // Zalo / Instagram / Facebook personal DMs usually block web prefilled text.
-  // The UI copies the prepared message before opening these channels so guests only need to paste/send.
-  if (channelName === 'Zalo') return 'https://zalo.me/0865251125';
-  if (channelName === 'Instagram') return 'https://instagram.com/duytadm';
-  if (channelName === 'Facebook') return 'https://www.facebook.com/messages/t/duy.thai.977475';
-  return '#';
+  if (channelName === 'WhatsApp') {
+    if (configuredHref.includes('wa.me')) return `${configuredHref.split('?')[0]}?text=${encoded}`;
+    return configuredHref || `https://wa.me/84865251125?text=${encoded}`;
+  }
+  if (channelName === 'Email') {
+    const email = configuredHref.startsWith('mailto:') ? configuredHref.slice(7).split('?')[0] : CONTACT_INFO.email;
+    return `mailto:${email}?subject=${encodeURIComponent('DuyT Booking - Yêu cầu đặt chỗ')}&body=${encoded}`;
+  }
+  if (channelName === 'Telegram' && configuredHref.includes('/share/')) return `${configuredHref}${configuredHref.includes('?') ? '&' : '?'}text=${encoded}`;
+  return configuredHref || '#';
 }

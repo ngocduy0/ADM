@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { requireAdminApi } from '@/lib/admin-api';
+import { getSupabaseAdminClient } from '@/lib/concierge-repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,20 +24,6 @@ type AdminNotificationRow = {
   createdAt: string;
   updatedAt: string;
 };
-
-function getSupabaseAdminClient() {
-  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  const url = rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
-
-  if (!url || !serviceRoleKey) {
-    throw new Error('Thiếu NEXT_PUBLIC_SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY.');
-  }
-
-  return createClient(url, serviceRoleKey.trim(), {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 function rowToNotification(row: Record<string, any>): AdminNotificationPayload {
   return {
@@ -64,6 +51,8 @@ function notificationToRow(notification: AdminNotificationPayload): AdminNotific
 }
 
 export async function GET(request: NextRequest) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   try {
     const supabase = getSupabaseAdminClient();
     const limitParam = Number(request.nextUrl.searchParams.get('limit') || 100);
@@ -93,6 +82,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   try {
     const supabase = getSupabaseAdminClient();
     const body = await request.json().catch(() => ({}));
@@ -148,10 +139,13 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   try {
     const supabase = getSupabaseAdminClient();
     const body = await request.json().catch(() => ({}));
     const ids = Array.isArray(body.ids) ? body.ids.map(String).filter(Boolean) : [];
+    const reservationIds = Array.isArray(body.reservationIds) ? body.reservationIds.map(String).filter(Boolean) : [];
     const read = body.read !== false;
 
     const patch = {
@@ -159,9 +153,11 @@ export async function PATCH(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    const query = ids.length
-      ? supabase.from('AdminNotification').update(patch).in('id', ids)
-      : supabase.from('AdminNotification').update(patch).not('id', 'is', null);
+    const query = reservationIds.length
+      ? supabase.from('AdminNotification').update(patch).in('reservationId', reservationIds)
+      : ids.length
+        ? supabase.from('AdminNotification').update(patch).in('id', ids)
+        : supabase.from('AdminNotification').update(patch).not('id', 'is', null);
 
     const { error } = await query;
     if (error) throw error;
