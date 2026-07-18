@@ -1,73 +1,73 @@
 import { NextResponse } from 'next/server';
-import { Customer } from '@/components/aurelius/types';
-import { readAllData, replaceAllData, writeSecurityLog } from '@/lib/concierge-repository';
+import type { Customer } from '@/components/aurelius/types';
+import { validateCustomer } from '@/lib/booking-rules';
+import { requireAdminApi } from '@/lib/admin-api';
+import {
+  customerExistsFast,
+  customerHasBookingsFast,
+  deleteCustomerFast,
+  readAllData,
+  upsertCustomerFast,
+  writeSecurityLog,
+} from '@/lib/concierge-repository';
 
 export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   const { id } = await params;
   try {
     const data = await readAllData();
     const customer = data.customers.find((item) => item.id === id);
-    if (!customer) return NextResponse.json({ ok: false, error: 'Customer not found' }, { status: 404 });
-
-    const reservations = data.reservations.filter((booking) => {
-      const samePhone = booking.phoneNumber.replace(/\s+/g, '') === customer.phoneNumber.replace(/\s+/g, '');
-      return samePhone || booking.fullName.toLowerCase() === customer.fullName.toLowerCase();
-    });
-
+    if (!customer) return NextResponse.json({ ok: false, error: 'Không tìm thấy khách hàng.' }, { status: 404 });
+    const normalizedPhone = customer.phoneNumber.replace(/[\s.()-]/g, '');
+    const reservations = data.reservations.filter((booking) =>
+      booking.phoneNumber.replace(/[\s.()-]/g, '') === normalizedPhone || booking.fullName.toLowerCase() === customer.fullName.toLowerCase(),
+    );
     return NextResponse.json({ ok: true, source: 'supabase', data: { customer, reservations } });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown database error';
-    return NextResponse.json({ ok: false, source: 'local-fallback', warning: message, error: 'Customer not found' }, { status: 404 });
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Không thể tải khách hàng.' }, { status: 503 });
   }
 }
 
 export async function PATCH(request: Request, { params }: Params) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   const { id } = await params;
-  const patch = await request.json() as Partial<Customer>;
-
+  const customer = await request.json() as Customer;
+  if (!customer || customer.id !== id) {
+    return NextResponse.json({ ok: false, error: 'Payload khách hàng không hợp lệ hoặc sai mã.' }, { status: 400 });
+  }
+  const validation = validateCustomer(customer);
+  if (!validation.valid) {
+    return NextResponse.json({ ok: false, error: validation.issues[0]?.message, issues: validation.issues }, { status: 422 });
+  }
   try {
-    const current = await readAllData();
-    let updatedCustomer: Customer | null = null;
-    const customers = current.customers.map((customer) => {
-      if (customer.id !== id) return customer;
-      updatedCustomer = { ...customer, ...patch, id: customer.id };
-      return updatedCustomer;
-    });
-
-    if (!updatedCustomer) {
-      return NextResponse.json({ ok: false, error: 'Customer not found' }, { status: 404 });
-    }
-
-    await writeSecurityLog('CUSTOMER_PATCH', request, { customerId: id });
-    await replaceAllData({ ...current, customers });
-    return NextResponse.json({ ok: true, source: 'supabase', data: updatedCustomer });
+    if (!(await customerExistsFast(id))) return NextResponse.json({ ok: false, error: 'Không tìm thấy khách hàng.' }, { status: 404 });
+    const saved = await upsertCustomerFast(customer);
+    void writeSecurityLog('CUSTOMER_PATCH', request, { customerId: id });
+    return NextResponse.json({ ok: true, source: 'supabase', data: saved });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown database error';
-    console.warn('[customer-api:patch:fallback]', message);
-    return NextResponse.json({ ok: true, source: 'local-fallback', warning: message, data: { ...patch, id } });
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Không thể cập nhật khách hàng.' }, { status: 503 });
   }
 }
 
 export async function DELETE(request: Request, { params }: Params) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   const { id } = await params;
-
   try {
-    const current = await readAllData();
-    const customers = current.customers.filter((customer) => customer.id !== id);
-    if (customers.length === current.customers.length) {
-      return NextResponse.json({ ok: false, error: 'Customer not found' }, { status: 404 });
+    if (!(await customerExistsFast(id))) return NextResponse.json({ ok: false, error: 'Không tìm thấy khách hàng.' }, { status: 404 });
+    if (await customerHasBookingsFast(id)) {
+      return NextResponse.json({ ok: false, error: 'Không thể xóa khách hàng đang có lịch sử booking.' }, { status: 409 });
     }
-
-    await writeSecurityLog('CUSTOMER_DELETE', request, { customerId: id });
-    await replaceAllData({ ...current, customers });
+    await deleteCustomerFast(id);
+    void writeSecurityLog('CUSTOMER_DELETE', request, { customerId: id });
     return NextResponse.json({ ok: true, source: 'supabase', data: { id } });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown database error';
-    console.warn('[customer-api:delete:fallback]', message);
-    return NextResponse.json({ ok: true, source: 'local-fallback', warning: message, data: { id } });
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Không thể xóa khách hàng.' }, { status: 503 });
   }
 }

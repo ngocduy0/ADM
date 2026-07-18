@@ -5,12 +5,10 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Phone,
 } from "lucide-react";
 import { HomepageReel, Venue } from "../types";
 import { useI18n, Locale } from "../i18n";
-import { localizeVenue, formatVnd } from "../localize";
-import { CONTACT_CHANNELS, CONTACT_INFO } from "../contactConfig";
+import { localizeVenue } from "../localize";
 import { SiteSettings } from "../siteSettings";
 
 interface HomepageViewProps {
@@ -740,7 +738,7 @@ function ReelCardMedia({
         loop
         playsInline
         autoPlay
-        preload="auto"
+        preload="metadata"
         controls={false}
         aria-label={`${label} reel video`}
         className="h-full w-full object-cover"
@@ -753,6 +751,7 @@ function ReelCardMedia({
       src={poster}
       alt={label}
       referrerPolicy="no-referrer"
+      loading="lazy"
       className="h-full w-full object-cover"
     />
   );
@@ -900,223 +899,31 @@ function HomepageReelsSection({
   );
 }
 
-type FloatingContactItem = {
-  name: string;
-  href: string;
-  icon?: string;
-  isPhone?: boolean;
-};
 
-function FloatingContactBar() {
-  const phoneDisplay = CONTACT_INFO.whatsappPhone || "";
-  const phoneHref = phoneDisplay.replace(/[^\d+]/g, "");
-  const contactOrder = [
-    "WhatsApp",
-    "Zalo",
-    "Telegram",
-    "Instagram",
-    "Facebook",
-    "Email",
-  ];
-
-  const contactChannels: FloatingContactItem[] = CONTACT_CHANNELS.filter(
-    (channel) => contactOrder.includes(channel.name),
-  )
-    .sort(
-      (a, b) =>
-        contactOrder.indexOf(a.name) - contactOrder.indexOf(b.name),
-    )
-    .map((channel) => ({
-      name: channel.name,
-      href: channel.href,
-      icon: channel.icon,
-    }));
-
-  const contacts: FloatingContactItem[] = [
-    {
-      name: "Gọi ngay",
-      href: `tel:${phoneHref}`,
-      isPhone: true,
-    },
-    ...contactChannels,
-  ];
-
+function HomeConciergeSection({ locale, conciergeCards, logoUrl }: { locale: Locale; conciergeCards: ReelCard[]; logoUrl?: string }) {
+  const copy = homeConciergeCopy[locale] || homeConciergeCopy.vi;
   return (
-    <>
-      <style>{`
-        @keyframes duyt-contact-float {
-          0%, 100% {
-            transform: translate3d(0, 0, 0);
-          }
-          50% {
-            transform: translate3d(0, -6px, 0);
-          }
-        }
-
-        @keyframes duyt-contact-ring {
-          0% {
-            transform: scale(0.75);
-            opacity: 0.75;
-          }
-          75%, 100% {
-            transform: scale(1.65);
-            opacity: 0;
-          }
-        }
-
-        .duyt-contact-float {
-          animation-name: duyt-contact-float;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-          will-change: transform;
-        }
-
-        .duyt-contact-ring {
-          animation: duyt-contact-ring 1.8s ease-out infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .duyt-contact-float,
-          .duyt-contact-ring {
-            animation: none !important;
-          }
-        }
-      `}</style>
-
-      <nav
-        aria-label="Liên hệ nhanh"
-        className="pointer-events-none fixed inset-x-0 bottom-3 z-[90] px-3 sm:bottom-5 sm:px-6"
-      >
-        <div className="mx-auto flex max-w-[1100px] justify-center">
-          <div className="pointer-events-auto flex max-w-full items-end gap-1.5 overflow-x-auto rounded-[28px] border border-white/10 bg-black/[0.08] px-2.5 py-2 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-[10px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:gap-2 sm:px-3">
-            {contacts.map((channel, index) => {
-              const isInternalAction =
-                channel.href.startsWith("mailto:") ||
-                channel.href.startsWith("tel:");
-
-              return (
-                <a
-                  key={channel.name}
-                  href={channel.href}
-                  target={isInternalAction ? undefined : "_blank"}
-                  rel={isInternalAction ? undefined : "noopener noreferrer"}
-                  aria-label={
-                    channel.isPhone
-                      ? `Gọi ${phoneDisplay}`
-                      : `Liên hệ qua ${channel.name}`
-                  }
-                  title={channel.isPhone ? phoneDisplay : channel.name}
-                  className="group flex min-w-[58px] shrink-0 flex-col items-center justify-end gap-1.5 rounded-2xl px-1.5 py-1.5 text-center transition duration-300 hover:-translate-y-1 hover:bg-white/[0.07] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 sm:min-w-[76px] sm:px-2"
-                >
-                  <span
-                    className="duyt-contact-float relative grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/20 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md transition duration-300 group-hover:border-gold/60 group-hover:bg-black/35 group-hover:shadow-[0_10px_28px_rgba(214,173,76,0.16)] sm:h-12 sm:w-12"
-                    style={{
-                      animationDuration: `${3.1 + (index % 3) * 0.45}s`,
-                      animationDelay: `${index * 120}ms`,
-                    }}
-                  >
-                    {channel.isPhone ? (
-                      <>
-                        <span className="duyt-contact-ring absolute inset-0 rounded-full border border-emerald-400/70" />
-                        <Phone className="relative z-10 h-5 w-5 text-white transition duration-300 group-hover:rotate-12 group-hover:text-gold sm:h-6 sm:w-6" />
-                        <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#090B0F] bg-emerald-400" />
-                      </>
-                    ) : (
-                      <img
-                        src={channel.icon}
-                        alt=""
-                        aria-hidden="true"
-                        className="h-7 w-7 object-contain transition duration-300 group-hover:scale-110 sm:h-8 sm:w-8"
-                      />
-                    )}
-                  </span>
-
-                  <span className="max-w-[70px] truncate text-[9px] font-semibold leading-none text-white/80 transition group-hover:text-gold sm:text-[10px]">
-                    {channel.name}
-                  </span>
-                </a>
-              );
-            })}
+    <section className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
+      <div className="grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="space-y-6">
+          <div className="flex h-20 w-32 items-center justify-center rounded-2xl border border-gold/15 bg-dark-navy/60 p-4">
+            <img src={logoUrl || '/duyt-logo.png'} alt="DuyT Booking" className="max-h-full max-w-full object-contain" />
           </div>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">{copy.curatedBy} DuyT Booking</p>
+          <h2 className="font-serif text-3xl leading-tight text-on-surface md:text-5xl">Dịch vụ Concierge</h2>
+          <p className="text-sm font-light leading-7 text-on-surface-variant">{copy.description}</p>
+          <p className="rounded-2xl border border-gold/10 bg-gold/5 p-4 text-xs leading-6 text-on-surface-variant">{copy.guidance}</p>
         </div>
-      </nav>
-    </>
-  );
-}
-
-function HomeConciergeSection({
-  locale,
-  conciergeCards,
-  logoUrl,
-}: {
-  locale: Locale;
-  conciergeCards: ReelCard[];
-  logoUrl?: string;
-}) {
-  const c = homeConciergeCopy[locale] || homeConciergeCopy.en;
-  return (
-    <section className="px-6 md:px-16 max-w-[1440px] mx-auto py-20 border-t border-gold/10 text-center">
-      <div className="mx-auto max-w-3xl rounded-[34px] border border-gold/10 bg-dark-navy/35 px-6 py-12 shadow-2xl shadow-black/20">
-        <div className="mb-8 flex items-center justify-center gap-8 text-center">
-          <div>
-            <p className="text-[11px] sans-label text-gold font-bold uppercase tracking-[0.28em]">
-              Booking Concierge
-            </p>
-            <p className="mt-2 font-serif italic text-on-surface">
-              DuyT Booking
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {conciergeCards.slice(0, 6).map((card) => (
+            <a key={card.id} href={card.instagramUrl} target="_blank" rel="noopener noreferrer" className="group relative aspect-[9/14] overflow-hidden rounded-2xl border border-gold/10 bg-dark-navy">
+              <ReelCardMedia videoUrl={card.videoUrl} poster={card.poster} label={card.label} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/10" />
+              <div className="absolute inset-x-0 bottom-0 p-3"><p className="text-[9px] font-bold uppercase tracking-wider text-gold">{card.tag}</p><p className="mt-1 line-clamp-2 text-xs font-bold text-white">{card.caption}</p></div>
+            </a>
+          ))}
+          {!conciergeCards.length ? <div className="col-span-full grid min-h-56 place-items-center rounded-2xl border border-dashed border-gold/15 text-xs text-on-surface-variant">Chưa có Reel Concierge.</div> : null}
         </div>
-
-        <div className="mx-auto mb-5 h-24 w-24 overflow-hidden rounded-full border border-gold/30">
-          <img
-            src={logoUrl || "/avatar DuyT.jpg"}
-            alt="DuyT Booking"
-            className="h-full w-full object-cover"
-          />
-        </div>
-        <p className="mx-auto mt-4 max-w-md font-serif text-sm italic leading-relaxed text-on-surface-variant">
-          {c.description}
-        </p>
-        <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-on-surface">
-          {c.guidance}
-        </p>
-
-        {conciergeCards.length > 0 && (
-          <div className="mx-auto mt-8 flex max-w-2xl snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none]">
-            {conciergeCards.map((card) => (
-              <a
-                key={card.id}
-                href={card.instagramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative block aspect-[9/16] w-[145px] shrink-0 snap-start overflow-hidden rounded-2xl bg-black shadow-xl transition hover:-translate-y-1"
-              >
-                <ReelCardMedia
-                  videoUrl={card.videoUrl}
-                  poster={card.poster}
-                  label={card.label}
-                />
-                <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-white">
-                  {card.tag}
-                </span>
-                <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white">
-                  <InstagramGlyph />
-                </span>
-                <span
-                  className="absolute inset-x-0 bottom-0 line-clamp-2 px-2 pb-2 pt-8 font-serif text-[11px] italic leading-tight text-white"
-                  style={{
-                    background:
-                      "linear-gradient(to top, rgba(0,0,0,0.82), rgba(0,0,0,0))",
-                  }}
-                >
-                  {card.caption}
-                </span>
-              </a>
-            ))}
-          </div>
-        )}
-
       </div>
     </section>
   );
@@ -1197,216 +1004,95 @@ export default function HomepageView({
   const heroPosterUrl =
     siteSettings?.heroPosterUrl?.trim() || heroFallbackImage;
 
-  return (
-    <div className="pb-28 text-left font-sans text-on-surface sm:pb-32">
-      <section className="relative min-h-screen w-full overflow-hidden flex flex-col justify-center items-start px-6 md:px-16">
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          {heroVideoUrl ? (
-            <video
-              key={heroVideoUrl}
-              src={heroVideoUrl}
-              poster={heroPosterUrl || undefined}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="h-full w-full object-cover brightness-[1.28] contrast-[1.06] saturate-[1.12]"
-            />
-          ) : (
-            <img
-              src={heroFallbackImage}
-              alt="DuyT Booking"
-              referrerPolicy="no-referrer"
-              className="h-full w-full object-cover brightness-[1.18] contrast-[1.05] saturate-[1.08]"
-            />
-          )}
+  const configuredSections = [...(siteSettings?.homepageSections || [])]
+    .filter((section) => section.enabled)
+    .sort((a, b) => a.order - b.order);
+  const sections = configuredSections.length
+    ? configuredSections
+    : [
+        { id: "HERO", title: "Hero Banner", subtitle: "", enabled: true, order: 0 },
+        { id: "FEATURED_VENUES", title: t("featured"), subtitle: "", enabled: true, order: 1, venueIds: [] },
+        { id: "REELS_FEED", title: feedCopy.title, subtitle: "", enabled: true, order: 2 },
+        { id: "CONCIERGE", title: "DuyT Concierge", subtitle: "", enabled: true, order: 3 },
+        { id: "WHY_DUYT", title: c.whyTitle, subtitle: "", enabled: true, order: 4 },
+        { id: "TESTIMONIALS", title: c.testimonialsTitle, subtitle: "", enabled: true, order: 5 },
+        { id: "FAQ", title: c.faqTitle, subtitle: "", enabled: true, order: 6 },
+      ];
+  const featuredSection = sections.find((section) => section.id === "FEATURED_VENUES");
+  const configuredVenueIds = featuredSection?.venueIds || [];
+  const homepageVenues = configuredVenueIds.length
+    ? configuredVenueIds.map((id) => featuredVenues.find((venue) => venue.id === id)).filter((venue): venue is Venue => Boolean(venue))
+    : featuredVenues;
 
-          {/* Chỉ giữ lớp phủ rất nhẹ để chữ vẫn đọc được, không làm video bị đen */}
-          <div className="absolute inset-0 bg-black/[0.12]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/12 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-[28vh] bg-gradient-to-t from-[#05070A] via-[#05070A]/45 to-transparent" />
-        </div>
-      </section>
-
-      <section className="px-6 md:px-16 max-w-[1440px] mx-auto py-24 border-t border-gold/10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
-          <div>
-            <h2 className="text-3xl md:text-5xl font-serif text-on-surface tracking-wide break-words">
-              {t("featured")}
-            </h2>
-          </div>
-          <button
-            onClick={() => onNavigate("VENUES")}
-            className="text-xs sans-label text-gold border-b border-gold pb-1 hover:text-gold-light hover:border-gold-light transition-all flex items-center gap-1 cursor-pointer font-bold uppercase"
-          >
-            {t("browseAll")} <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {featuredVenues.slice(0, 3).map((v) => {
-            const displayVenue = localizeVenue(v, locale);
-            return (
-              <div
-                key={v.id}
-                onClick={() => onSelectVenue(v.id)}
-                className="group relative h-[550px] rounded-2xl overflow-hidden border border-gold/10 cursor-pointer transition-all duration-500 hover:border-gold/30"
-              >
-                <img
-                  src={v.image}
-                  alt={displayVenue.name}
-                  referrerPolicy="no-referrer"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-deep-black/30 to-transparent" />
-                <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
-                  <div>
-                    <span className="text-[10px] sans-label tracking-widest bg-deep-black/50 border border-gold/20 px-3.5 py-1 rounded-full text-gold uppercase font-bold">
-                      {displayVenue.category}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="mb-4 flex items-center justify-between text-xs text-gold">
-                      <span>★ {v.rating.toFixed(1)}</span>
-                    </div>
-                    <h3 className="text-2xl font-serif text-on-surface mb-2 break-words">
-                      {displayVenue.name}
-                    </h3>
-                    <p className="text-xs text-on-surface-variant font-light line-clamp-2 leading-relaxed mb-6">
-                      {displayVenue.location}
-                    </p>
-                    <button className="text-[11px] sans-label text-gold font-bold tracking-widest group-hover:translate-x-2 transition-transform duration-300">
-                      {t("discover")} →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <HomepageReelsSection feedCopy={feedCopy} feedCards={feedCards} />
-
-      <HomeConciergeSection
-        locale={locale}
-        conciergeCards={conciergeCards}
-        logoUrl={siteSettings?.logoUrl}
-      />
-
-      <section className="px-6 md:px-16 max-w-[1440px] mx-auto py-24 border-t border-gold/10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-5 space-y-6">
-            <h2 className="text-3xl md:text-5xl font-serif text-on-surface tracking-wide leading-tight break-words">
-              {c.whyTitle}
-            </h2>
-            <p className="text-sm text-on-surface-variant font-light leading-relaxed">
-              {c.whyText}
-            </p>
-          </div>
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {c.blocks.map(([title, text], i) => (
-              <div
-                key={i}
-                className="glass-card p-6 rounded-2xl border border-gold/10"
-              >
-                <h4 className="text-sm font-serif text-gold tracking-wide mb-1.5">
-                  {title}
-                </h4>
-                <p className="text-xs text-on-surface-variant font-light leading-relaxed">
-                  {text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-6 md:px-16 max-w-[1440px] mx-auto py-24 border-t border-gold/10 bg-dark-navy/20">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-serif text-on-surface tracking-wide break-words">
-            {c.testimonialsTitle}
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {c.reviews.map(([author, vip, venue, text], i) => (
-            <div
-              key={i}
-              className="glass-card p-8 rounded-2xl border border-gold/10 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: 5 }).map((_, sIdx) => (
-                    <Star
-                      key={sIdx}
-                      className="w-3.5 h-3.5 fill-gold text-gold"
-                    />
-                  ))}
-                </div>
-                <p className="text-sm font-serif italic text-on-surface-variant leading-relaxed mb-6 font-light">
-                  “{text}”
-                </p>
-              </div>
-              <div className="flex justify-between items-center border-t border-gold/10 pt-4">
-                <div>
-                  <span className="text-sm font-semibold text-on-surface block">
-                    {author}
-                  </span>
-                  <span className="text-[10px] text-on-surface-variant font-light">
-                    {c.visited} {venue}
-                  </span>
-                </div>
-              </div>
+  const renderSection = (section: (typeof sections)[number]) => {
+    switch (section.id) {
+      case "HERO":
+        return (
+          <section key={section.id} className="relative flex min-h-screen w-full flex-col items-start justify-center overflow-hidden px-6 md:px-16">
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              {heroVideoUrl ? (
+                <video key={heroVideoUrl} src={heroVideoUrl} poster={heroPosterUrl || undefined} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover brightness-[1.28] contrast-[1.06] saturate-[1.12]" />
+              ) : (
+                <img src={heroFallbackImage} alt={siteSettings?.brandName || "DuyT Booking"} referrerPolicy="no-referrer" className="h-full w-full object-cover brightness-[1.18] contrast-[1.05] saturate-[1.08]" />
+              )}
+              <div className="absolute inset-0 bg-black/[0.12]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/12 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-[28vh] bg-gradient-to-t from-[#05070A] via-[#05070A]/45 to-transparent" />
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section
-        id="faq"
-        className="px-6 md:px-16 max-w-[1440px] mx-auto py-24 border-t border-gold/10 scroll-mt-28"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className="lg:col-span-4 text-left space-y-4">
-            <h3 className="text-3xl font-serif text-on-surface tracking-wide break-words">
-              {c.faqTitle}
-            </h3>
-            <p className="text-xs text-on-surface-variant font-light leading-relaxed">
-              {c.faqIntro}
-            </p>
-          </div>
-          <div className="lg:col-span-8 space-y-4 text-left font-sans">
-            {c.faqs.map(([q, a], idx) => {
-              const isOpen = activeFaq === idx;
-              return (
-                <div
-                  key={idx}
-                  className="border border-gold/15 rounded-xl overflow-hidden transition-all duration-300"
-                >
-                  <button
-                    onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="w-full flex justify-between items-center p-5 bg-dark-navy/30 hover:bg-gold/5 transition-colors cursor-pointer text-left"
-                  >
-                    <span className="text-sm font-semibold text-on-surface">
-                      {q}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-gold transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="p-5 bg-deep-black/40 border-t border-gold/10 font-sans text-xs text-on-surface-variant font-light leading-relaxed">
-                      {a}
+          </section>
+        );
+      case "FEATURED_VENUES":
+        return (
+          <section key={section.id} className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
+            <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+              <div>
+                <h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-5xl">{section.title || t("featured")}</h2>
+                {section.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{section.subtitle}</p> : null}
+              </div>
+              <button onClick={() => onNavigate("VENUES")} className="flex cursor-pointer items-center gap-1 border-b border-gold pb-1 text-xs font-bold uppercase text-gold transition-all hover:border-gold-light hover:text-gold-light">{t("browseAll")} <ArrowRight className="h-3.5 w-3.5" /></button>
+            </div>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+              {homepageVenues.slice(0, 6).map((v) => {
+                const displayVenue = localizeVenue(v, locale);
+                return (
+                  <div key={v.id} onClick={() => onSelectVenue(v.id)} className="group relative h-[550px] cursor-pointer overflow-hidden rounded-2xl border border-gold/10 transition-all duration-500 hover:border-gold/30">
+                    <img src={v.image} alt={displayVenue.name} referrerPolicy="no-referrer" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-deep-black/30 to-transparent" />
+                    <div className="absolute inset-0 z-10 flex flex-col justify-between p-8">
+                      <div><span className="rounded-full border border-gold/20 bg-deep-black/50 px-3.5 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">{displayVenue.category}</span></div>
+                      <div><div className="mb-4 flex items-center justify-between text-xs text-gold"><span>★ {v.rating.toFixed(1)}</span></div><h3 className="mb-2 break-words font-serif text-2xl text-on-surface">{displayVenue.name}</h3><p className="mb-6 line-clamp-2 text-xs font-light leading-relaxed text-on-surface-variant">{displayVenue.location}</p><button className="text-[11px] font-bold tracking-widest text-gold transition-transform duration-300 group-hover:translate-x-2">{t("discover")} →</button></div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      case "REELS_FEED":
+        return <div key={section.id}><HomepageReelsSection feedCopy={{ ...feedCopy, title: section.title || feedCopy.title }} feedCards={feedCards} /></div>;
+      case "CONCIERGE":
+        return <div key={section.id}><HomeConciergeSection locale={locale} conciergeCards={conciergeCards} logoUrl={siteSettings?.logoUrl} /></div>;
+      case "WHY_DUYT":
+        return (
+          <section key={section.id} className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
+            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+              <div className="space-y-6 lg:col-span-5"><h2 className="break-words font-serif text-3xl leading-tight tracking-wide text-on-surface md:text-5xl">{section.title || c.whyTitle}</h2><p className="text-sm font-light leading-relaxed text-on-surface-variant">{section.subtitle || c.whyText}</p></div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-7">{c.blocks.map(([title, text], i) => <div key={i} className="glass-card rounded-2xl border border-gold/10 p-6"><h4 className="mb-1.5 font-serif text-sm tracking-wide text-gold">{title}</h4><p className="text-xs font-light leading-relaxed text-on-surface-variant">{text}</p></div>)}</div>
+            </div>
+          </section>
+        );
+      case "TESTIMONIALS":
+        return (
+          <section key={section.id} className="border-t border-gold/10 bg-dark-navy/20 px-6 py-24 md:px-16"><div className="mx-auto max-w-[1440px]"><div className="mx-auto mb-16 max-w-2xl text-center"><h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-4xl">{section.title || c.testimonialsTitle}</h2>{section.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{section.subtitle}</p> : null}</div><div className="grid grid-cols-1 gap-8 md:grid-cols-3">{c.reviews.map(([author, vip, venue, text], i) => <div key={i} className="glass-card flex flex-col justify-between rounded-2xl border border-gold/10 p-8"><div><div className="mb-4 flex gap-1">{Array.from({ length: 5 }).map((_, sIdx) => <Star key={sIdx} className="h-3.5 w-3.5 fill-gold text-gold" />)}</div><p className="mb-6 font-serif text-sm font-light italic leading-relaxed text-on-surface-variant">“{text}”</p></div><div className="flex items-center justify-between border-t border-gold/10 pt-4"><div><span className="block text-sm font-semibold text-on-surface">{author}</span><span className="text-[10px] font-light text-on-surface-variant">{c.visited} {venue}</span></div></div></div>)}</div></div></section>
+        );
+      case "FAQ":
+        return (
+          <section key={section.id} id="faq" className="mx-auto max-w-[1440px] scroll-mt-28 border-t border-gold/10 px-6 py-24 md:px-16"><div className="grid grid-cols-1 gap-12 lg:grid-cols-12"><div className="space-y-4 text-left lg:col-span-4"><h3 className="break-words font-serif text-3xl tracking-wide text-on-surface">{section.title || c.faqTitle}</h3><p className="text-xs font-light leading-relaxed text-on-surface-variant">{section.subtitle || c.faqIntro}</p></div><div className="space-y-4 text-left font-sans lg:col-span-8">{c.faqs.map(([q, a], idx) => { const isOpen = activeFaq === idx; return <div key={idx} className="overflow-hidden rounded-xl border border-gold/15 transition-all duration-300"><button onClick={() => setActiveFaq(isOpen ? null : idx)} className="flex w-full cursor-pointer items-center justify-between bg-dark-navy/30 p-5 text-left transition-colors hover:bg-gold/5"><span className="text-sm font-semibold text-on-surface">{q}</span><ChevronDown className={`h-4 w-4 text-gold transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} /></button>{isOpen ? <div className="border-t border-gold/10 bg-deep-black/40 p-5 font-sans text-xs font-light leading-relaxed text-on-surface-variant">{a}</div> : null}</div>; })}</div></div></section>
+        );
+      default:
+        return null;
+    }
+  };
 
-      <FloatingContactBar />
-    </div>
-  );
+  return <div className="pb-28 text-left font-sans text-on-surface sm:pb-32">{sections.map(renderSection)}</div>;
 }

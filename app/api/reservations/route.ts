@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { INITIAL_RESERVATIONS } from '@/components/aurelius/data';
-import { BookingStatus, Customer, ReservationRequest, VipStatus } from '@/components/aurelius/types';
-import { readAllData, replaceAllData, writeSecurityLog } from '@/lib/concierge-repository';
+import { BookingStatus, type ReservationRequest } from '@/components/aurelius/types';
+import { validateReservation } from '@/lib/booking-rules';
+import { requireAdminApi } from '@/lib/admin-api';
+import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
+import { consumeRateLimit, getClientIp } from '@/lib/request-rate-limit';
+import { readAllData, replaceAllData, upsertBookingNotificationFast, upsertReservationFast, writeSecurityLog } from '@/lib/concierge-repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,127 +17,94 @@ function readReservationsPayload(body: unknown): ReservationRequest[] | null {
   return null;
 }
 
-function normalizePhone(phone: string) {
-  return phone.replace(/\s+/g, '').trim();
+function validationResponse(issues: Array<{ field: string; message: string }>) {
+  return NextResponse.json({ ok: false, error: issues[0]?.message || 'Dữ liệu booking không hợp lệ.', issues }, { status: 422 });
 }
 
-function upsertCustomerFromReservation(customers: Customer[], reservation: ReservationRequest) {
-  const phoneKey = normalizePhone(reservation.phoneNumber);
-  const existing = customers.find((customer) => normalizePhone(customer.phoneNumber) === phoneKey);
-
-  if (!existing) {
-    const nextCustomer: Customer = {
-      id: `cust-${Date.now()}`,
-      fullName: reservation.fullName,
-      phoneNumber: reservation.phoneNumber,
-      notes: `Yêu cầu đặt chỗ từ website ngày ${reservation.date}. Bàn/phòng: ${reservation.preferredTableName || 'Concierge chọn'}.`,
-      vipStatus: VipStatus.VIP,
-      favoriteVenueIds: [reservation.venueId],
-      createdAt: new Date().toISOString(),
-    };
-    return [nextCustomer, ...customers];
-  }
-
-  return customers.map((customer) => {
-    if (customer.id !== existing.id) return customer;
-    const favoriteVenueIds = customer.favoriteVenueIds.includes(reservation.venueId)
-      ? customer.favoriteVenueIds
-      : [...customer.favoriteVenueIds, reservation.venueId];
-    return {
-      ...customer,
-      fullName: customer.fullName || reservation.fullName,
-      phoneNumber: customer.phoneNumber || reservation.phoneNumber,
-      favoriteVenueIds,
-    };
-  });
-}
-
-export async function GET() {
+export async function GET(request: Request) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   try {
     const data = await readAllData();
     return NextResponse.json({ ok: true, source: 'supabase', data: data.reservations });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown database error';
-    console.warn('[reservations-api:get:fallback]', message);
-    return NextResponse.json({ ok: true, source: 'local-fallback', warning: message, data: INITIAL_RESERVATIONS });
+    return NextResponse.json({
+      ok: true,
+      source: 'local-fallback',
+      warning: error instanceof Error ? error.message : 'Không thể kết nối cơ sở dữ liệu.',
+      data: INITIAL_RESERVATIONS,
+    });
   }
 }
 
 export async function POST(request: Request) {
   const body = await request.json() as Partial<ReservationRequest>;
-
-  if (!body.venueId || !body.fullName || !body.phoneNumber || !body.date || !body.arrivalTime) {
-    return NextResponse.json({ ok: false, error: 'Missing required reservation fields' }, { status: 400 });
+  const isAdmin = isAuthorizedAdminRequest(request);
+  if (!isAdmin) {
+    const rate = consumeRateLimit(`booking:${getClientIp(request)}`, 8, 10 * 60_000);
+    if (!rate.allowed) {
+      return NextResponse.json({ ok: false, error: 'Bạn đã gửi quá nhiều yêu cầu đặt chỗ. Vui lòng thử lại sau.' }, { status: 429 });
+    }
   }
-
   try {
     const current = await readAllData();
     const venue = current.venues.find((item) => item.id === body.venueId);
-    const spot = venue?.preferredTables.find((table) => table.id === body.preferredTableId || table.name === body.preferredTableName);
-
+    const table = venue?.preferredTables.find((item) => item.id === body.preferredTableId || item.name === body.preferredTableName);
     const reservation: ReservationRequest = {
-      id: body.id || `res-${Date.now()}`,
-      venueId: body.venueId,
-      venueName: body.venueName || venue?.name || 'Địa điểm chưa xác định',
-      fullName: body.fullName,
-      phoneNumber: body.phoneNumber,
+      id: isAdmin && body.id ? body.id : `res-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+      venueId: body.venueId || '',
+      venueName: venue?.name || '',
+      fullName: body.fullName || '',
+      phoneNumber: body.phoneNumber || '',
       guestCount: Number(body.guestCount) || 1,
-      date: body.date,
-      arrivalTime: body.arrivalTime,
-      preferredTableId: body.preferredTableId || spot?.id || '',
-      preferredTableName: body.preferredTableName || spot?.name || 'Concierge chọn bàn',
-      preferredTableArea: body.preferredTableArea || spot?.area,
-      preferredTableMinimumSpend: body.preferredTableMinimumSpend || spot?.minimumSpend,
-      preferredTableColor: body.preferredTableColor || spot?.color,
-      preferredTableCapacity: body.preferredTableCapacity || spot?.capacity,
-      referenceCode: body.referenceCode,
-      notes: body.notes || '',
-      status: body.status || BookingStatus.NEW,
-      createdAt: body.createdAt || new Date().toISOString(),
-      source: body.source || 'Web Form',
+      date: body.date || '',
+      arrivalTime: body.arrivalTime || '',
+      preferredTableId: table?.id || '',
+      preferredTableName: table?.name || 'Chưa chọn bàn',
+      preferredTableArea: table?.area,
+      preferredTableMinimumSpend: table?.minimumSpend,
+      preferredTableColor: table?.color,
+      preferredTableCapacity: table?.capacity,
+      referenceCode: body.referenceCode || `DUYT-${Date.now().toString().slice(-6)}`,
+      notes: String(body.notes || '').slice(0, 500),
+      status: isAdmin && body.status ? body.status : BookingStatus.NEW,
+      createdAt: isAdmin && body.createdAt ? body.createdAt : new Date().toISOString(),
+      source: isAdmin && body.source ? body.source : 'Web Form',
     };
 
-    const reservations = [reservation, ...current.reservations.filter((item) => item.id !== reservation.id)];
-    const customers = upsertCustomerFromReservation(current.customers, reservation);
+    const validation = validateReservation(reservation, current.venues, current.reservations);
+    if (!validation.valid) return validationResponse(validation.issues);
 
-    await writeSecurityLog('RESERVATION_POST', request, {
-      reservationId: reservation.id,
-      venueId: reservation.venueId,
-      guestCount: reservation.guestCount,
+    const saved = await upsertReservationFast(reservation, current);
+    await upsertBookingNotificationFast(saved).catch(() => undefined);
+    void writeSecurityLog('RESERVATION_POST', request, {
+      reservationId: saved.id,
+      venueId: saved.venueId,
+      guestCount: saved.guestCount,
     });
-    await replaceAllData({ venues: current.venues, customers, reservations });
-    const next = await readAllData();
-
-    return NextResponse.json({ ok: true, source: 'supabase', data: { reservation, payload: next } }, { status: 201 });
+    return NextResponse.json({ ok: true, source: 'supabase', data: saved }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown database error';
-    console.warn('[reservations-api:post:fallback]', message);
-    const fallbackReservation = {
-      ...body,
-      id: body.id || `res-${Date.now()}`,
-      status: body.status || BookingStatus.NEW,
-      createdAt: body.createdAt || new Date().toISOString(),
-      source: body.source || 'Web Form',
-    } as ReservationRequest;
-    return NextResponse.json({ ok: true, source: 'local-fallback', warning: message, data: { reservation: fallbackReservation } }, { status: 201 });
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Không thể tạo booking.' }, { status: 503 });
   }
 }
 
 export async function PUT(request: Request) {
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
   const reservations = readReservationsPayload(await request.json());
-  if (!reservations) {
-    return NextResponse.json({ ok: false, error: 'Invalid reservations payload' }, { status: 400 });
-  }
+  if (!reservations) return NextResponse.json({ ok: false, error: 'Payload bookings không hợp lệ.' }, { status: 400 });
 
   try {
     const current = await readAllData();
-    await writeSecurityLog('RESERVATIONS_PUT', request, { reservations: reservations.length });
+    for (const reservation of reservations) {
+      const existing = current.reservations.find((item) => item.id === reservation.id) || null;
+      const validation = validateReservation(reservation, current.venues, reservations, { existing });
+      if (!validation.valid) return validationResponse(validation.issues);
+    }
     await replaceAllData({ ...current, reservations });
-    const next = await readAllData();
-    return NextResponse.json({ ok: true, source: 'supabase', data: next.reservations });
+    void writeSecurityLog('RESERVATIONS_PUT', request, { reservations: reservations.length });
+    return NextResponse.json({ ok: true, source: 'supabase', data: reservations });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown database error';
-    console.warn('[reservations-api:put:fallback]', message);
-    return NextResponse.json({ ok: true, source: 'local-fallback', warning: message, data: reservations });
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Không thể đồng bộ bookings.' }, { status: 503 });
   }
 }

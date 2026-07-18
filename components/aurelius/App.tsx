@@ -10,12 +10,8 @@ import FloatingContact from "./components/FloatingContact";
 import { AboutView, ContactView } from "./components/AboutContactViews";
 import {
   loadData,
-  saveVenues,
-  saveCustomers,
-  saveReservations,
   loadDataFromServer,
-  saveDataToServer,
-  ConciergeDataPayload,
+  createReservationOnServer,
 } from "./data";
 import {
   DEFAULT_SITE_SETTINGS,
@@ -33,40 +29,6 @@ import {
 } from "./types";
 import { SlidersHorizontal } from "lucide-react";
 import { I18nProvider, Locale, useI18n } from "./i18n";
-
-type AdminNotificationPayload = {
-  id: string;
-  reservationId: string;
-  title: string;
-  message: string;
-  createdAt: string;
-  read: boolean;
-  tableColor?: string;
-};
-
-async function createAdminNotificationFromBooking(
-  booking: ReservationRequest,
-): Promise<void> {
-  const notice: AdminNotificationPayload = {
-    id: `notice-${booking.id}`,
-    reservationId: booking.id,
-    title: `Đặt chỗ mới · ${booking.preferredTableName || "Chưa chọn bàn"}`,
-    message: `${booking.fullName} · ${booking.venueName} · ${
-      booking.preferredTableArea || "Concierge chọn khu"
-    } · ${booking.guestCount} khách`,
-    createdAt: booking.createdAt || new Date().toISOString(),
-    read: false,
-    tableColor: booking.preferredTableColor || "#0066ff",
-  };
-
-  await fetch("/api/admin-notifications", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    credentials: "same-origin",
-    body: JSON.stringify({ notifications: [notice] }),
-  });
-}
 
 function PublicAppContent() {
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -86,79 +48,32 @@ function PublicAppContent() {
     let isMounted = true;
 
     async function hydrateData() {
-      try {
-        const data = await loadDataFromServer();
-        if (!isMounted) return;
-        setVenues(data.venues);
-        setReservations(data.reservations);
-        setCustomers(data.customers);
+      const [dataResult, settingsResult] = await Promise.allSettled([
+        loadDataFromServer(),
+        loadSiteSettingsFromServer(),
+      ]);
+      if (!isMounted) return;
 
-        try {
-          const settings = await loadSiteSettingsFromServer();
-          if (isMounted) {
-            setSiteSettings(settings);
-            saveSiteSettingsLocal(settings);
-          }
-        } catch (settingsError) {
-          console.warn(
-            "[DuyT] Site settings unavailable, using local/default fallback.",
-            settingsError,
-          );
-          if (isMounted) setSiteSettings(loadSiteSettingsLocal());
-        }
+      const data = dataResult.status === "fulfilled" ? dataResult.value : loadData();
+      setVenues(data.venues);
+      setReservations(data.reservations);
+      setCustomers(data.customers);
 
-        saveVenues(data.venues);
-        saveReservations(data.reservations);
-        saveCustomers(data.customers);
-      } catch (error) {
-        console.warn(
-          "[DuyT] Supabase unavailable, using local fallback.",
-          error,
-        );
-        const data = loadData();
-        if (!isMounted) return;
-        setVenues(data.venues);
-        setReservations(data.reservations);
-        setCustomers(data.customers);
-        setSiteSettings(loadSiteSettingsLocal());
-      } finally {
-        if (isMounted) setIsLoadingData(false);
-      }
+      const nextSettings = settingsResult.status === "fulfilled"
+        ? settingsResult.value
+        : loadSiteSettingsLocal();
+      setSiteSettings(nextSettings);
+      if (settingsResult.status === "fulfilled") saveSiteSettingsLocal(nextSettings);
+      setIsLoadingData(false);
     }
 
-    hydrateData();
+    void hydrateData();
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const commitData = (payload: ConciergeDataPayload) => {
-    setVenues(payload.venues);
-    setReservations(payload.reservations);
-    setCustomers(payload.customers);
-
-    saveVenues(payload.venues);
-    saveReservations(payload.reservations);
-    saveCustomers(payload.customers);
-
-    saveDataToServer(payload)
-      .then((serverData) => {
-        setVenues(serverData.venues);
-        setReservations(serverData.reservations);
-        setCustomers(serverData.customers);
-        saveVenues(serverData.venues);
-        saveReservations(serverData.reservations);
-        saveCustomers(serverData.customers);
-      })
-      .catch((error) => {
-        console.warn(
-          "[DuyT] Supabase sync failed. Changes are kept locally.",
-          error,
-        );
-      });
-  };
-
-  const handleRequestSubmit = (formData: any) => {
+  const handleRequestSubmit = async (formData: Omit<ReservationRequest, "id" | "venueId" | "venueName" | "status" | "createdAt" | "source">) => {
     if (!selectedVenueId) return;
     const currentVenue = venues.find((v) => v.id === selectedVenueId);
     if (!currentVenue) return;
@@ -190,7 +105,6 @@ function PublicAppContent() {
       source: "Web Form",
     };
 
-    const nextReservations = [newRequest, ...reservations];
     const clientExists = customers.some(
       (c) =>
         c.phoneNumber.replace(/\s+/g, "") ===
@@ -222,33 +136,23 @@ function PublicAppContent() {
           return c;
         });
 
-    commitData({
-      venues,
-      reservations: nextReservations,
-      customers: nextCustomers,
-    });
-
-    createAdminNotificationFromBooking(newRequest).catch((error) => {
-      console.warn("[DuyT] Could not create admin notification", error);
-    });
+    const saved = await createReservationOnServer(newRequest);
+    setReservations([saved, ...reservations]);
+    setCustomers(nextCustomers);
   };
 
   const openVenueDetail = (venueId: string) => {
-    const nextVenues = venues.map((venue) =>
-      venue.id === venueId
-        ? { ...venue, viewCount: Math.max(0, Number(venue.viewCount || 0)) + 1 }
-        : venue,
-    );
-    setVenues(nextVenues);
-    saveVenues(nextVenues);
-    saveDataToServer({ venues: nextVenues, reservations, customers }).catch(
-      (error) => {
-        console.warn(
-          "[DuyT] Venue view sync failed. View is kept locally.",
-          error,
-        );
-      },
-    );
+    const currentVenue = venues.find((venue) => venue.id === venueId);
+    const nextViewCount = Math.max(0, Number(currentVenue?.viewCount || 0)) + 1;
+    setVenues((current) => current.map((venue) =>
+      venue.id === venueId ? { ...venue, viewCount: nextViewCount } : venue,
+    ));
+    void fetch(`/api/venues/${encodeURIComponent(venueId)}/view`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ viewCount: nextViewCount }),
+      keepalive: true,
+    }).catch(() => undefined);
     setSelectedVenueId(venueId);
     setCurrentView("VENUE_DETAIL");
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -355,6 +259,7 @@ function PublicAppContent() {
 
         {currentView === "VENUE_DETAIL" && selectedVenue && (
           <VenueDetailView
+            key={selectedVenue.id}
             venue={selectedVenue}
             onBack={() => handleNavigate("VENUES")}
             onSubmitRequest={handleRequestSubmit}
@@ -378,15 +283,13 @@ export default function App({
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
-    setLocaleState(initialLocale);
-    if (typeof window !== "undefined")
-      localStorage.setItem("aurelius-locale", initialLocale);
-  }, [initialLocale]);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("aurelius-locale", locale);
+    }
+  }, [locale]);
 
   const setLocale = (nextLocale: Locale) => {
     setLocaleState(nextLocale);
-    if (typeof window !== "undefined")
-      localStorage.setItem("aurelius-locale", nextLocale);
   };
 
   return (

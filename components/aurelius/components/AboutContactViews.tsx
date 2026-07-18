@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { CheckCircle2, Headset } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useI18n } from "../i18n";
-import { CONTACT_CHANNELS, CONTACT_INFO } from "../contactConfig";
+import { getContactChannels } from "../contactConfig";
+import { usePublicSettings } from "../public/usePublicData";
 
 const aboutCopy = {
   en: {
@@ -351,6 +352,8 @@ export function AboutView() {
 
 export function ContactView() {
   const { locale } = useI18n();
+  const { siteSettings } = usePublicSettings();
+  const contactChannels = getContactChannels(siteSettings);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
@@ -382,7 +385,7 @@ export function ContactView() {
             {c.channelsTitle}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {CONTACT_CHANNELS.map((chan) => (
+            {contactChannels.map((chan) => (
               <a
                 key={chan.name}
                 href={chan.href}

@@ -3,92 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import VenueDetailView from '../components/VenueDetailView';
-import {
-  createReservationOnServer,
-  loadData,
-  saveCustomers,
-  saveReservations,
-  updateVenueOnServer,
-} from '../data';
+import { createReservationOnServer } from '../data';
 import { Locale } from '../i18n';
-import { BookingStatus, Customer, ReservationRequest, Venue, VipStatus } from '../types';
+import { BookingStatus, ReservationRequest } from '../types';
 import PublicShell from './PublicShell';
 import { publicPath } from './routes';
 import { usePublicVenue } from './usePublicData';
-
-type AdminNotificationPayload = {
-  id: string;
-  reservationId: string;
-  title: string;
-  message: string;
-  createdAt: string;
-  read: boolean;
-  tableColor?: string;
-};
-
-async function createAdminNotificationFromBooking(booking: ReservationRequest): Promise<void> {
-  const notice: AdminNotificationPayload = {
-    id: `notice-${booking.id}`,
-    reservationId: booking.id,
-    title: `Đặt chỗ mới · ${booking.preferredTableName || 'Chưa chọn bàn'}`,
-    message: `${booking.fullName} · ${booking.venueName} · ${booking.preferredTableArea || 'Concierge chọn khu'} · ${booking.guestCount} khách`,
-    createdAt: booking.createdAt || new Date().toISOString(),
-    read: false,
-    tableColor: booking.preferredTableColor || '#0066ff',
-  };
-
-  await fetch('/api/admin-notifications', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    cache: 'no-store',
-    credentials: 'same-origin',
-    body: JSON.stringify({ notifications: [notice] }),
-  });
-}
-
-function normalizePhone(phone: string) {
-  return phone.replace(/\s+/g, '').trim();
-}
-
-function buildOptimisticCustomerList(
-  customers: Customer[],
-  selectedVenueId: string,
-  formData: any,
-): Customer[] {
-  const clientExists = customers.some((customer) => normalizePhone(customer.phoneNumber) === normalizePhone(formData.phoneNumber));
-
-  if (!clientExists) {
-    return [
-      {
-        id: `cust-${Date.now()}`,
-        fullName: formData.fullName,
-        phoneNumber: formData.phoneNumber,
-        notes: `Yêu cầu đặt chỗ từ website ngày ${formData.date}. Bàn/phòng: ${formData.preferredTableName}.`,
-        vipStatus: VipStatus.VIP,
-        favoriteVenueIds: [selectedVenueId],
-        createdAt: new Date().toISOString(),
-      },
-      ...customers,
-    ];
-  }
-
-  return customers.map((customer) => {
-    if (normalizePhone(customer.phoneNumber) !== normalizePhone(formData.phoneNumber)) return customer;
-    const favoriteVenueIds = customer.favoriteVenueIds.includes(selectedVenueId)
-      ? customer.favoriteVenueIds
-      : [...customer.favoriteVenueIds, selectedVenueId];
-    return { ...customer, favoriteVenueIds };
-  });
-}
-
-function saveBookingLocally(reservation: ReservationRequest, venue: Venue, formData: any) {
-  const localData = loadData();
-  const nextReservations = [reservation, ...localData.reservations.filter((item) => item.id !== reservation.id)];
-  const nextCustomers = buildOptimisticCustomerList(localData.customers, venue.id, formData);
-
-  saveReservations(nextReservations);
-  saveCustomers(nextCustomers);
-}
 
 export default function VenueDetailPageClient({
   initialLocale = 'vi',
@@ -110,12 +30,15 @@ export default function VenueDetailPageClient({
     }
 
     const nextViewCount = Math.max(0, Number(selectedVenue.viewCount || 0)) + 1;
-    updateVenueOnServer(selectedVenue.id, { viewCount: nextViewCount }).catch((error) => {
-      console.warn('[DuyT] Venue view sync failed. View is kept locally.', error);
-    });
-  }, [selectedVenue?.id]);
+    void fetch(`/api/venues/${encodeURIComponent(selectedVenue.id)}/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ viewCount: nextViewCount }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }, [selectedVenue]);
 
-  const handleRequestSubmit = (formData: any) => {
+  const handleRequestSubmit = async (formData: Omit<ReservationRequest, 'id' | 'venueId' | 'venueName' | 'status' | 'createdAt' | 'source'>) => {
     if (!selectedVenue) return;
 
     const selectedTable = selectedVenue.preferredTables.find(
@@ -144,19 +67,7 @@ export default function VenueDetailPageClient({
       source: 'Web Form',
     };
 
-    createReservationOnServer(newRequest)
-      .then((serverData) => {
-        saveReservations(serverData.reservations);
-        saveCustomers(serverData.customers);
-      })
-      .catch((error) => {
-        console.warn('[DuyT] Reservation API failed. Booking is kept locally.', error);
-        saveBookingLocally(newRequest, selectedVenue, formData);
-      });
-
-    createAdminNotificationFromBooking(newRequest).catch((error) => {
-      console.warn('[DuyT] Could not create admin notification', error);
-    });
+    await createReservationOnServer(newRequest);
   };
 
   if (isLoadingData) {
@@ -164,7 +75,7 @@ export default function VenueDetailPageClient({
   }
 
   return (
-    <PublicShell initialLocale={initialLocale} activeView="VENUE_DETAIL" logoUrl={siteSettings.logoUrl}>
+    <PublicShell initialLocale={initialLocale} activeView="VENUE_DETAIL" logoUrl={siteSettings.logoUrl} siteSettings={siteSettings}>
       {selectedVenue ? (
         <VenueDetailView
           venue={selectedVenue}

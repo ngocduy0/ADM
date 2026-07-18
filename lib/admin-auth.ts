@@ -62,3 +62,23 @@ export function isValidAdminSession(cookieValue?: string | null) {
 }
 
 export { COOKIE_NAME, SESSION_MAX_AGE_SECONDS };
+
+function readCookieValue(cookieHeader: string | null, name: string) {
+  if (!cookieHeader) return null;
+  for (const entry of cookieHeader.split(';')) {
+    const separator = entry.indexOf('=');
+    if (separator < 0) continue;
+    const key = entry.slice(0, separator).trim();
+    if (key !== name) continue;
+    try {
+      return decodeURIComponent(entry.slice(separator + 1).trim());
+    } catch {
+      return entry.slice(separator + 1).trim();
+    }
+  }
+  return null;
+}
+
+export function isAuthorizedAdminRequest(request: Request) {
+  return isValidAdminSession(readCookieValue(request.headers.get('cookie'), COOKIE_NAME));
+}

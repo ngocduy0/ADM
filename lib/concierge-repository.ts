@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { INITIAL_CUSTOMERS, INITIAL_RESERVATIONS, INITIAL_VENUES } from '@/components/aurelius/data';
 import { BookingStatus, Customer, ReservationRequest, Venue } from '@/components/aurelius/types';
+import {
+  buildBookingStorageDate,
+  decodeBookingNotes,
+  encodeBookingNotes,
+  parseBookingStorageDateTime,
+} from '@/lib/booking-storage-time';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +26,26 @@ type DbCustomer = Record<string, any>;
 type DbBooking = Record<string, any>;
 type DbBookingContact = Record<string, any>;
 
+const SUPABASE_TIMEOUT_MS = Math.max(3_000, Number(process.env.SUPABASE_REQUEST_TIMEOUT_MS || 5_000));
+const READ_CACHE_TTL_MS = Math.max(500, Number(process.env.CONCIERGE_READ_CACHE_TTL_MS || 3_000));
+let dataCache: { expiresAt: number; value: ConciergePayload } | null = null;
+let seedPromise: Promise<void> | null = null;
+
+export function invalidateConciergeCache() {
+  dataCache = null;
+}
+
+function timedFetch(input: RequestInfo | URL, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
+  const externalSignal = init?.signal;
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timeout));
+}
+
 export function getSupabaseAdminClient() {
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -31,6 +57,7 @@ export function getSupabaseAdminClient() {
 
   return createClient(url, key.trim(), {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: timedFetch },
   });
 }
 
@@ -147,17 +174,40 @@ function dbStatusToUi(status: string): BookingStatus {
 }
 
 function buildBookingDate(date: string, arrivalTime: string) {
-  const safeDate = date || new Date().toISOString().slice(0, 10);
-  const safeTime = arrivalTime || '00:00';
-  return new Date(`${safeDate}T${safeTime}:00.000Z`).toISOString();
+  return buildBookingStorageDate(date, arrivalTime);
 }
 
-function formatDate(value: string) {
-  return new Date(value).toISOString().slice(0, 10);
+function formatDate(value: string, notes?: string | null) {
+  return parseBookingStorageDateTime(value, notes)?.date || '';
 }
 
-function formatTime(value: string) {
-  return new Date(value).toISOString().slice(11, 16);
+function formatTime(value: string, notes?: string | null) {
+  return parseBookingStorageDateTime(value, notes)?.time || '';
+}
+
+export async function readReservationStatusFast(id: string): Promise<ReservationRequest | null> {
+  const supabase = getSupabaseAdminClient();
+  const row = await checked(
+    supabase.from('Booking').select('id,bookingDate,status,notes,createdAt').eq('id', id).maybeSingle(),
+    'read Booking status',
+  ) as { id: string; bookingDate: string; status: string; notes?: string | null; createdAt?: string } | null;
+  if (!row) return null;
+  return {
+    id: row.id,
+    venueId: '',
+    venueName: '',
+    fullName: '',
+    phoneNumber: '',
+    guestCount: 1,
+    date: formatDate(row.bookingDate, row.notes),
+    arrivalTime: formatTime(row.bookingDate, row.notes),
+    preferredTableId: '',
+    preferredTableName: '',
+    notes: '',
+    status: dbStatusToUi(String(row.status)),
+    createdAt: row.createdAt || new Date().toISOString(),
+    source: 'Web Form',
+  };
 }
 
 function generateId(prefix: string, seed: string) {
@@ -199,6 +249,21 @@ function buildRequestSecurityContext(request: Request, metadata: Record<string, 
   };
 }
 
+export async function upsertBookingNotificationFast(reservation: ReservationRequest) {
+  const supabase = getSupabaseAdminClient();
+  const now = new Date().toISOString();
+  await checked(supabase.from('AdminNotification').upsert({
+    id: `booking-${reservation.id}`,
+    reservationId: reservation.id,
+    title: `Booking mới · ${reservation.fullName}`,
+    message: `${reservation.venueName} · ${reservation.preferredTableName || 'Chưa chọn bàn'} · ${reservation.guestCount} khách · ${reservation.date} ${reservation.arrivalTime}`,
+    tableColor: reservation.preferredTableColor || null,
+    isRead: false,
+    createdAt: reservation.createdAt || now,
+    updatedAt: now,
+  }, { onConflict: 'id' }), 'upsert AdminNotification');
+}
+
 export async function writeSecurityLog(event: string, request: Request, metadata: Record<string, unknown> = {}) {
   try {
     const supabase = getSupabaseAdminClient();
@@ -215,8 +280,8 @@ export async function writeSecurityLog(event: string, request: Request, metadata
       path: context.path,
       metadata: context.metadata,
     });
-  } catch (error) {
-    console.warn('[security-log:optional]', error instanceof Error ? error.message : error);
+  } catch {
+    // Security logging must never delay or break primary admin operations.
   }
 }
 
@@ -278,8 +343,8 @@ async function savePayloadBackup(supabase: ReturnType<typeof getSupabaseAdminCli
       },
       updatedAt: new Date().toISOString(),
     }, { onConflict: 'key' });
-  } catch (error) {
-    console.warn('[concierge-api:backup:optional]', error instanceof Error ? error.message : error);
+  } catch {
+    // Backup is best-effort and intentionally silent.
   }
 }
 
@@ -343,7 +408,7 @@ function uniqueRowsByVenueId<T extends { venueId: string }>(rows: T[]) {
 
 export async function replaceAllData(payload: ConciergePayload) {
   const supabase = getSupabaseAdminClient();
-  await savePayloadBackup(supabase, payload);
+  void savePayloadBackup(supabase, payload);
 
   const venueRows = payload.venues.map((venue) => ({
     id: venue.id,
@@ -519,7 +584,7 @@ export async function replaceAllData(payload: ConciergePayload) {
         bookingDate: buildBookingDate(reservation.date, reservation.arrivalTime),
         guestCount: Number(reservation.guestCount) || 1,
         status: uiStatusToDb(reservation.status),
-        notes: reservation.notes || null,
+        notes: encodeBookingNotes(reservation.notes),
         customerId,
         venueId: reservation.venueId,
         spotId: (() => {
@@ -546,25 +611,336 @@ export async function replaceAllData(payload: ConciergePayload) {
 
   await deleteStaleRowsById(supabase, 'Customer', customerRows.map((customer) => customer.id), 'Customer');
   await deleteStaleRowsById(supabase, 'Venue', venueRows.map((venue) => venue.id), 'Venue');
+  invalidateConciergeCache();
+}
+
+function sourceToChannel(source: ReservationRequest['source']) {
+  if (source === 'Web Form') return 'MANUAL';
+  if (source === 'Telegram') return 'LINE';
+  if (source === 'Zalo') return 'WECHAT';
+  return source.toUpperCase();
+}
+
+function scopedSpotId(venueId: string, spotId: string) {
+  const raw = compactId(spotId, 'spot');
+  const venueKey = compactId(venueId, 'venue');
+  return raw.startsWith(`${venueKey}__`) ? raw : `${venueKey}__${raw}`;
+}
+
+export async function customerExistsFast(id: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+  const row = await checked(
+    supabase.from('Customer').select('id').eq('id', id).maybeSingle(),
+    'read Customer existence',
+  ) as { id: string } | null;
+  return Boolean(row);
+}
+
+export async function customerHasBookingsFast(id: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+  const rows = await checked(
+    supabase.from('Booking').select('id').eq('customerId', id).limit(1),
+    'read Customer bookings',
+  ) as Array<{ id: string }>;
+  return rows.length > 0;
+}
+
+export async function upsertCustomerFast(customer: Customer): Promise<Customer> {
+  const supabase = getSupabaseAdminClient();
+  await checked(supabase.from('Customer').upsert({
+    id: customer.id,
+    fullName: customer.fullName,
+    phone: customer.phoneNumber || null,
+    email: null,
+  }, { onConflict: 'id' }), 'upsert Customer');
+  invalidateConciergeCache();
+  return customer;
+}
+
+export async function deleteCustomerFast(id: string) {
+  const supabase = getSupabaseAdminClient();
+  await checked(supabase.from('Customer').delete().eq('id', id), 'delete Customer');
+  invalidateConciergeCache();
+}
+
+export async function upsertReservationFast(
+  reservation: ReservationRequest,
+  current: ConciergePayload,
+): Promise<ReservationRequest> {
+  const supabase = getSupabaseAdminClient();
+  const phoneKey = reservation.phoneNumber.replace(/[\s.()-]/g, '');
+  const customer = current.customers.find((item) => item.phoneNumber.replace(/[\s.()-]/g, '') === phoneKey);
+  const customerId = customer?.id || `cust-${compactId(phoneKey || reservation.id, reservation.id)}`;
+
+  await checked(supabase.from('Customer').upsert({
+    id: customerId,
+    fullName: reservation.fullName,
+    phone: reservation.phoneNumber || null,
+    email: null,
+  }, { onConflict: 'id' }), 'upsert Customer');
+
+  const venue = current.venues.find((item) => item.id === reservation.venueId);
+  const selectedTable = venue?.preferredTables.find(
+    (item) => item.id === reservation.preferredTableId || item.name === reservation.preferredTableName,
+  );
+  const rawSpotId = selectedTable?.id || reservation.preferredTableId || '';
+  const spotId = rawSpotId ? scopedSpotId(reservation.venueId, rawSpotId) : null;
+
+  await checked(supabase.from('Booking').upsert({
+    id: reservation.id,
+    bookingDate: buildBookingDate(reservation.date, reservation.arrivalTime),
+    guestCount: Number(reservation.guestCount) || 1,
+    status: uiStatusToDb(reservation.status),
+    notes: encodeBookingNotes(reservation.notes),
+    customerId,
+    venueId: reservation.venueId,
+    spotId,
+  }, { onConflict: 'id' }), 'upsert Booking');
+
+  await checked(supabase.from('BookingContact').upsert({
+    id: generateId('contact', reservation.id),
+    channel: sourceToChannel(reservation.source),
+    messagePreview: reservation.notes || null,
+    bookingId: reservation.id,
+  }, { onConflict: 'id' }), 'upsert BookingContact');
+
+  invalidateConciergeCache();
+  return {
+    ...reservation,
+    preferredTableId: rawSpotId,
+    preferredTableName: selectedTable?.name || reservation.preferredTableName,
+    preferredTableArea: selectedTable?.area || reservation.preferredTableArea,
+    preferredTableMinimumSpend: selectedTable?.minimumSpend || reservation.preferredTableMinimumSpend,
+    preferredTableColor: selectedTable?.color || reservation.preferredTableColor,
+    preferredTableCapacity: selectedTable?.capacity || reservation.preferredTableCapacity,
+  };
+}
+
+export async function updateReservationStatusFast(id: string, status: BookingStatus) {
+  const supabase = getSupabaseAdminClient();
+  const rows = await checked(
+    supabase.from('Booking').update({ status: uiStatusToDb(status) }).eq('id', id).select('id'),
+    'update Booking status',
+  ) as Array<{ id: string }>;
+  if (!rows.length) throw new Error('Booking not found');
+  invalidateConciergeCache();
+}
+
+export async function deleteReservationFast(id: string) {
+  const supabase = getSupabaseAdminClient();
+  await checked(supabase.from('BookingContact').delete().eq('bookingId', id), 'delete BookingContact');
+  await checked(supabase.from('Booking').delete().eq('id', id), 'delete Booking');
+  invalidateConciergeCache();
+}
+
+async function syncVenueRows(
+  supabase: ReturnType<typeof getSupabaseAdminClient>,
+  tableName: string,
+  rows: Array<Record<string, unknown> & { id: string }>,
+  venueId: string,
+  label: string,
+) {
+  if (rows.length) await checked(supabase.from(tableName).upsert(rows, { onConflict: 'id' }), `upsert ${label}`);
+  await deleteStaleRowsByVenue(supabase, tableName, rows.map((row) => row.id), [venueId], label);
+}
+
+export async function venueExistsFast(id: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+  const row = await checked(
+    supabase.from('Venue').select('id').eq('id', id).maybeSingle(),
+    'read Venue existence',
+  ) as { id: string } | null;
+  return Boolean(row);
+}
+
+export async function venueHasBookingsFast(id: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+  const rows = await checked(
+    supabase.from('Booking').select('id').eq('venueId', id).limit(1),
+    'read Venue bookings',
+  ) as Array<{ id: string }>;
+  return rows.length > 0;
+}
+
+export async function deleteVenueFast(id: string) {
+  const supabase = getSupabaseAdminClient();
+  await Promise.all([
+    checked(supabase.from('VenueImage').delete().eq('venueId', id), 'delete VenueImage'),
+    checked(supabase.from('VenueSpot').delete().eq('venueId', id), 'delete VenueSpot'),
+    checked(supabase.from('VenueMapElement').delete().eq('venueId', id), 'delete VenueMapElement'),
+    checked(supabase.from('VenueMapConfig').delete().eq('venueId', id), 'delete VenueMapConfig'),
+    checked(supabase.from('VenueTableZone').delete().eq('venueId', id), 'delete VenueTableZone'),
+  ]);
+  await checked(supabase.from('Venue').delete().eq('id', id), 'delete Venue');
+  invalidateConciergeCache();
+}
+
+export async function incrementVenueViewCountFast(id: string) {
+  const supabase = getSupabaseAdminClient();
+  const row = await checked(
+    supabase.from('Venue').select('id,description').eq('id', id).maybeSingle(),
+    'read Venue view count',
+  ) as { id: string; description?: string | null } | null;
+  if (!row) throw new Error('Venue not found');
+
+  const descriptions = splitDescription(row.description);
+  const currentMeta = descriptions.meta || {};
+  const description = buildVenueDescription({
+    id,
+    name: '',
+    category: 'Nightclub',
+    location: '',
+    shortDescription: descriptions.shortDescription,
+    longDescription: descriptions.longDescription,
+    image: '',
+    images: [],
+    videoUrl: descriptions.videoUrl || undefined,
+    reels: descriptions.reels || [],
+    menuUrl: String(currentMeta.menuUrl || ''),
+    menuPdfUrl: String(currentMeta.menuPdfUrl || ''),
+    openingHours: (currentMeta.openingHours as Venue['openingHours']) || { open: '18:00', close: '02:00', label: '18:00 - 02:00' },
+    viewCount: Math.max(0, Math.floor(Number(currentMeta.viewCount || 0))) + 1,
+    preferredTables: [],
+    rating: Number(currentMeta.rating) || 4.8,
+    reviewsCount: Math.max(0, Number(currentMeta.reviewsCount || 0)),
+  } as Venue);
+
+  await checked(supabase.from('Venue').update({ description }).eq('id', id), 'update Venue view count');
+  invalidateConciergeCache();
+  return Math.max(0, Math.floor(Number(currentMeta.viewCount || 0))) + 1;
+}
+
+export async function upsertVenueFast(venue: Venue): Promise<Venue> {
+  const supabase = getSupabaseAdminClient();
+  await checked(supabase.from('Venue').upsert({
+    id: venue.id,
+    name: venue.name,
+    slug: slugify(venue.name, venue.id),
+    category: venue.category,
+    address: venue.location,
+    description: buildVenueDescription(venue),
+  }, { onConflict: 'id' }), 'upsert Venue');
+
+  const images = Array.from(new Set([venue.image, ...(venue.images || [])].filter(Boolean))).map((imageUrl, index) => ({
+    id: generateId('img', `${venue.id}-${index}`),
+    imageUrl,
+    venueId: venue.id,
+  }));
+
+  const zoneIdsUsed = new Set<string>();
+  const zoneIdMap = new Map<string, string>();
+  const zones = uniqueRowsById((venue.tableZones || []).map((zone, index) => {
+    const originalId = String(zone.id || `zone-${index + 1}`);
+    const id = makeScopedId(venue.id, originalId, 'zone', index, zoneIdsUsed);
+    for (const key of [originalId, zone.name || '', zone.label || '']) {
+      if (key) zoneIdMap.set(key, id);
+    }
+    return {
+      id,
+      venueId: venue.id,
+      name: zone.name || `Zone ${index + 1}`,
+      label: zone.label || zone.name || `Zone ${index + 1}`,
+      description: zone.description || null,
+      minimumSpend: numberOr(zone.minimumSpend, 0),
+      capacity: numberOr(zone.capacity, 1, 1),
+      color: zone.color || '#D6A85F',
+      sortOrder: Number(zone.order) || index + 1,
+      isActive: zone.isActive !== false,
+      updatedAt: new Date().toISOString(),
+    };
+  }));
+
+  const elementIdsUsed = new Set<string>();
+  const mapElements = uniqueRowsById((venue.floorPlanElements || []).map((element, index) => ({
+    id: makeScopedId(venue.id, element.id, 'element', index, elementIdsUsed),
+    venueId: venue.id,
+    type: element.type || 'CUSTOM',
+    label: element.label || element.type || `Element ${index + 1}`,
+    x: numberOr(element.x, 50),
+    y: numberOr(element.y, 50),
+    width: numberOr(element.width, 20, 2),
+    height: numberOr(element.height, 5, 2),
+    rotation: Number(element.rotation) || 0,
+    color: element.color || '#D6A85F',
+    sortOrder: Number(element.order) || index + 1,
+    isActive: element.isActive !== false,
+    updatedAt: new Date().toISOString(),
+  })));
+
+  const mapConfig = {
+    venueId: venue.id,
+    style: venue.floorPlanTheme?.style || 'NIGHTCLUB',
+    ratio: venue.floorPlanTheme?.ratio || 'PORTRAIT',
+    backgroundColor: venue.floorPlanTheme?.backgroundColor || '#070A12',
+    accentColor: venue.floorPlanTheme?.accentColor || '#D6A85F',
+    surfaceColor: venue.floorPlanTheme?.surfaceColor || '#111827',
+    gridColor: venue.floorPlanTheme?.gridColor || 'rgba(255,255,255,0.055)',
+    texture: venue.floorPlanTheme?.texture || 'GRID',
+    helperText: venue.floorPlanTheme?.helperText || null,
+    showGrid: venue.floorPlanTheme?.showGrid !== false,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await Promise.all([
+    syncVenueRows(supabase, 'VenueImage', images, venue.id, 'VenueImage'),
+    syncVenueRows(supabase, 'VenueTableZone', zones, venue.id, 'VenueTableZone'),
+    syncVenueRows(supabase, 'VenueMapElement', mapElements, venue.id, 'VenueMapElement'),
+    checked(supabase.from('VenueMapConfig').upsert(mapConfig, { onConflict: 'venueId' }), 'upsert VenueMapConfig'),
+  ]);
+
+  const spotIdsUsed = new Set<string>();
+  const spots = uniqueRowsById((venue.preferredTables || []).map((spot, index) => ({
+    id: makeScopedId(venue.id, spot.id, 'spot', index, spotIdsUsed),
+    name: spot.name || `Table ${index + 1}`,
+    description: spot.description || '',
+    area: spot.area || 'VIP Area',
+    zoneId: spot.zoneId ? zoneIdMap.get(spot.zoneId) || scopedSpotId(venue.id, spot.zoneId) : zoneIdMap.get(spot.area || '') || null,
+    capacity: numberOr(spot.capacity, 1, 1),
+    minimumSpend: numberOr(spot.minimumSpend, 0),
+    status: spot.status || 'AVAILABLE',
+    shape: spot.shape || 'RECT',
+    bookingMode: spot.bookingMode || 'REQUEST',
+    x: numberOr(spot.x, 20 + (index % 5) * 12),
+    y: numberOr(spot.y, 22 + Math.floor(index / 5) * 8),
+    width: numberOr(spot.width, 8, 1),
+    height: numberOr(spot.height, 5, 1),
+    rotation: Number(spot.rotation) || 0,
+    color: spot.color || null,
+    sortOrder: Number(spot.sortOrder) || index + 1,
+    badge: spot.badge || 'NONE',
+    venueId: venue.id,
+  })));
+  await syncVenueRows(supabase, 'VenueSpot', spots, venue.id, 'VenueSpot');
+
+  invalidateConciergeCache();
+  return venue;
 }
 
 async function ensureSeeded() {
-  const supabase = getSupabaseAdminClient();
-  const venues = await checked(supabase.from('Venue').select('id,name').order('createdAt', { ascending: true }).limit(10), 'count Venue');
-  const legacyDefaultNames = new Set(['The Obsidian Club', 'Azure Deck', 'The Gilded Room']);
-  const venueRows = (venues || []) as Array<{ name?: string }>;
-  const isLegacyDemo = Boolean(venueRows.length) && venueRows.every((venue) => legacyDefaultNames.has(String(venue.name || '')));
+  if (seedPromise) return seedPromise;
+  seedPromise = (async () => {
+    const supabase = getSupabaseAdminClient();
+    const venues = await checked(supabase.from('Venue').select('id,name').order('createdAt', { ascending: true }).limit(10), 'count Venue');
+    const legacyDefaultNames = new Set(['The Obsidian Club', 'Azure Deck', 'The Gilded Room']);
+    const venueRows = (venues || []) as Array<{ name?: string }>;
+    const isLegacyDemo = Boolean(venueRows.length) && venueRows.every((venue) => legacyDefaultNames.has(String(venue.name || '')));
 
-  if (!venueRows.length || isLegacyDemo) {
-    await replaceAllData({
-      venues: INITIAL_VENUES,
-      customers: INITIAL_CUSTOMERS,
-      reservations: INITIAL_RESERVATIONS,
-    });
-  }
+    if (!venueRows.length || isLegacyDemo) {
+      await replaceAllData({
+        venues: INITIAL_VENUES,
+        customers: INITIAL_CUSTOMERS,
+        reservations: INITIAL_RESERVATIONS,
+      });
+    }
+  })().catch((error) => {
+    seedPromise = null;
+    throw error;
+  });
+  return seedPromise;
 }
 
 export async function readAllData(): Promise<ConciergePayload> {
+  if (dataCache && dataCache.expiresAt > Date.now()) return dataCache.value;
   const supabase = getSupabaseAdminClient();
   await ensureSeeded();
 
@@ -622,16 +998,20 @@ export async function readAllData(): Promise<ConciergePayload> {
   }
 
   const bookingsByCustomer = new Map<string, DbBooking[]>();
+  const bookingsByVenue = new Map<string, DbBooking[]>();
   for (const booking of bookingsDb) {
-    const list = bookingsByCustomer.get(booking.customerId) || [];
-    list.push(booking);
-    bookingsByCustomer.set(booking.customerId, list);
+    const customerList = bookingsByCustomer.get(booking.customerId) || [];
+    customerList.push(booking);
+    bookingsByCustomer.set(booking.customerId, customerList);
+    const venueList = bookingsByVenue.get(booking.venueId) || [];
+    venueList.push(booking);
+    bookingsByVenue.set(booking.venueId, venueList);
   }
 
   const venues: Venue[] = venuesDb.map((venue) => {
     const descriptions = splitDescription(venue.description);
     const images = (imagesByVenue.get(venue.id) || []).map((image) => image.imageUrl);
-    const venueBookings = bookingsDb.filter((booking) => booking.venueId === venue.id);
+    const venueBookings = bookingsByVenue.get(venue.id) || [];
     return {
       id: venue.id,
       name: venue.name,
@@ -725,7 +1105,7 @@ export async function readAllData(): Promise<ConciergePayload> {
       id: customer.id,
       fullName: customer.fullName,
       phoneNumber: customer.phone || '',
-      notes: customerBookings[0]?.notes || 'Hồ sơ khách được đồng bộ từ Supabase.',
+      notes: decodeBookingNotes(customerBookings[0]?.notes) || 'Hồ sơ khách được đồng bộ từ Supabase.',
       vipStatus: customerBookings.length >= 3 ? 'ELITE' : customerBookings.length >= 2 ? 'VVIP' : 'VIP',
       favoriteVenueIds: Array.from(new Set(customerBookings.map((booking) => booking.venueId))),
       createdAt: customer.createdAt || new Date().toISOString(),
@@ -737,6 +1117,7 @@ export async function readAllData(): Promise<ConciergePayload> {
     const customer = customerById.get(booking.customerId);
     const spot = booking.spotId ? spotById.get(booking.spotId) : null;
     const contact = latestContactByBooking.get(booking.id);
+    const bookingParts = parseBookingStorageDateTime(booking.bookingDate, booking.notes);
     return {
       id: booking.id,
       venueId: booking.venueId,
@@ -744,20 +1125,22 @@ export async function readAllData(): Promise<ConciergePayload> {
       fullName: customer?.fullName || 'Khách chưa xác định',
       phoneNumber: customer?.phone || '',
       guestCount: Number(booking.guestCount) || 1,
-      date: formatDate(booking.bookingDate),
-      arrivalTime: formatTime(booking.bookingDate),
+      date: bookingParts?.date || '',
+      arrivalTime: bookingParts?.time || '',
       preferredTableId: booking.spotId || '',
       preferredTableName: spot?.name || 'Bàn VIP',
       preferredTableArea: spot?.area || undefined,
       preferredTableMinimumSpend: Number(spot?.minimumSpend) || undefined,
       preferredTableColor: spot?.color || undefined,
       preferredTableCapacity: Number(spot?.capacity) || undefined,
-      notes: booking.notes || '',
+      notes: decodeBookingNotes(booking.notes),
       status: dbStatusToUi(String(booking.status)),
       createdAt: booking.createdAt || new Date().toISOString(),
       source: contact?.channel === 'INSTAGRAM' ? 'Instagram' : contact?.channel === 'WHATSAPP' ? 'WhatsApp' : contact?.channel === 'LINE' ? 'Telegram' : contact?.channel === 'WECHAT' ? 'Zalo' : 'Web Form',
     };
   });
 
-  return { venues, customers, reservations };
+  const payload = { venues, customers, reservations };
+  dataCache = { value: payload, expiresAt: Date.now() + READ_CACHE_TTL_MS };
+  return payload;
 }

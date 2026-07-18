@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, CheckCircle2, Copy, ExternalLink, Send, Users } from 'lucide-react';
 import { Venue, ReservationRequest, PreferredTable } from '../types';
 import { useI18n } from '../i18n';
-import { CONTACT_CHANNELS, buildReservationMessage, buildContactUrl } from '../contactConfig';
+import { buildReservationMessage, buildContactUrl, getContactChannels } from '../contactConfig';
+import { usePublicSettings } from '../public/usePublicData';
 
 interface ReservationFormProps {
   venue: Venue;
-  onSubmit: (formData: Omit<ReservationRequest, 'id' | 'venueId' | 'venueName' | 'status' | 'createdAt' | 'source'>) => void;
+  onSubmit: (formData: Omit<ReservationRequest, 'id' | 'venueId' | 'venueName' | 'status' | 'createdAt' | 'source'>) => Promise<void> | void;
   onClose?: () => void;
   initialPreferredTableId?: string;
 }
@@ -88,6 +89,7 @@ function bookingModeText(table?: PreferredTable) {
 }
 
 export default function ReservationForm({ venue, onSubmit, onClose, initialPreferredTableId }: ReservationFormProps) {
+  const { siteSettings } = usePublicSettings();
   const { t } = useI18n();
   const availableTables = useMemo(() => venue.preferredTables.filter((table) => table.status !== 'HIDDEN'), [venue.preferredTables]);
   const initialTable = availableTables.find((table) => table.id === initialPreferredTableId) || availableTables[0];
@@ -103,6 +105,7 @@ export default function ReservationForm({ venue, onSubmit, onClose, initialPrefe
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [submittedData, setSubmittedData] = useState<SubmittedReservation | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const selectedTable = availableTables.find((table) => table.id === preferredTableId) || availableTables[0];
   const maxGuests = Math.max(1, selectedTable?.capacity || 12);
@@ -110,11 +113,13 @@ export default function ReservationForm({ venue, onSubmit, onClose, initialPrefe
 
   useEffect(() => {
     const nextTable = availableTables.find((table) => table.id === initialPreferredTableId) || availableTables[0];
-    setPreferredTableId(nextTable?.id || '');
+    const timer = window.setTimeout(() => setPreferredTableId(nextTable?.id || ''), 0);
+    return () => window.clearTimeout(timer);
   }, [initialPreferredTableId, availableTables]);
 
   useEffect(() => {
-    setGuestCount((current) => Math.min(Math.max(1, current), maxGuests));
+    const timer = window.setTimeout(() => setGuestCount((current) => Math.min(Math.max(1, current), maxGuests)), 0);
+    return () => window.clearTimeout(timer);
   }, [maxGuests]);
 
   const copyMessage = async (message: string) => {
@@ -126,7 +131,7 @@ export default function ReservationForm({ venue, onSubmit, onClose, initialPrefe
     }
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
 
@@ -149,14 +154,21 @@ export default function ReservationForm({ venue, onSubmit, onClose, initialPrefe
       referenceCode,
     };
 
-    onSubmit(payload);
-    setSubmittedData({
-      ...payload,
-      venueName: venue.name,
-      area: selectedTable?.area || 'VIP Area',
-      minSpend: selectedTable?.minimumSpend || 0,
-      referenceCode,
-    });
+    setSubmitting(true);
+    try {
+      await onSubmit(payload);
+      setSubmittedData({
+        ...payload,
+        venueName: venue.name,
+        area: selectedTable?.area || 'VIP Area',
+        minSpend: selectedTable?.minimumSpend || 0,
+        referenceCode,
+      });
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Không thể gửi booking. Vui lòng kiểm tra kết nối và thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submittedData) {
@@ -171,7 +183,7 @@ export default function ReservationForm({ venue, onSubmit, onClose, initialPrefe
       notes: submittedData.notes,
       referenceCode: submittedData.referenceCode,
     });
-    const socialChannels = CONTACT_CHANNELS.filter((channel) => ['WhatsApp', 'Zalo', 'Telegram', 'Instagram', 'Facebook', 'Email'].includes(channel.name));
+    const socialChannels = getContactChannels(siteSettings);
 
     return (
       <div className="mx-auto max-w-xl overflow-hidden rounded-[28px] border border-gold/20 bg-[#101217] text-on-surface shadow-2xl shadow-black/35">
@@ -207,7 +219,7 @@ export default function ReservationForm({ venue, onSubmit, onClose, initialPrefe
 
           <div className="grid grid-cols-2 gap-3">
             {socialChannels.map((channel) => {
-              const href = buildContactUrl(channel.name, message);
+              const href = buildContactUrl(channel.name, message, socialChannels);
               return (
                 <a key={channel.name} href={href} target={channel.name === 'Email' ? undefined : '_blank'} rel="noopener noreferrer" onClick={() => copyMessage(message)} className="flex min-h-[92px] flex-col items-center justify-center rounded-2xl border border-gold/10 bg-deep-black/30 p-3 transition hover:border-gold/40 hover:bg-gold/5">
                   <img src={channel.icon} alt={channel.name} className="mb-2 h-9 w-9 rounded-full object-contain" />
@@ -260,7 +272,7 @@ export default function ReservationForm({ venue, onSubmit, onClose, initialPrefe
         {error && <div className="rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-200">{error}</div>}
 
         <div className="rounded-2xl border border-gold/15 bg-gold/5 p-3 text-center"><p className="text-[11px] leading-relaxed text-gold-light/90">🔒 Concierge xác nhận trực tiếp với địa điểm. Chỗ chỉ được giữ sau khi có phản hồi chính thức.</p></div>
-        <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-4 text-xs font-black uppercase tracking-widest text-dark-navy shadow-lg shadow-gold/15 transition hover:bg-gold-light"><Send className="h-4 w-4" />{t('requestReservation')}</button>
+        <button type="submit" disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-4 text-xs font-black uppercase tracking-widest text-dark-navy shadow-lg shadow-gold/15 transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-60"><Send className="h-4 w-4" />{submitting ? 'Đang gửi...' : t('requestReservation')}</button>
       </div>
     </form>
   );

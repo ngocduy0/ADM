@@ -134,7 +134,7 @@ export default function GuidePageClient({
     <PublicShell
       initialLocale={initialLocale}
       activeView={view}
-      logoUrl={siteSettings.logoUrl}
+      logoUrl={siteSettings.logoUrl} siteSettings={siteSettings}
     >
       <GuidePageBody initialLocale={initialLocale} view={view} />
     </PublicShell>

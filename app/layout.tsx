@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DuyT",
-  description: "DuyT Danang-Concierge reservation and admin dashboard",
+  title: "DuyT Booking",
+  description: "DuyT Booking - hệ thống đặt chỗ và quản trị địa điểm",
 };
 
 export default function RootLayout({

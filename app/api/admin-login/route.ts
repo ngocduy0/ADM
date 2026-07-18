@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   const { email, password } = await request.json().catch(() => ({ email: '', password: '' }));
-  const expectedEmail = process.env.ADMIN_EMAIL || 'admin@duytconcierge.com';
+  const expectedEmail = process.env.ADMIN_EMAIL || 'admin@duyt.vn';
   const expectedPassword = process.env.ADMIN_PASSWORD;
 
   if (!expectedPassword) {

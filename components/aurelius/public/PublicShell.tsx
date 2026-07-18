@@ -6,22 +6,24 @@ import Footer from '../components/Footer';
 import FloatingContact from '../components/FloatingContact';
 import { I18nProvider, Locale } from '../i18n';
 import { PublicView } from './routes';
+import type { SiteSettings } from '../siteSettings';
 
 export default function PublicShell({
   initialLocale = 'vi',
   activeView,
   logoUrl,
+  siteSettings,
   children,
 }: {
   initialLocale?: Locale;
   activeView: PublicView;
   logoUrl?: string;
+  siteSettings?: SiteSettings;
   children: React.ReactNode;
 }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
-    setLocaleState(initialLocale);
     if (typeof window !== 'undefined') {
       localStorage.setItem('aurelius-locale', initialLocale);
     }
@@ -44,7 +46,7 @@ export default function PublicShell({
         <main className={["flex-grow", activeView === 'HOME' ? 'pt-0' : 'pt-[84px]'].join(' ')}>
           {children}
         </main>
-        <FloatingContact />
+        {activeView === 'HOME' ? <FloatingContact siteSettings={siteSettings} /> : null}
         <Footer logoUrl={logoUrl} />
       </div>
     </I18nProvider>

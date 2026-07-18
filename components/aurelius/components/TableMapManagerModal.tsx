@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   Copy,
   Grid3X3,
   Layers3,
@@ -7,6 +8,7 @@ import {
   Palette,
   Plus,
   RotateCcw,
+  Save,
   Trash2,
   X,
 } from "lucide-react";
@@ -37,6 +39,9 @@ interface TableMapManagerModalProps {
   onChangeElements: (elements: VenueMapElement[]) => void;
   onChangeTheme?: (theme: VenueFloorPlanTheme) => void;
   onClose: () => void;
+  embedded?: boolean;
+  onSave?: () => void;
+  saving?: boolean;
 }
 
 const DEFAULT_ZONE_COLORS = [
@@ -595,6 +600,9 @@ export default function TableMapManagerModal({
   onChangeElements,
   onChangeTheme,
   onClose,
+  embedded = false,
+  onSave,
+  saving = false,
 }: TableMapManagerModalProps) {
   const cleanTheme = useMemo(
     () => normalizeTheme(theme, venueCategory),
@@ -891,8 +899,8 @@ export default function TableMapManagerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/55 p-3 backdrop-blur-md md:p-6">
-      <div className="mx-auto flex h-full max-w-[1520px] flex-col overflow-hidden rounded-[30px] bg-[#F5F5F7] shadow-2xl">
+    <div className={embedded ? "h-full min-h-0 bg-[#F5F5F7]" : "fixed inset-0 z-[100] bg-black/55 p-3 backdrop-blur-md md:p-6"}>
+      <div className={embedded ? "flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#F5F5F7]" : "mx-auto flex h-full max-w-[1520px] flex-col overflow-hidden rounded-[30px] bg-[#F5F5F7] shadow-2xl"}>
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E5EA] bg-white px-5 py-4">
           <div>
             <h2 className="text-xl font-black text-[#1D1D1F]">
@@ -924,17 +932,29 @@ export default function TableMapManagerModal({
               <Plus className="mr-1 inline h-3.5 w-3.5" />
               Vật thể
             </button>
+            {onSave ? (
+              <button
+                type="button"
+                onClick={onSave}
+                disabled={saving}
+                className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#1F3A8A] px-4 text-xs font-black text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? "Đang lưu..." : "Lưu sơ đồ"}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onClose}
               className="grid h-10 w-10 place-items-center rounded-full border border-[#E5E5EA] bg-white text-[#1D1D1F] hover:bg-[#F5F5F7]"
+              aria-label={embedded ? "Quay lại" : "Đóng"}
             >
-              <X className="h-5 w-5" />
+              {embedded ? <ArrowLeft className="h-5 w-5" /> : <X className="h-5 w-5" />}
             </button>
           </div>
         </header>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[330px_minmax(0,1fr)_380px]">
+        <div className={embedded ? "grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden p-3 lg:grid-cols-[300px_minmax(0,1fr)_340px]" : "grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[330px_minmax(0,1fr)_380px]"}>
           <aside className="min-h-0 overflow-y-auto rounded-[24px] border border-[#E5E5EA] bg-white p-4">
             <div className="mb-4 grid grid-cols-4 rounded-2xl bg-[#F5F5F7] p-1 text-xs font-black">
               {(["style", "tables", "zones", "layout"] as const).map((item) => (
