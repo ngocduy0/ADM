@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   ChevronLeft,
@@ -340,7 +340,7 @@ export default function VenueDetailView({
     venue.preferredTables[0]?.id || "",
   );
   const [showRequestForm, setShowRequestForm] = useState(false);
-
+  const modalRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (safeImages.length <= 1) return;
@@ -554,16 +554,21 @@ export default function VenueDetailView({
 
       {showRequestForm && (
         <div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/75 p-0 backdrop-blur-xl sm:items-center sm:p-6"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 px-4 py-4 backdrop-blur-xl"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="reservation-modal-title"
+          aria-describedby="reservation-modal-description"
         >
-          <div className="relative max-h-[96dvh] w-full max-w-2xl overflow-y-auto rounded-t-[32px] border border-gold/20 bg-[#101217] shadow-2xl shadow-black/60 sm:rounded-[32px]">
+          <div
+            ref={modalRef}
+            className="relative mx-auto flex max-h-[calc(100vh-3rem)] w-full max-w-[min(860px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[32px] border border-gold/20 bg-[#101217] shadow-2xl shadow-black/75"
+          >
             <button
               type="button"
               onClick={() => setShowRequestForm(false)}
               aria-label="Đóng form đặt bàn"
-              className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/45 text-white backdrop-blur transition hover:border-gold hover:text-gold"
+              className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#090B0F]/85 text-white transition hover:border-gold hover:text-gold focus:outline-none focus:ring-2 focus:ring-gold/50"
             >
               <X className="h-5 w-5" />
             </button>

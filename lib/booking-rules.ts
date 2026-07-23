@@ -1,8 +1,18 @@
-import { BookingStatus, VipStatus, type Customer, type ReservationRequest, type Venue } from '../components/aurelius/types';
+import {
+  BookingStatus,
+  VipStatus,
+  type Customer,
+  type ReservationRequest,
+  type Venue,
+} from "../components/aurelius/types";
 
-export const BUSINESS_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+export const BUSINESS_TIME_ZONE = "Asia/Ho_Chi_Minh";
 export const NO_SHOW_GRACE_MINUTES = 30;
-export const TABLE_TURNOVER_MINUTES = 120;
+export const TABLE_SESSION_MINUTES = 270;
+export const TABLE_BUFFER_BEFORE_MINUTES = 30;
+export const TABLE_BUFFER_AFTER_MINUTES = 30;
+// Backwards-compatible alias used by older UI/tests.
+export const TABLE_TURNOVER_MINUTES = TABLE_SESSION_MINUTES;
 export const MAX_ADVANCE_BOOKING_DAYS = 730;
 
 export type ValidationIssue = {
@@ -24,27 +34,55 @@ const TERMINAL_STATUSES = new Set<BookingStatus>([
 ]);
 
 const STATUS_TRANSITIONS: Record<BookingStatus, ReadonlySet<BookingStatus>> = {
-  [BookingStatus.NEW]: new Set([BookingStatus.CONTACTED, BookingStatus.CONFIRMED, BookingStatus.CANCELLED]),
-  [BookingStatus.CONTACTED]: new Set([BookingStatus.CONFIRMED, BookingStatus.CANCELLED]),
-  [BookingStatus.CONFIRMED]: new Set([BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.NO_SHOW]),
+  [BookingStatus.NEW]: new Set([
+    BookingStatus.CONTACTED,
+    BookingStatus.CONFIRMED,
+    BookingStatus.CANCELLED,
+  ]),
+  [BookingStatus.CONTACTED]: new Set([
+    BookingStatus.CONFIRMED,
+    BookingStatus.CANCELLED,
+  ]),
+  [BookingStatus.CONFIRMED]: new Set([
+    BookingStatus.COMPLETED,
+    BookingStatus.CANCELLED,
+    BookingStatus.NO_SHOW,
+  ]),
   [BookingStatus.COMPLETED]: new Set(),
   [BookingStatus.CANCELLED]: new Set(),
   [BookingStatus.NO_SHOW]: new Set(),
 };
 
 export function normalizeVietnamesePhone(value: string) {
-  return String(value || '').replace(/[\s.()-]/g, '');
+  return String(value || "").replace(/[\s.()-]/g, "");
 }
 
 export function isVietnamesePhoneNumber(value: string) {
   return /^(\+84|84|0)(3|5|7|8|9)\d{8}$/.test(normalizeVietnamesePhone(value));
 }
 
+export function normalizeInternationalPhone(value: string) {
+  const raw = String(value || "").trim();
+  const hasPlus = raw.startsWith("+");
+  const digits = raw.replace(/\D/g, "");
+  return `${hasPlus ? "+" : ""}${digits}`;
+}
+
+export function isInternationalPhoneNumber(value: string) {
+  const normalized = normalizeInternationalPhone(value);
+  if (isVietnamesePhoneNumber(normalized)) return true;
+  return /^\+[1-9]\d{7,14}$/.test(normalized);
+}
+
 export function isDateKey(value: string) {
   if (!DATE_KEY_RE.test(value)) return false;
-  const [year, month, day] = value.split('-').map(Number);
+  const [year, month, day] = value.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
-  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }
 
 export function isTimeKey(value: string) {
@@ -59,11 +97,14 @@ export function bookingDateTime(date: string, time: string) {
 
 export function minutesFromMidnight(time: string) {
   if (!isTimeKey(time)) return Number.NaN;
-  const [hour, minute] = time.split(':').map(Number);
+  const [hour, minute] = time.split(":").map(Number);
   return hour * 60 + minute;
 }
 
-export function isWithinOpeningHours(time: string, openingHours?: Venue['openingHours']) {
+export function isWithinOpeningHours(
+  time: string,
+  openingHours?: Venue["openingHours"],
+) {
   if (!openingHours?.open || !openingHours?.close) return true;
   const target = minutesFromMidnight(time);
   const open = minutesFromMidnight(openingHours.open);
@@ -74,6 +115,84 @@ export function isWithinOpeningHours(time: string, openingHours?: Venue['opening
   return target >= open || target <= close;
 }
 
+export type TableAvailability = {
+  available: boolean;
+  conflict?: ReservationRequest;
+  blockedFrom?: Date;
+  blockedUntil?: Date;
+};
+
+export function reservationOccupancyWindow(
+  reservation: Pick<ReservationRequest, "date" | "arrivalTime">,
+  venue?: Venue,
+) {
+  const start = bookingDateTime(reservation.date, reservation.arrivalTime);
+  if (!start) return null;
+  const blockedFrom = new Date(
+    start.getTime() - TABLE_BUFFER_BEFORE_MINUTES * 60_000,
+  );
+  let blockedUntil = new Date(
+    start.getTime() +
+      (TABLE_SESSION_MINUTES + TABLE_BUFFER_AFTER_MINUTES) * 60_000,
+  );
+
+  // A table is released at venue closing time when that happens sooner than
+  // the standard 4.5-hour session + cleanup buffer.
+  if (venue?.openingHours?.close) {
+    const closeMinutes = minutesFromMidnight(venue.openingHours.close);
+    const arrivalMinutes = minutesFromMidnight(reservation.arrivalTime);
+    if (Number.isFinite(closeMinutes) && Number.isFinite(arrivalMinutes)) {
+      const closeDate = new Date(start);
+      let delta = closeMinutes - arrivalMinutes;
+      if (delta <= 0) delta += 24 * 60;
+      closeDate.setTime(start.getTime() + delta * 60_000);
+      if (closeDate.getTime() < blockedUntil.getTime())
+        blockedUntil = closeDate;
+    }
+  }
+  return { start, blockedFrom, blockedUntil };
+}
+
+export function getTableAvailability(
+  candidate: Pick<
+    ReservationRequest,
+    "id" | "venueId" | "preferredTableId" | "date" | "arrivalTime"
+  >,
+  reservations: ReservationRequest[],
+  venue?: Venue,
+): TableAvailability {
+  if (!candidate.preferredTableId) return { available: true };
+  const candidateStart = bookingDateTime(candidate.date, candidate.arrivalTime);
+  if (!candidateStart) return { available: false };
+  for (const item of reservations) {
+    if (
+      item.id === candidate.id ||
+      item.status === BookingStatus.CANCELLED ||
+      item.status === BookingStatus.NO_SHOW
+    )
+      continue;
+    if (
+      item.venueId !== candidate.venueId ||
+      item.preferredTableId !== candidate.preferredTableId
+    )
+      continue;
+    const window = reservationOccupancyWindow(item, venue);
+    if (!window) continue;
+    if (
+      candidateStart.getTime() >= window.blockedFrom.getTime() &&
+      candidateStart.getTime() < window.blockedUntil.getTime()
+    ) {
+      return {
+        available: false,
+        conflict: item,
+        blockedFrom: window.blockedFrom,
+        blockedUntil: window.blockedUntil,
+      };
+    }
+  }
+  return { available: true };
+}
+
 export function getStatusTransitionDecision(
   reservation: ReservationRequest,
   nextStatus: BookingStatus,
@@ -82,32 +201,58 @@ export function getStatusTransitionDecision(
   if (reservation.status === nextStatus) return { allowed: true };
 
   if (TERMINAL_STATUSES.has(reservation.status)) {
-    return { allowed: false, reason: 'Booking đã ở trạng thái kết thúc nên không thể đổi ngược trạng thái.' };
+    return {
+      allowed: false,
+      reason:
+        "Booking đã ở trạng thái kết thúc nên không thể đổi ngược trạng thái.",
+    };
   }
 
   if (!STATUS_TRANSITIONS[reservation.status].has(nextStatus)) {
-    return { allowed: false, reason: 'Trình tự trạng thái không hợp lệ. Hãy xử lý booking theo đúng quy trình.' };
+    return {
+      allowed: false,
+      reason:
+        "Trình tự trạng thái không hợp lệ. Hãy xử lý booking theo đúng quy trình.",
+    };
   }
 
-  const scheduledAt = bookingDateTime(reservation.date, reservation.arrivalTime);
-  if (!scheduledAt) return { allowed: false, reason: 'Ngày hoặc giờ booking không hợp lệ.' };
+  const scheduledAt = bookingDateTime(
+    reservation.date,
+    reservation.arrivalTime,
+  );
+  if (!scheduledAt)
+    return { allowed: false, reason: "Ngày hoặc giờ booking không hợp lệ." };
 
-  if (nextStatus === BookingStatus.COMPLETED && now.getTime() < scheduledAt.getTime()) {
-    return { allowed: false, reason: 'Chưa tới giờ booking nên chưa thể đánh dấu Hoàn tất.' };
+  if (
+    nextStatus === BookingStatus.COMPLETED &&
+    now.getTime() < scheduledAt.getTime()
+  ) {
+    return {
+      allowed: false,
+      reason: "Chưa tới giờ booking nên chưa thể đánh dấu Hoàn tất.",
+    };
   }
 
   if (nextStatus === BookingStatus.NO_SHOW) {
     const allowedAt = scheduledAt.getTime() + NO_SHOW_GRACE_MINUTES * 60_000;
     if (now.getTime() < allowedAt) {
-      return { allowed: false, reason: `Chỉ có thể đánh dấu Không đến sau giờ booking ${NO_SHOW_GRACE_MINUTES} phút.` };
+      return {
+        allowed: false,
+        reason: `Chỉ có thể đánh dấu Không đến sau giờ booking ${NO_SHOW_GRACE_MINUTES} phút.`,
+      };
     }
   }
 
   return { allowed: true };
 }
 
-function sameSchedule(a?: ReservationRequest | null, b?: ReservationRequest | null) {
-  return Boolean(a && b && a.date === b.date && a.arrivalTime === b.arrivalTime);
+function sameSchedule(
+  a?: ReservationRequest | null,
+  b?: ReservationRequest | null,
+) {
+  return Boolean(
+    a && b && a.date === b.date && a.arrivalTime === b.arrivalTime,
+  );
 }
 
 export function validateReservation(
@@ -122,129 +267,276 @@ export function validateReservation(
   const fullName = reservation.fullName.trim();
 
   if (fullName.length < 2 || fullName.length > 80) {
-    issues.push({ field: 'fullName', message: 'Tên khách hàng phải từ 2 đến 80 ký tự.' });
+    issues.push({
+      field: "fullName",
+      message: "Tên khách hàng phải từ 2 đến 80 ký tự.",
+    });
   }
-  if (!isVietnamesePhoneNumber(reservation.phoneNumber)) {
-    issues.push({ field: 'phoneNumber', message: 'Số điện thoại Việt Nam không hợp lệ.' });
+  if (!isInternationalPhoneNumber(reservation.phoneNumber)) {
+    issues.push({
+      field: "phoneNumber",
+      message:
+        "Số điện thoại không hợp lệ. Số quốc tế cần có mã vùng, ví dụ +84 hoặc +1.",
+    });
   }
-  if (!Number.isInteger(Number(reservation.guestCount)) || reservation.guestCount < 1 || reservation.guestCount > 100) {
-    issues.push({ field: 'guestCount', message: 'Số khách phải là số nguyên từ 1 đến 100.' });
+  if (
+    !Number.isInteger(Number(reservation.guestCount)) ||
+    reservation.guestCount < 1 ||
+    reservation.guestCount > 100
+  ) {
+    issues.push({
+      field: "guestCount",
+      message: "Số khách phải là số nguyên từ 1 đến 100.",
+    });
   }
-  if (!isDateKey(reservation.date)) issues.push({ field: 'date', message: 'Ngày booking không hợp lệ.' });
-  if (!isTimeKey(reservation.arrivalTime)) issues.push({ field: 'arrivalTime', message: 'Giờ booking không hợp lệ.' });
+  if (!isDateKey(reservation.date))
+    issues.push({ field: "date", message: "Ngày booking không hợp lệ." });
+  if (!isTimeKey(reservation.arrivalTime))
+    issues.push({ field: "arrivalTime", message: "Giờ booking không hợp lệ." });
 
   const venue = venues.find((item) => item.id === reservation.venueId);
   if (!venue) {
-    issues.push({ field: 'venueId', message: 'Địa điểm không tồn tại hoặc đã bị xóa.' });
+    issues.push({
+      field: "venueId",
+      message: "Địa điểm không tồn tại hoặc đã bị xóa.",
+    });
   }
 
-  const scheduledAt = bookingDateTime(reservation.date, reservation.arrivalTime);
+  const scheduledAt = bookingDateTime(
+    reservation.date,
+    reservation.arrivalTime,
+  );
   if (scheduledAt) {
     const changedSchedule = !sameSchedule(existing, reservation);
-    if ((!existing || changedSchedule) && scheduledAt.getTime() < now.getTime() - 60_000) {
-      issues.push({ field: 'date', message: 'Không thể tạo hoặc chuyển booking về thời điểm đã qua.' });
+    if (
+      (!existing || changedSchedule) &&
+      scheduledAt.getTime() < now.getTime() - 60_000
+    ) {
+      issues.push({
+        field: "date",
+        message: "Không thể tạo hoặc chuyển booking về thời điểm đã qua.",
+      });
     }
     const maxDate = now.getTime() + MAX_ADVANCE_BOOKING_DAYS * 86_400_000;
     if (scheduledAt.getTime() > maxDate) {
-      issues.push({ field: 'date', message: `Chỉ nhận booking trước tối đa ${MAX_ADVANCE_BOOKING_DAYS} ngày.` });
+      issues.push({
+        field: "date",
+        message: `Chỉ nhận booking trước tối đa ${MAX_ADVANCE_BOOKING_DAYS} ngày.`,
+      });
     }
   }
 
-  if (venue && !isWithinOpeningHours(reservation.arrivalTime, venue.openingHours)) {
+  if (
+    venue &&
+    !isWithinOpeningHours(reservation.arrivalTime, venue.openingHours)
+  ) {
     issues.push({
-      field: 'arrivalTime',
+      field: "arrivalTime",
       message: `Giờ đến nằm ngoài giờ hoạt động ${venue.openingHours?.label || `${venue.openingHours?.open} - ${venue.openingHours?.close}`}.`,
     });
   }
 
-  const table = venue?.preferredTables.find((item) => item.id === reservation.preferredTableId || item.name === reservation.preferredTableName);
+  const table = venue?.preferredTables.find(
+    (item) =>
+      item.id === reservation.preferredTableId ||
+      item.name === reservation.preferredTableName,
+  );
   if (reservation.preferredTableId && !table) {
-    issues.push({ field: 'preferredTableId', message: 'Bàn/phòng đã chọn không thuộc địa điểm này.' });
+    issues.push({
+      field: "preferredTableId",
+      message: "Bàn/phòng đã chọn không thuộc địa điểm này.",
+    });
   }
   if (table) {
-    if (table.status === 'HIDDEN') issues.push({ field: 'preferredTableId', message: 'Bàn/phòng này đang bị ẩn và không thể nhận booking.' });
+    if (table.status === "HIDDEN")
+      issues.push({
+        field: "preferredTableId",
+        message: "Bàn/phòng này đang bị ẩn và không thể nhận booking.",
+      });
     if (reservation.guestCount > table.capacity) {
-      issues.push({ field: 'guestCount', message: `Bàn/phòng ${table.name} chỉ phù hợp tối đa ${table.capacity} khách.` });
+      issues.push({
+        field: "guestCount",
+        message: `Bàn/phòng ${table.name} chỉ phù hợp tối đa ${table.capacity} khách.`,
+      });
     }
   }
 
-  if (reservation.status === BookingStatus.COMPLETED || reservation.status === BookingStatus.NO_SHOW) {
-    const base = existing || { ...reservation, status: BookingStatus.CONFIRMED };
-    const decision = getStatusTransitionDecision({ ...base, status: existing?.status || BookingStatus.CONFIRMED }, reservation.status, now);
-    if (!decision.allowed) issues.push({ field: 'status', message: decision.reason || 'Trạng thái chưa hợp lệ.' });
+  if (
+    reservation.status === BookingStatus.COMPLETED ||
+    reservation.status === BookingStatus.NO_SHOW
+  ) {
+    const base = existing || {
+      ...reservation,
+      status: BookingStatus.CONFIRMED,
+    };
+    const decision = getStatusTransitionDecision(
+      { ...base, status: existing?.status || BookingStatus.CONFIRMED },
+      reservation.status,
+      now,
+    );
+    if (!decision.allowed)
+      issues.push({
+        field: "status",
+        message: decision.reason || "Trạng thái chưa hợp lệ.",
+      });
   }
 
-  if (reservation.preferredTableId && scheduledAt && reservation.status !== BookingStatus.CANCELLED) {
-    const conflict = reservations.find((item) => {
-      if (item.id === reservation.id || item.status === BookingStatus.CANCELLED) return false;
-      if (item.venueId !== reservation.venueId || item.preferredTableId !== reservation.preferredTableId) return false;
-      const other = bookingDateTime(item.date, item.arrivalTime);
-      return Boolean(other && Math.abs(other.getTime() - scheduledAt.getTime()) < TABLE_TURNOVER_MINUTES * 60_000);
-    });
-    if (conflict) {
+  if (
+    reservation.preferredTableId &&
+    scheduledAt &&
+    reservation.status !== BookingStatus.CANCELLED
+  ) {
+    const availability = getTableAvailability(reservation, reservations, venue);
+    if (!availability.available && availability.conflict) {
+      const until = availability.blockedUntil?.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: BUSINESS_TIME_ZONE,
+      });
       issues.push({
-        field: 'preferredTableId',
-        message: `Bàn/phòng đã có booking ${conflict.fullName} lúc ${conflict.arrivalTime}. Cần cách nhau ít nhất ${TABLE_TURNOVER_MINUTES} phút.`,
+        field: "preferredTableId",
+        message: `Bàn/phòng đã được giữ cho ${availability.conflict.fullName} lúc ${availability.conflict.arrivalTime}${until ? ` và dự kiến trống lại lúc ${until}` : ""}. Các lượt cần cách nhau theo phiên 4,5 giờ và thời gian chuẩn bị; vui lòng chọn bàn hoặc giờ khác.`,
       });
     }
   }
 
   if (existing && reservation.status !== existing.status) {
-    const decision = getStatusTransitionDecision(existing, reservation.status, now);
-    if (!decision.allowed && !issues.some((item) => item.field === 'status')) {
-      issues.push({ field: 'status', message: decision.reason || 'Không thể đổi trạng thái booking.' });
+    const decision = getStatusTransitionDecision(
+      existing,
+      reservation.status,
+      now,
+    );
+    if (!decision.allowed && !issues.some((item) => item.field === "status")) {
+      issues.push({
+        field: "status",
+        message: decision.reason || "Không thể đổi trạng thái booking.",
+      });
     }
   }
 
   return { valid: issues.length === 0, issues };
 }
 
-
-export function validateCustomer(customer: Customer, customers: Customer[] = []): ValidationResult {
+export function validateCustomer(
+  customer: Customer,
+  customers: Customer[] = [],
+): ValidationResult {
   const issues: ValidationIssue[] = [];
   const fullName = customer.fullName.trim();
   if (fullName.length < 2 || fullName.length > 80) {
-    issues.push({ field: 'fullName', message: 'Tên khách hàng phải từ 2 đến 80 ký tự.' });
+    issues.push({
+      field: "fullName",
+      message: "Tên khách hàng phải từ 2 đến 80 ký tự.",
+    });
   }
-  if (!isVietnamesePhoneNumber(customer.phoneNumber)) {
-    issues.push({ field: 'phoneNumber', message: 'Số điện thoại Việt Nam không hợp lệ.' });
+  if (!isInternationalPhoneNumber(customer.phoneNumber)) {
+    issues.push({
+      field: "phoneNumber",
+      message: "Số điện thoại không hợp lệ. Số quốc tế cần có mã vùng.",
+    });
   }
   if (!Object.values(VipStatus).includes(customer.vipStatus)) {
-    issues.push({ field: 'vipStatus', message: 'Phân hạng khách hàng không hợp lệ.' });
+    issues.push({
+      field: "vipStatus",
+      message: "Phân hạng khách hàng không hợp lệ.",
+    });
   }
-  if ((customer.notes || '').length > 1_000) {
-    issues.push({ field: 'notes', message: 'Ghi chú khách hàng không được vượt quá 1.000 ký tự.' });
+  if ((customer.notes || "").length > 1_000) {
+    issues.push({
+      field: "notes",
+      message: "Ghi chú khách hàng không được vượt quá 1.000 ký tự.",
+    });
   }
   const phone = normalizeVietnamesePhone(customer.phoneNumber);
-  const duplicate = customers.find((item) => item.id !== customer.id && normalizeVietnamesePhone(item.phoneNumber) === phone);
+  const duplicate = customers.find(
+    (item) =>
+      item.id !== customer.id &&
+      normalizeVietnamesePhone(item.phoneNumber) === phone,
+  );
   if (phone && duplicate) {
-    issues.push({ field: 'phoneNumber', message: `Số điện thoại đã thuộc khách hàng ${duplicate.fullName}.` });
+    issues.push({
+      field: "phoneNumber",
+      message: `Số điện thoại đã thuộc khách hàng ${duplicate.fullName}.`,
+    });
   }
   return { valid: issues.length === 0, issues };
 }
 
 export function validateVenue(venue: Venue): ValidationResult {
   const issues: ValidationIssue[] = [];
-  if (venue.name.trim().length < 2 || venue.name.trim().length > 100) issues.push({ field: 'name', message: 'Tên địa điểm phải từ 2 đến 100 ký tự.' });
-  if (venue.location.trim().length < 3 || venue.location.trim().length > 240) issues.push({ field: 'location', message: 'Địa chỉ phải từ 3 đến 240 ký tự.' });
-  if (!['Nightclub', 'Karaoke'].includes(venue.category)) issues.push({ field: 'category', message: 'Danh mục địa điểm không hợp lệ.' });
-  if (venue.rating < 0 || venue.rating > 5) issues.push({ field: 'rating', message: 'Đánh giá phải nằm trong khoảng 0 đến 5.' });
-  if (venue.openingHours && (!isTimeKey(venue.openingHours.open) || !isTimeKey(venue.openingHours.close))) issues.push({ field: 'openingHours', message: 'Giờ mở cửa hoặc đóng cửa không hợp lệ.' });
+  if (venue.name.trim().length < 2 || venue.name.trim().length > 100)
+    issues.push({
+      field: "name",
+      message: "Tên địa điểm phải từ 2 đến 100 ký tự.",
+    });
+  if (venue.location.trim().length < 3 || venue.location.trim().length > 240)
+    issues.push({
+      field: "location",
+      message: "Địa chỉ phải từ 3 đến 240 ký tự.",
+    });
+  if (!["Nightclub", "Karaoke"].includes(venue.category))
+    issues.push({
+      field: "category",
+      message: "Danh mục địa điểm không hợp lệ.",
+    });
+  if (venue.rating < 0 || venue.rating > 5)
+    issues.push({
+      field: "rating",
+      message: "Đánh giá phải nằm trong khoảng 0 đến 5.",
+    });
+  if (
+    venue.openingHours &&
+    (!isTimeKey(venue.openingHours.open) ||
+      !isTimeKey(venue.openingHours.close))
+  )
+    issues.push({
+      field: "openingHours",
+      message: "Giờ mở cửa hoặc đóng cửa không hợp lệ.",
+    });
 
   const tableIds = new Set<string>();
   const tableNames = new Set<string>();
   for (const table of venue.preferredTables || []) {
     const id = table.id.trim();
     const name = table.name.trim().toLowerCase();
-    if (!id || tableIds.has(id)) issues.push({ field: 'preferredTables', message: 'Mã bàn/phòng không được để trống hoặc trùng nhau.' });
-    if (!name || tableNames.has(name)) issues.push({ field: 'preferredTables', message: 'Tên bàn/phòng không được để trống hoặc trùng nhau.' });
+    if (!id || tableIds.has(id))
+      issues.push({
+        field: "preferredTables",
+        message: "Mã bàn/phòng không được để trống hoặc trùng nhau.",
+      });
+    if (!name || tableNames.has(name))
+      issues.push({
+        field: "preferredTables",
+        message: "Tên bàn/phòng không được để trống hoặc trùng nhau.",
+      });
     tableIds.add(id);
     tableNames.add(name);
-    if (table.capacity < 1 || table.capacity > 200) issues.push({ field: 'preferredTables', message: `Sức chứa bàn ${table.name || id} phải từ 1 đến 200.` });
-    if (table.minimumSpend < 0) issues.push({ field: 'preferredTables', message: `Minimum spend của bàn ${table.name || id} không được âm.` });
-    for (const [key, value] of Object.entries({ x: table.x, y: table.y, width: table.width, height: table.height })) {
-      if (value != null && (!Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 100)) {
-        issues.push({ field: 'preferredTables', message: `Tọa độ/kích thước ${key} của bàn ${table.name || id} phải trong khoảng 0–100.` });
+    if (table.capacity < 1 || table.capacity > 200)
+      issues.push({
+        field: "preferredTables",
+        message: `Sức chứa bàn ${table.name || id} phải từ 1 đến 200.`,
+      });
+    if (table.minimumSpend < 0)
+      issues.push({
+        field: "preferredTables",
+        message: `Minimum spend của bàn ${table.name || id} không được âm.`,
+      });
+    for (const [key, value] of Object.entries({
+      x: table.x,
+      y: table.y,
+      width: table.width,
+      height: table.height,
+    })) {
+      if (
+        value != null &&
+        (!Number.isFinite(Number(value)) ||
+          Number(value) < 0 ||
+          Number(value) > 100)
+      ) {
+        issues.push({
+          field: "preferredTables",
+          message: `Tọa độ/kích thước ${key} của bàn ${table.name || id} phải trong khoảng 0–100.`,
+        });
       }
     }
   }
