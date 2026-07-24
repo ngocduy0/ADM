@@ -2,7 +2,8 @@ import React from 'react';
 import { MapPin, Sparkles, Star } from 'lucide-react';
 import { Venue } from '../types';
 import { useI18n } from '../i18n';
-import { formatVnd, localizeVenue } from '../localize';
+import { formatVnd, localizeCategory, localizeVenue } from '../localize';
+import { venuePublicSlug } from '../public/routes';
 
 interface VenueCardProps {
   key?: string;
@@ -13,11 +14,15 @@ interface VenueCardProps {
 export default function VenueCard({ venue, onClick }: VenueCardProps) {
   const { locale, t } = useI18n();
   const displayVenue = localizeVenue(venue, locale);
-  const minSpend = Math.min(...venue.preferredTables.map(t => t.minimumSpend));
+  const minSpend = venue.preferredTables.length ? Math.min(...venue.preferredTables.map((table) => table.minimumSpend)) : 0;
+  const minSpendLabel = ({
+    vi: 'Chi tiêu tối thiểu từ', en: 'Minimum spend from', ko: '최소 이용 금액', zh: '最低消费',
+    th: 'ขั้นต่ำเริ่มต้น', ja: 'ミニマムスペンド', hi: 'न्यूनतम खर्च',
+  } as const)[locale];
   return (
     <article 
-      onClick={() => onClick(venue.id)}
-      className="group relative h-[500px] rounded-2xl overflow-hidden border border-gold/10 glass-card cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-gold/5 hover:border-gold/30"
+      onClick={() => onClick(venuePublicSlug(venue))}
+      className="group relative h-[500px] rounded-[24px] overflow-hidden border border-gold/10 glass-card cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-gold/5 hover:border-gold/30"
     >
       {/* Background Image with Hover scale */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -35,7 +40,7 @@ export default function VenueCard({ venue, onClick }: VenueCardProps) {
         {/* Top bar */}
         <div className="flex justify-between items-start">
           <span className="text-[10px] sans-label tracking-widest bg-deep-black/60 border border-gold/25 text-gold px-3.5 py-1.5 rounded-full backdrop-blur-md uppercase font-bold">
-            {displayVenue.category}
+            {localizeCategory(venue.category, locale)}
           </span>
           <div className="flex items-center gap-1 bg-deep-black/60 border border-on-surface-variant/10 text-gold px-2.5 py-1 rounded-full backdrop-blur-md">
             <Star className="w-3 h-3 fill-gold text-gold" />
@@ -60,7 +65,7 @@ export default function VenueCard({ venue, onClick }: VenueCardProps) {
 
           <div className="flex items-center justify-between pt-4 border-t border-gold/10">
             <span className="text-xs text-on-surface-variant font-light">
-              {locale === 'vi' ? 'Chi tiêu tối thiểu từ' : 'Min. spend from'} <strong className="text-gold font-medium">{formatVnd(minSpend)}</strong>
+              {minSpendLabel} <strong className="text-gold font-medium">{formatVnd(minSpend, locale)}</strong>
             </span>
             <button className="text-[11px] sans-label text-gold font-bold tracking-widest group-hover:translate-x-1.5 transition-transform duration-300 flex items-center gap-1">
               {t('discover')} <span className="text-[14px]">→</span>

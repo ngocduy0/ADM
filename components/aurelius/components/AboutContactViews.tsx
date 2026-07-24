@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useI18n } from "../i18n";
-import { getContactChannels } from "../contactConfig";
+import { getLocalizedContactChannels } from "../contactConfig";
 import { usePublicSettings } from "../public/usePublicData";
 
 const aboutCopy = {
@@ -59,9 +59,9 @@ const aboutCopy = {
   },
   ko: {
     eyebrow: "다낭에서 시작",
-    titleA: "Concierge for",
-    titleB: "curated premium venues",
-    p1: "DuyT는 클럽 테이블, 프라이빗 룸, 프리미엄 장소 예약을 더 명확하고 프라이빗하게 조율하기 위해 만들어졌습니다.",
+    titleA: "엄선된 프리미엄 장소를 위한",
+    titleB: "전담 컨시어지",
+    p1: "DuyT는 클럽 테이블, 프라이빗 룸, 프리미엄 장소 예약을 첫 문의부터 최종 확정까지 더 명확하고 프라이빗하게 조율하기 위해 만들어졌습니다.",
     p2: "모든 요청은 선택한 장소와 직접 확인됩니다. 무작위 배정이나 불확실한 약속이 없습니다.",
     architect: "밤을 더 정확하게 준비하는 방식",
     quote:
@@ -71,7 +71,7 @@ const aboutCopy = {
     blocks: [
       [
         "프라이빗 처리",
-        "고객 정보는 요청한 venue experience 조율에만 사용됩니다.",
+        "고객 정보는 요청한 장소 경험을 조율하는 목적으로만 사용됩니다.",
       ],
       ["직접 확인", "컨시어지가 가능 여부와 특별 요청을 현장과 확인합니다."],
       [
@@ -82,9 +82,9 @@ const aboutCopy = {
   },
   zh: {
     eyebrow: "创建于岘港",
-    titleA: "Concierge for",
-    titleB: "curated premium venues",
-    p1: "DuyT 让俱乐部桌位、私人包厢与高级场地预订更清晰、更私密、更容易协调。",
+    titleA: "为精选高端场地提供",
+    titleB: "专属礼宾服务",
+    p1: "DuyT 让俱乐部桌位、私人包厢与高级场地预订从首次咨询到最终确认都更清晰、更私密、更容易协调。",
     p2: "每个请求都会与所选场地方直接确认，不随机分配，也不做未确认的承诺。",
     architect: "更精准地安排你的夜晚",
     quote:
@@ -119,9 +119,9 @@ const aboutCopy = {
   },
   ja: {
     eyebrow: "ダナンで設立",
-    titleA: "Concierge for",
-    titleB: "curated premium venues",
-    p1: "DuyTはクラブテーブル、個室、プレミアム会場の予約を、より明確でプライベートに調整するために作られました。",
+    titleA: "厳選プレミアム会場のための",
+    titleB: "専属コンシェルジュ",
+    p1: "DuyTはクラブテーブル、個室、プレミアム会場の予約を、最初の相談から最終確定までより明確でプライベートに調整するために作られました。",
     p2: "すべてのリクエストは選択した会場へ直接確認します。ランダムな割り当てや未確認の約束はありません。",
     architect: "夜をより正確に準備する方法",
     quote:
@@ -142,27 +142,27 @@ const aboutCopy = {
   },
   hi: {
     eyebrow: "दा नांग में स्थापित",
-    titleA: "Concierge for",
-    titleB: "curated premium venues",
-    p1: "DuyT club table, private room और premium venue reservations को clear, private और easy coordination देने के लिए बनाया गया है।",
-    p2: "हर request selected venue से directly check होती है। कोई random assignment या unconfirmed promise नहीं।",
+    titleA: "चुने हुए प्रीमियम स्थानों के लिए",
+    titleB: "निजी कंसीयर्ज सेवा",
+    p1: "DuyT क्लब टेबल, निजी कक्ष और प्रीमियम स्थान की बुकिंग को पहली बातचीत से अंतिम पुष्टि तक स्पष्ट, निजी और आसानी से समन्वित बनाता है।",
+    p2: "हर अनुरोध चुने गए स्थान से सीधे जाँचा जाता है। कोई मनमाना आवंटन या बिना पुष्टि का वादा नहीं किया जाता।",
     architect: "आपकी रात को अधिक सटीक तरीके से तैयार करना",
     quote:
-      "अच्छी रात आगमन से पहले शुरू होती है: सही table, सही room, सही time और clear confirmation।",
+      "अच्छी रात आगमन से पहले शुरू होती है: सही टेबल, सही कक्ष, सही समय और स्पष्ट पुष्टि।",
     founder: "DuyT",
     rule: "सिद्धांत",
     blocks: [
       [
         "निजी प्रबंधन",
-        "Guest details केवल requested venue experience coordinate करने के लिए use होते हैं।",
+        "अतिथि की जानकारी केवल अनुरोधित स्थान अनुभव के समन्वय के लिए उपयोग होती है।",
       ],
       [
         "सीधी पुष्टि",
-        "कंसीयर्ज availability, time और special requests की venue से पुष्टि करता है।",
+        "कंसीयर्ज उपलब्धता, समय और विशेष अनुरोधों की स्थान से पुष्टि करता है।",
       ],
       [
         "स्पष्ट समन्वय",
-        "Minimum spend, capacity और service notes स्पष्ट रूप से बताए जाते हैं।",
+        "न्यूनतम खर्च, क्षमता और सेवा संबंधी जानकारी स्पष्ट रूप से बताई जाती है।",
       ],
     ],
   },
@@ -207,7 +207,7 @@ const contactCopy = {
     eyebrow: "직접 연결",
     title: "DuyT 문의",
     intro:
-      "원하는 채널을 선택하세요. DuyT가 venue request를 프라이빗하게 확인합니다.",
+      "원하는 채널을 선택하세요. DuyT가 장소 요청을 비공개로 확인하고 직접 조율합니다.",
     channelsTitle: "공식 연락 채널",
     successTitle: "정보가 전송되었습니다",
     successText: "DuyT가 이메일 또는 전화번호로 답변드립니다.",
@@ -216,7 +216,7 @@ const contactCopy = {
     name: "이름",
     message: "요청 내용",
     placeholder:
-      "Venue name, table or room, birthday setup, guest count and arrival time...",
+      "장소명, 테이블 또는 룸, 생일 세팅, 인원과 도착 시간...",
     button: "정보 보내기",
   },
   zh: {
@@ -262,23 +262,23 @@ const contactCopy = {
     name: "お名前",
     message: "リクエスト内容",
     placeholder:
-      "Venue name, table or room, birthday setup, guest count and arrival time...",
+      "会場名、テーブルまたは個室、誕生日セットアップ、人数、到着時間...",
     button: "情報を送信",
   },
   hi: {
     eyebrow: "सीधा संपर्क",
     title: "DuyT से संपर्क",
     intro:
-      "अपनी पसंदीदा contact method चुनें। DuyT private reply देगा और venue request directly confirm करेगा।",
+      "अपना पसंदीदा संपर्क माध्यम चुनें। DuyT निजी रूप से उत्तर देगा और स्थान संबंधी अनुरोध की सीधे पुष्टि करेगा।",
     channelsTitle: "आधिकारिक संपर्क चैनल",
     successTitle: "जानकारी भेज दी गई",
-    successText: "DuyT आपके email या phone number पर reply देगा।",
+    successText: "DuyT आपके ईमेल या फ़ोन नंबर पर उत्तर देगा।",
     another: "दूसरा अनुरोध भेजें",
     formTitle: "निजी संपर्क फ़ॉर्म",
     name: "आपका नाम",
     message: "अनुरोध विवरण",
     placeholder:
-      "Venue name, table or room, birthday setup, guest count and arrival time...",
+      "स्थान का नाम, टेबल या कक्ष, जन्मदिन की सजावट, अतिथि संख्या और आगमन समय...",
     button: "जानकारी भेजें",
   },
 } as const;
@@ -287,10 +287,10 @@ export function AboutView() {
   const { locale } = useI18n();
   const c = aboutCopy[locale] || aboutCopy.vi;
   return (
-    <div className="text-left font-sans max-w-[1440px] mx-auto px-6 md:px-16 pt-6 space-y-20">
+    <div className="duyt-public-page text-left font-sans max-w-[1440px] mx-auto px-6 md:px-16 pt-6 space-y-20">
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         <div className="lg:col-span-7 space-y-6">
-          <h2 className="text-4xl md:text-5xl font-serif text-on-surface leading-tight break-words">
+          <h2 className="duyt-editorial text-5xl md:text-7xl text-on-surface leading-[.95] break-words">
             {c.titleA}
             <br />
             <span className="text-gold">{c.titleB}</span>
@@ -303,7 +303,7 @@ export function AboutView() {
           </p>
         </div>
         <div className="lg:col-span-5">
-          <div className="relative h-[400px] rounded-2xl overflow-hidden border border-gold/15">
+          <div className="relative h-[400px] rounded-[24px] overflow-hidden border border-gold/15">
             <img
               src="/about.jpg"
               alt="DuyT Concierge"
@@ -332,7 +332,7 @@ export function AboutView() {
         {c.blocks.map((block, idx) => (
           <div
             key={idx}
-            className="glass-card p-8 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all duration-300"
+            className="glass-card p-8 rounded-[24px] border border-gold/10 hover:border-gold/30 transition-all duration-300"
           >
             <span className="text-xs sans-label text-gold font-bold tracking-widest block mb-4">
               {c.rule} {idx + 1}
@@ -353,7 +353,7 @@ export function AboutView() {
 export function ContactView() {
   const { locale } = useI18n();
   const { siteSettings } = usePublicSettings();
-  const contactChannels = getContactChannels(siteSettings);
+  const contactChannels = getLocalizedContactChannels(siteSettings, locale);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
@@ -366,12 +366,12 @@ export function ContactView() {
   };
 
   return (
-    <div className="text-left font-sans max-w-[1440px] mx-auto px-6 md:px-16 pt-6 space-y-16">
+    <div className="duyt-public-page text-left font-sans max-w-[1440px] mx-auto px-6 md:px-16 pt-6 space-y-16">
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <span className="text-xs sans-label text-gold font-bold tracking-widest uppercase">
           {c.eyebrow}
         </span>
-        <h2 className="text-4xl md:text-5xl font-serif text-on-surface tracking-wide">
+        <h2 className="duyt-editorial text-5xl md:text-7xl text-on-surface leading-[.95]">
           {c.title}
         </h2>
         <p className="text-sm font-light text-on-surface-variant leading-relaxed">
@@ -389,9 +389,9 @@ export function ContactView() {
               <a
                 key={chan.name}
                 href={chan.href}
-                target={chan.href.startsWith("mailto:") ? undefined : "_blank"}
-                rel="no-referrer"
-                className="flex flex-col items-center justify-center p-6 rounded-2xl border border-gold/10 bg-deep-black/30 hover:bg-gold/5 hover:border-gold/30 transition-all duration-300 text-center group cursor-pointer"
+                target={chan.href.startsWith("http") ? "_blank" : undefined}
+                rel={chan.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className="flex flex-col items-center justify-center p-6 rounded-[24px] border border-gold/10 bg-deep-black/30 hover:bg-gold/5 hover:border-gold/30 transition-all duration-300 text-center group cursor-pointer"
               >
                 <img
                   src={chan.icon}
@@ -411,7 +411,7 @@ export function ContactView() {
 
         <div className="lg:col-span-6">
           {conReady ? (
-            <div className="bg-gold/5 border border-gold/15 rounded-2xl p-8 text-center h-full flex flex-col justify-center items-center space-y-4">
+            <div className="bg-gold/5 border border-gold/15 rounded-[24px] p-8 text-center h-full flex flex-col justify-center items-center space-y-4">
               <CheckCircle2 className="w-12 h-12 text-gold" />
               <h4 className="text-xl font-serif text-gold">{c.successTitle}</h4>
               <p className="text-xs text-on-surface-variant max-w-sm font-light leading-relaxed">

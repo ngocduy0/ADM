@@ -15,7 +15,7 @@ export const LANGUAGES: { code: Locale; label: string; native: string }[] = [
 ];
 
 const vi = {
-  home: 'Trang chủ', venues: 'Địa điểm', about: 'Giới thiệu', contact: 'Liên hệ', howItWorks: 'Cách hoạt động', faq: 'Câu hỏi', dayPass: 'Vé ngày', questionsMessage: 'Cần hỏi? Nhắn DuyT', language: 'Tiếng Việt',
+  home: 'Trang chủ', venues: 'Địa điểm', about: 'Giới thiệu', contact: 'Liên hệ', bookNow: 'Đặt bàn ngay', howItWorks: 'Cách hoạt động', faq: 'Câu hỏi', dayPass: 'Vé ngày', questionsMessage: 'Cần hỏi? Nhắn DuyT', language: 'Tiếng Việt',
   heroEyebrow: 'Quản lý trải nghiệm cao cấp', heroTitle1: 'Concierge cá nhân', heroTitle2: 'cho', heroTitle3: 'những trải nghiệm thượng hạng', heroSubtitle: 'Khám phá địa điểm trong hệ thống, chọn bàn mong muốn và để DuyT xử lý phần còn lại.',
   pickSpot: 'Chọn chỗ', browseVenues: 'Xem địa điểm', messageJay: 'Nhắn DuyT', threeVenues: 'Các địa điểm chọn lọc, DuyT xử lý.', pickWhere: 'Chọn địa điểm và trải nghiệm phù hợp với buổi tối của bạn.',
   seamless: 'Quy trình mượt mà', stepsTitle: 'Ba bước đặt chỗ.', step1Title: 'Chọn khu / bàn', step1Text: 'Xem danh sách địa điểm chọn lọc và chọn khu vực hoặc bàn phù hợp với nhu cầu.', step2Title: 'Xác nhận khả năng phục vụ', step2Text: 'Concierge kiểm tra trực tiếp với địa điểm rồi phản hồi chính thức.', step3Title: 'Giữ chỗ bằng cọc', step3Text: 'Hoàn tất giữ chỗ bằng phương thức thanh toán được gửi riêng trong cuộc trò chuyện.',
@@ -31,7 +31,7 @@ const vi = {
 const dictionaries: Record<Locale, Record<keyof typeof vi, string>> = {
   vi,
   en: {
-    home: 'Home', venues: 'Venues', about: 'About', contact: 'Contact', howItWorks: 'How it works', faq: 'Questions', dayPass: 'Day pass', questionsMessage: 'Need help? Message DuyT', language: 'English',
+    home: 'Home', venues: 'Venues', about: 'About', contact: 'Contact', bookNow: 'Book now', howItWorks: 'How it works', faq: 'Questions', dayPass: 'Day pass', questionsMessage: 'Need help? Message DuyT', language: 'English',
     heroEyebrow: 'Premium experience management', heroTitle1: 'Personal concierge', heroTitle2: 'for', heroTitle3: 'elevated experiences', heroSubtitle: 'Explore venues in the system, choose the table you want, and let DuyT handle the rest.',
     pickSpot: 'Choose a spot', browseVenues: 'View venues', messageJay: 'Message DuyT', threeVenues: 'Curated venues, handled by DuyT.', pickWhere: 'Choose the venue and experience that fit your night.',
     seamless: 'Smooth process', stepsTitle: 'Three booking steps.', step1Title: 'Choose area / table', step1Text: 'View curated venues and choose an area or table that fits your needs.', step2Title: 'Confirm service availability', step2Text: 'The concierge checks directly with the venue and sends the official response.', step3Title: 'Hold with deposit', step3Text: 'Complete the hold with the payment method shared privately in chat.',
@@ -44,7 +44,7 @@ const dictionaries: Record<Locale, Record<keyof typeof vi, string>> = {
     contactPanelTitle: 'Ask DuyT — usually replies within 1 hour', close: 'Close', openContacts: 'Open contact options',
   },
   ko: {
-    home: '홈', venues: '장소', about: '소개', contact: '문의', howItWorks: '이용 방법', faq: '질문', dayPass: '데이 패스', questionsMessage: '문의가 필요하신가요? DuyT에 메시지', language: '한국어',
+    home: '홈', venues: '장소', about: '소개', contact: '문의', bookNow: '지금 예약', howItWorks: '이용 방법', faq: '질문', dayPass: '데이 패스', questionsMessage: '문의가 필요하신가요? DuyT에 메시지', language: '한국어',
     heroEyebrow: '프리미엄 경험 관리', heroTitle1: '개인 컨시어지', heroTitle2: '를 위한', heroTitle3: '프리미엄 경험', heroSubtitle: '시스템의 장소를 둘러보고 원하는 테이블을 선택하면 DuyT가 나머지를 처리합니다.',
     pickSpot: '자리 선택', browseVenues: '장소 보기', messageJay: 'DuyT에 메시지', threeVenues: '엄선된 장소를 DuyT가 처리합니다.', pickWhere: '당신의 밤에 맞는 장소와 경험을 선택하세요.',
     seamless: '부드러운 진행', stepsTitle: '예약은 세 단계입니다.', step1Title: '구역 / 테이블 선택', step1Text: '엄선된 장소 목록을 보고 필요에 맞는 구역 또는 테이블을 선택하세요.', step2Title: '서비스 가능 여부 확인', step2Text: '컨시어지가 장소와 직접 확인한 뒤 공식 답변을 드립니다.', step3Title: '보증금으로 자리 확보', step3Text: '채팅에서 별도로 안내되는 결제 방식으로 자리를 확보하세요.',
@@ -57,7 +57,7 @@ const dictionaries: Record<Locale, Record<keyof typeof vi, string>> = {
     contactPanelTitle: 'DuyT에 문의 — 보통 1시간 이내 답변', close: '닫기', openContacts: '연락 옵션 열기',
   },
   zh: {
-    home: '首页', venues: '地点', about: '介绍', contact: '联系', howItWorks: '如何运作', faq: '问题', dayPass: '日票', questionsMessage: '需要咨询？联系 DuyT', language: '中文',
+    home: '首页', venues: '地点', about: '介绍', contact: '联系', bookNow: '立即预订', howItWorks: '如何运作', faq: '问题', dayPass: '日票', questionsMessage: '需要咨询？联系 DuyT', language: '中文',
     heroEyebrow: '高级体验管理', heroTitle1: '私人礼宾', heroTitle2: '为', heroTitle3: '高端体验服务', heroSubtitle: '浏览系统内的地点，选择想要的桌位，其余交给 DuyT 处理。',
     pickSpot: '选择位置', browseVenues: '查看地点', messageJay: '联系 DuyT', threeVenues: '精选地点，由 DuyT 处理。', pickWhere: '选择适合你夜晚的地点和体验。',
     seamless: '顺畅流程', stepsTitle: '三步完成预订。', step1Title: '选择区域 / 桌位', step1Text: '查看精选地点列表，并选择符合需求的区域或桌位。', step2Title: '确认接待能力', step2Text: '礼宾会直接与地点确认，然后给出正式回复。', step3Title: '用订金保留位置', step3Text: '通过聊天中单独发送的付款方式完成保留。',
@@ -70,7 +70,7 @@ const dictionaries: Record<Locale, Record<keyof typeof vi, string>> = {
     contactPanelTitle: '咨询 DuyT — 通常 1 小时内回复', close: '关闭', openContacts: '打开联系方式',
   },
   th: {
-    home: 'หน้าแรก', venues: 'สถานที่', about: 'เกี่ยวกับ', contact: 'ติดต่อ', howItWorks: 'วิธีใช้งาน', faq: 'คำถาม', dayPass: 'บัตรรายวัน', questionsMessage: 'ต้องการถาม? ส่งข้อความถึง DuyT', language: 'ภาษาไทย',
+    home: 'หน้าแรก', venues: 'สถานที่', about: 'เกี่ยวกับ', contact: 'ติดต่อ', bookNow: 'จองตอนนี้', howItWorks: 'วิธีใช้งาน', faq: 'คำถาม', dayPass: 'บัตรรายวัน', questionsMessage: 'ต้องการถาม? ส่งข้อความถึง DuyT', language: 'ภาษาไทย',
     heroEyebrow: 'การจัดการประสบการณ์ระดับพรีเมียม', heroTitle1: 'คอนเซียร์จส่วนตัว', heroTitle2: 'สำหรับ', heroTitle3: 'ประสบการณ์ระดับสูง', heroSubtitle: 'สำรวจสถานที่ในระบบ เลือกโต๊ะที่ต้องการ แล้วให้ DuyT จัดการส่วนที่เหลือ',
     pickSpot: 'เลือกที่นั่ง', browseVenues: 'ดูสถานที่', messageJay: 'ส่งข้อความถึง DuyT', threeVenues: 'สถานที่คัดสรร ให้ DuyT ดูแล', pickWhere: 'เลือกสถานที่และประสบการณ์ที่เหมาะกับค่ำคืนนี้ของคุณ',
     seamless: 'ขั้นตอนราบรื่น', stepsTitle: 'จองง่ายในสามขั้นตอน', step1Title: 'เลือกโซน / โต๊ะ', step1Text: 'ดูรายชื่อสถานที่คัดสรรและเลือกโซนหรือโต๊ะที่เหมาะกับความต้องการ', step2Title: 'ยืนยันความพร้อมให้บริการ', step2Text: 'คอนเซียร์จตรวจสอบกับสถานที่โดยตรงแล้วตอบกลับอย่างเป็นทางการ', step3Title: 'ล็อกที่ด้วยมัดจำ', step3Text: 'ยืนยันการจองด้วยช่องทางชำระเงินที่ส่งให้ในแชทส่วนตัว',
@@ -83,7 +83,7 @@ const dictionaries: Record<Locale, Record<keyof typeof vi, string>> = {
     contactPanelTitle: 'ถาม DuyT — ปกติตอบกลับภายใน 1 ชั่วโมง', close: 'ปิด', openContacts: 'เปิดช่องทางติดต่อ',
   },
   ja: {
-    home: 'ホーム', venues: '場所', about: '紹介', contact: '連絡先', howItWorks: '利用方法', faq: '質問', dayPass: 'デイパス', questionsMessage: '質問がありますか？DuyTへ連絡', language: '日本語',
+    home: 'ホーム', venues: '場所', about: '紹介', contact: '連絡先', bookNow: '今すぐ予約', howItWorks: '利用方法', faq: '質問', dayPass: 'デイパス', questionsMessage: '質問がありますか？DuyTへ連絡', language: '日本語',
     heroEyebrow: '上質な体験管理', heroTitle1: '専属コンシェルジュ', heroTitle2: 'で', heroTitle3: '特別な体験を', heroSubtitle: 'システム内の場所を確認し、希望のテーブルを選ぶだけ。残りは DuyT が対応します。',
     pickSpot: '席を選ぶ', browseVenues: '場所を見る', messageJay: 'DuyTへ連絡', threeVenues: '厳選された場所を DuyT が対応します。', pickWhere: 'その夜に合う場所と体験を選んでください。',
     seamless: 'スムーズな流れ', stepsTitle: '予約は3ステップ。', step1Title: 'エリア / テーブルを選択', step1Text: '厳選された場所の一覧から、希望に合うエリアまたはテーブルを選びます。', step2Title: '対応可否を確認', step2Text: 'コンシェルジュが場所へ直接確認し、正式に返信します。', step3Title: 'デポジットで席を確保', step3Text: 'チャットで個別に案内される支払い方法で席を確保します。',
@@ -96,7 +96,7 @@ const dictionaries: Record<Locale, Record<keyof typeof vi, string>> = {
     contactPanelTitle: 'DuyTに相談 — 通常1時間以内に返信', close: '閉じる', openContacts: '連絡オプションを開く',
   },
   hi: {
-    home: 'होम', venues: 'स्थान', about: 'परिचय', contact: 'संपर्क', howItWorks: 'कैसे काम करता है', faq: 'प्रश्न', dayPass: 'डे पास', questionsMessage: 'सवाल है? DuyT को संदेश भेजें', language: 'हिन्दी',
+    home: 'होम', venues: 'स्थान', about: 'परिचय', contact: 'संपर्क', bookNow: 'अभी बुक करें', howItWorks: 'कैसे काम करता है', faq: 'प्रश्न', dayPass: 'डे पास', questionsMessage: 'सवाल है? DuyT को संदेश भेजें', language: 'हिन्दी',
     heroEyebrow: 'प्रीमियम अनुभव प्रबंधन', heroTitle1: 'व्यक्तिगत कंसीयर्ज', heroTitle2: 'के लिए', heroTitle3: 'बेहतरीन अनुभव', heroSubtitle: 'सिस्टम में स्थान देखें, अपनी पसंद की टेबल चुनें और बाकी काम DuyT संभालेगा।',
     pickSpot: 'जगह चुनें', browseVenues: 'स्थान देखें', messageJay: 'DuyT को संदेश', threeVenues: 'चुने हुए स्थान, DuyT द्वारा संभाले गए।', pickWhere: 'अपनी शाम के लिए उपयुक्त स्थान और अनुभव चुनें।',
     seamless: 'आसान प्रक्रिया', stepsTitle: 'तीन चरणों में बुकिंग।', step1Title: 'क्षेत्र / टेबल चुनें', step1Text: 'चुने हुए स्थानों की सूची देखें और अपनी जरूरत के अनुसार क्षेत्र या टेबल चुनें।', step2Title: 'सेवा उपलब्धता की पुष्टि', step2Text: 'कंसीयर्ज सीधे स्थान से जांच कर आधिकारिक उत्तर देता है।', step3Title: 'डिपॉजिट से जगह सुरक्षित करें', step3Text: 'चैट में अलग से भेजी गई भुगतान विधि से जगह सुरक्षित करें।',

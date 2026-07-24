@@ -1,19 +1,30 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  CalendarDays,
   ChevronLeft,
+  Clock3,
   Eye,
   FileText,
   MapPin,
-  ShieldCheck,
   Star,
   X,
 } from "lucide-react";
 import { PreferredTable, ReservationRequest, Venue } from "../types";
 import { useI18n, Locale } from "../i18n";
-import { formatVnd, localizeVenue } from "../localize";
+import { formatVnd, localizeCategory, localizeVenue } from "../localize";
 import ReservationForm from "./ReservationForm";
 import FloorPlanSelector from "./FloorPlanSelector";
+import useBusinessClock from "../hooks/useBusinessClock";
+import {
+  DEFAULT_OPENING_HOURS,
+  PUBLIC_BOOKING_LEAD_MINUTES,
+  formatBusinessSlotLabel,
+  getBusinessDateForNow,
+  getBusinessSlotDisableReason,
+  getBusinessTimeSlots,
+  getFirstBookableTime,
+} from "@/lib/business-session";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1400&auto=format&fit=crop";
@@ -222,6 +233,29 @@ const detailCopy: Record<Locale, DetailCopy> = {
   },
 };
 
+
+
+type DetailUiCopy = {
+  views: string; soldOut: string; timeMap: string; chooseTime: string; session: string;
+  nextDay: string; nextDaySuffix: string; locked: string; checking: string; available: string;
+  businessDate: string; arrival: string; past: string; lead: string; minutes: string;
+  full: string; menuPdf: string; market: string; closeForm: string; availabilityError: string;
+};
+
+const detailUiCopy: Record<Locale, DetailUiCopy> = {
+  vi: { views: 'lượt xem', soldOut: 'Hết bàn ở khung giờ này', timeMap: 'Thời gian xem sơ đồ', chooseTime: 'Chọn ngày hoạt động và giờ đến', session: 'Ca hoạt động bắt đầu', nextDay: 'ngày kế tiếp', nextDaySuffix: '+1 ngày', locked: 'Bàn đã có lịch tại thời gian này vẫn hiển thị trên sơ đồ nhưng bị khóa và không thể chọn.', checking: 'Đang kiểm tra lịch bàn…', available: 'bàn còn khả dụng', businessDate: 'Ngày hoạt động', arrival: 'Giờ đến', past: 'ĐÃ QUA', lead: 'CẦN ĐẶT TRƯỚC', minutes: 'PHÚT', full: 'HẾT BÀN', menuPdf: 'Xem menu PDF', market: 'Theo thị trường', closeForm: 'Đóng form đặt bàn', availabilityError: 'Không kiểm tra được lịch bàn.' },
+  en: { views: 'views', soldOut: 'No tables at this time', timeMap: 'Floor-plan schedule', chooseTime: 'Choose an operating date and arrival time', session: 'The operating session starts at', nextDay: 'the following day', nextDaySuffix: '+1 day', locked: 'Booked tables remain visible on the floor plan in a locked, non-selectable state.', checking: 'Checking table availability…', available: 'tables available', businessDate: 'Operating date', arrival: 'Arrival time', past: 'PAST', lead: 'BOOK AT LEAST', minutes: 'MIN AHEAD', full: 'FULLY BOOKED', menuPdf: 'View PDF menu', market: 'Market price', closeForm: 'Close reservation form', availabilityError: 'Unable to check table availability.' },
+  ko: { views: '조회', soldOut: '이 시간에는 빈 테이블이 없습니다', timeMap: '배치도 예약 시간', chooseTime: '영업일과 도착 시간을 선택하세요', session: '영업 세션 시작', nextDay: '다음 날', nextDaySuffix: '+1일', locked: '예약된 테이블은 배치도에 잠금 상태로 표시되며 선택할 수 없습니다.', checking: '테이블 가능 여부 확인 중…', available: '개 테이블 이용 가능', businessDate: '영업일', arrival: '도착 시간', past: '지난 시간', lead: '최소 사전 예약', minutes: '분', full: '예약 마감', menuPdf: 'PDF 메뉴 보기', market: '시가', closeForm: '예약 양식 닫기', availabilityError: '테이블 가능 여부를 확인할 수 없습니다.' },
+  zh: { views: '次浏览', soldOut: '该时段暂无桌位', timeMap: '桌位图时间', chooseTime: '选择营业日期和到达时间', session: '营业时段开始于', nextDay: '次日', nextDaySuffix: '+1天', locked: '已预订桌位仍显示在平面图中，但会锁定且无法选择。', checking: '正在检查桌位…', available: '张桌位可用', businessDate: '营业日期', arrival: '到达时间', past: '已过', lead: '至少提前', minutes: '分钟预订', full: '已满', menuPdf: '查看 PDF 菜单', market: '时价', closeForm: '关闭预订表单', availabilityError: '无法检查桌位可用情况。' },
+  th: { views: 'ครั้งที่ดู', soldOut: 'ไม่มีโต๊ะว่างในเวลานี้', timeMap: 'เวลาสำหรับดูผัง', chooseTime: 'เลือกวันที่เปิดให้บริการและเวลามาถึง', session: 'รอบให้บริการเริ่ม', nextDay: 'วันถัดไป', nextDaySuffix: '+1 วัน', locked: 'โต๊ะที่มีการจองแล้วยังคงแสดงบนผังในสถานะล็อกและไม่สามารถเลือกได้', checking: 'กำลังตรวจสอบโต๊ะว่าง…', available: 'โต๊ะว่าง', businessDate: 'วันที่เปิดให้บริการ', arrival: 'เวลามาถึง', past: 'ผ่านไปแล้ว', lead: 'จองล่วงหน้าอย่างน้อย', minutes: 'นาที', full: 'เต็มแล้ว', menuPdf: 'ดูเมนู PDF', market: 'ราคาตลาด', closeForm: 'ปิดแบบฟอร์มจอง', availabilityError: 'ไม่สามารถตรวจสอบโต๊ะว่างได้' },
+  ja: { views: '閲覧', soldOut: 'この時間は空きテーブルがありません', timeMap: 'フロアマップ時間', chooseTime: '営業日と到着時間を選択してください', session: '営業開始', nextDay: '翌日', nextDaySuffix: '+1日', locked: '予約済みテーブルはマップ上にロック状態で表示され、選択できません。', checking: '空き状況を確認中…', available: 'テーブル利用可能', businessDate: '営業日', arrival: '到着時間', past: '過去', lead: '少なくとも', minutes: '分前予約', full: '満席', menuPdf: 'PDFメニューを見る', market: '時価', closeForm: '予約フォームを閉じる', availabilityError: '空き状況を確認できません。' },
+  hi: { views: 'व्यू', soldOut: 'इस समय कोई टेबल उपलब्ध नहीं है', timeMap: 'फ्लोर-प्लान समय', chooseTime: 'ऑपरेटिंग तारीख और आगमन समय चुनें', session: 'ऑपरेटिंग सत्र शुरू होता है', nextDay: 'अगले दिन', nextDaySuffix: '+1 दिन', locked: 'बुक की गई टेबल फ्लोर प्लान पर लॉक स्थिति में दिखाई देती हैं और चुनी नहीं जा सकतीं।', checking: 'टेबल उपलब्धता जाँची जा रही है…', available: 'टेबल उपलब्ध', businessDate: 'ऑपरेटिंग तारीख', arrival: 'आगमन समय', past: 'बीता हुआ', lead: 'कम से कम पहले बुक करें', minutes: 'मिनट', full: 'पूरी तरह बुक', menuPdf: 'PDF मेनू देखें', market: 'बाज़ार मूल्य', closeForm: 'बुकिंग फ़ॉर्म बंद करें', availabilityError: 'टेबल उपलब्धता जाँची नहीं जा सकी।' },
+};
+
+const numberLocale: Record<Locale, string> = {
+  vi: 'vi-VN', en: 'en-US', ko: 'ko-KR', zh: 'zh-CN', th: 'th-TH', ja: 'ja-JP', hi: 'hi-IN',
+};
+
 interface VenueDetailViewProps {
   venue: Venue;
   onBack: () => void;
@@ -290,7 +324,7 @@ function DetailReelCard({
       href={reel.instagramUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative block aspect-[9/16] overflow-hidden rounded-2xl border border-gold/10 bg-deep-black shadow-xl transition hover:-translate-y-1 hover:border-gold/35"
+      className="group relative block aspect-[9/16] overflow-hidden rounded-[24px] border border-gold/10 bg-deep-black shadow-xl transition hover:-translate-y-1 hover:border-gold/35"
     >
       {reel.videoUrl && isDirectVideoUrl(reel.videoUrl) ? (
         <video
@@ -330,17 +364,82 @@ export default function VenueDetailView({
   onSubmitRequest,
 }: VenueDetailViewProps) {
   const { t, locale } = useI18n();
-  const displayVenue = localizeVenue(venue, locale);
+  const displayVenue = useMemo(() => localizeVenue(venue, locale), [venue, locale]);
   const c = detailCopy[locale]?.back ? detailCopy[locale] : detailCopy.vi;
+  const ui = detailUiCopy[locale];
+  const now = useBusinessClock();
   const safeImages = useMemo(() => safeImageList(venue), [venue]);
-  const venueReels = useMemo(() => getVenueDetailReels(venue), [venue]);
+  const venueReels = useMemo(() => getVenueDetailReels(displayVenue), [displayVenue]);
+  const openingHours = displayVenue.openingHours || DEFAULT_OPENING_HOURS;
+  const mapTimeOptions = useMemo(
+    () => getBusinessTimeSlots(openingHours),
+    [openingHours],
+  );
+  const defaultBusinessDate = useMemo(
+    () => getBusinessDateForNow(openingHours, now),
+    [openingHours, now],
+  );
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [pausedUntil, setPausedUntil] = useState(0);
+  const [businessDate, setBusinessDate] = useState(defaultBusinessDate);
+  const [mapArrivalTime, setMapArrivalTime] = useState(
+    getFirstBookableTime(defaultBusinessDate, openingHours, now),
+  );
+  const basePublicTables = useMemo(
+    () =>
+      displayVenue.preferredTables.filter((table) => table.status !== "HIDDEN"),
+    [displayVenue.preferredTables],
+  );
   const [selectedTableId, setSelectedTableId] = useState(
-    venue.preferredTables[0]?.id || "",
+    basePublicTables[0]?.id || "",
   );
   const [showRequestForm, setShowRequestForm] = useState(false);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const [availability, setAvailability] = useState<
+    Record<
+      string,
+      Record<
+        string,
+        null | {
+          blocked?: boolean;
+        }
+      >
+    >
+  >({});
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
+  const isTableUnavailable = (tableId: string, time = mapArrivalTime) => {
+    const table = basePublicTables.find((item) => item.id === tableId);
+    return table?.status === "RESERVED" || Boolean(availability[tableId]?.[time]);
+  };
+  const disabledTableIds = useMemo(() => {
+    if (checkingAvailability) return basePublicTables.map((table) => table.id);
+    return basePublicTables
+      .filter((table) => table.status === "RESERVED" || Boolean(availability[table.id]?.[mapArrivalTime]))
+      .map((table) => table.id);
+  }, [availability, basePublicTables, checkingAvailability, mapArrivalTime]);
+  const disabledTableSet = useMemo(() => new Set(disabledTableIds), [disabledTableIds]);
+  const selectableTables = useMemo(
+    () => basePublicTables.filter((table) => !disabledTableSet.has(table.id)),
+    [basePublicTables, disabledTableSet],
+  );
+  const selectedTable =
+    selectableTables.find((table) => table.id === selectedTableId) ||
+    selectableTables[0];
+
+  const isMapTimeFullyBooked = (time: string) =>
+    basePublicTables.length > 0 &&
+    basePublicTables.every((table) => isTableUnavailable(table.id, time));
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+    setPausedUntil(0);
+    const nextBusinessDate = getBusinessDateForNow(openingHours, now);
+    setBusinessDate(nextBusinessDate);
+    setMapArrivalTime(getFirstBookableTime(nextBusinessDate, openingHours, now));
+    setSelectedTableId(basePublicTables[0]?.id || "");
+    setShowRequestForm(false);
+  }, [venue.id]);
 
   useEffect(() => {
     if (safeImages.length <= 1) return;
@@ -351,15 +450,87 @@ export default function VenueDetailView({
     return () => window.clearInterval(timer);
   }, [safeImages.length, pausedUntil]);
 
+  useEffect(() => {
+    if (!businessDate || !venue.id) return;
+    const controller = new AbortController();
+    setAvailability({});
+    setCheckingAvailability(true);
+    fetch(
+      `/api/reservations/availability?venueId=${encodeURIComponent(venue.id)}&businessDate=${encodeURIComponent(businessDate)}`,
+      { signal: controller.signal },
+    )
+      .then((response) => response.json())
+      .then((payload) => {
+        if (!payload?.ok) {
+          throw new Error(payload?.error || ui.availabilityError);
+        }
+        setAvailability(
+          Object.fromEntries(
+            (payload.data.tables || []).map(
+              (table: {
+                id: string;
+                slots: Record<
+                  string,
+                  null | {
+                    blocked?: boolean;
+                  }
+                >;
+              }) => [table.id, table.slots],
+            ),
+          ),
+        );
+      })
+      .catch((error) => {
+        if (error?.name !== "AbortError") setAvailability({});
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCheckingAvailability(false);
+      });
+    return () => controller.abort();
+  }, [businessDate, venue.id]);
+
+  useEffect(() => {
+    const timeReason = getBusinessSlotDisableReason(
+      businessDate,
+      mapArrivalTime,
+      openingHours,
+      now,
+      PUBLIC_BOOKING_LEAD_MINUTES,
+    );
+    if (!timeReason && !isMapTimeFullyBooked(mapArrivalTime)) return;
+    const nextTime = mapTimeOptions.find(
+      (time) =>
+        !getBusinessSlotDisableReason(
+          businessDate,
+          time,
+          openingHours,
+          now,
+          PUBLIC_BOOKING_LEAD_MINUTES,
+        ) && !isMapTimeFullyBooked(time),
+    );
+    if (nextTime && nextTime !== mapArrivalTime) setMapArrivalTime(nextTime);
+  }, [availability, businessDate, mapArrivalTime, mapTimeOptions, now, openingHours]);
+
+  useEffect(() => {
+    if (businessDate < defaultBusinessDate) setBusinessDate(defaultBusinessDate);
+  }, [businessDate, defaultBusinessDate]);
+
+  useEffect(() => {
+    if (selectedTableId && selectableTables.some((table) => table.id === selectedTableId)) return;
+    setSelectedTableId(selectableTables[0]?.id || "");
+  }, [selectableTables, selectedTableId]);
+
   const activeImage =
     safeImages[Math.min(activeImageIndex, safeImages.length - 1)] ||
     FALLBACK_IMAGE;
-  const selectedTable =
-    venue.preferredTables.find((table) => table.id === selectedTableId) ||
-    venue.preferredTables[0];
 
   const openReservationForm = (table?: PreferredTable) => {
-    if (table) setSelectedTableId(table.id);
+    const nextTable =
+      (table && selectableTables.find((item) => item.id === table.id)) ||
+      selectedTable ||
+      selectableTables[0];
+    if (!nextTable) return;
+    setSelectedTableId(nextTable.id);
     setShowRequestForm(true);
   };
 
@@ -373,7 +544,7 @@ export default function VenueDetailView({
   }, [showRequestForm]);
 
   return (
-    <div className="mx-auto max-w-[1440px] px-6 pt-6 text-left font-sans md:px-16">
+    <div className="duyt-public-page mx-auto max-w-[1440px] px-6 pt-6 text-left font-sans md:px-16">
       <button
         onClick={onBack}
         className="mb-8 flex cursor-pointer items-center gap-2 text-xs font-bold uppercase tracking-widest text-gold transition hover:text-gold-light"
@@ -383,7 +554,7 @@ export default function VenueDetailView({
 
       <section className="mb-16 grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-7">
-          <div className="relative h-[480px] overflow-hidden rounded-2xl border border-gold/10 bg-deep-black">
+          <div className="relative h-[480px] overflow-hidden rounded-[24px] border border-gold/10 bg-deep-black">
             <img
               src={activeImage}
               alt={displayVenue.name}
@@ -391,7 +562,7 @@ export default function VenueDetailView({
               className="h-full w-full object-cover transition-all duration-700"
             />
             <div className="absolute left-4 top-4 rounded-full border border-gold/20 bg-deep-black/60 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-gold backdrop-blur-md">
-              {displayVenue.category}
+              {localizeCategory(venue.category, locale)}
             </div>
             <div className="absolute bottom-4 right-4 rounded-full border border-gold/10 bg-deep-black/80 px-4 py-1.5 font-mono text-xs font-bold text-on-surface">
               {(activeImageIndex + 1).toString().padStart(2, "0")} /{" "}
@@ -425,7 +596,7 @@ export default function VenueDetailView({
               <MapPin className="h-4 w-4" />
               <span>{displayVenue.location}</span>
             </div>
-            <h1 className="mb-4 text-4xl leading-tight text-on-surface md:text-5xl">
+            <h1 className="duyt-editorial mb-4 text-5xl leading-[.94] text-on-surface md:text-7xl">
               {displayVenue.name}
             </h1>
             <div className="mb-6 flex items-center gap-6">
@@ -452,16 +623,16 @@ export default function VenueDetailView({
               </div>
               <span className="inline-flex items-center gap-1.5 text-xs font-light text-on-surface-variant">
                 <Eye className="h-3.5 w-3.5 text-gold" />
-                {new Intl.NumberFormat("vi-VN").format(
+                {new Intl.NumberFormat(numberLocale[locale]).format(
                   venue.viewCount || 0,
                 )}{" "}
-                lượt xem
+                {ui.views}
               </span>
             </div>
             <p className="mb-6 text-sm font-light leading-relaxed text-on-surface-variant">
               {displayVenue.longDescription}
             </p>
-            <div className="mb-8 grid gap-3 rounded-2xl border border-gold/10 bg-dark-navy/35 p-5">
+            <div className="mb-8 grid gap-3 rounded-[24px] border border-gold/10 bg-dark-navy/35 p-5">
               <span className="text-xs font-bold uppercase tracking-widest text-gold">
                 {c.trustTitle}
               </span>
@@ -480,24 +651,105 @@ export default function VenueDetailView({
           </div>
           <button
             onClick={() => openReservationForm(selectedTable)}
-            className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gold py-4 text-xs font-bold uppercase tracking-widest text-dark-navy shadow-xl shadow-gold/15 transition-all hover:bg-gold-light"
+            disabled={!selectedTable || checkingAvailability}
+            className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gold py-4 text-xs font-bold uppercase tracking-widest text-dark-navy shadow-xl shadow-gold/15 transition-all hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {t("requestReservation")} <ArrowRight className="h-4 w-4" />
+            {selectedTable ? t("requestReservation") : ui.soldOut}
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </section>
 
       <section className="mb-20 border-t border-gold/10 pt-16">
+        <div className="mb-5 rounded-[28px] border border-gold/10 bg-[#050507] p-4 shadow-2xl shadow-black/25 sm:p-5">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gold">
+                {ui.timeMap}
+              </p>
+              <h3 className="mt-1 text-xl font-serif text-white">
+                {ui.chooseTime}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-white/55">
+                {ui.session} {openingHours.open} – {openingHours.close} {ui.nextDay}. {ui.locked}
+              </p>
+            </div>
+            <p className="text-xs font-semibold text-on-surface-variant">
+              {checkingAvailability
+                ? ui.checking
+                : `${selectableTables.length}/${basePublicTables.length} ${ui.available}`}
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                <CalendarDays className="mr-1 inline h-4 w-4" />
+                {ui.businessDate}
+              </label>
+              <input
+                type="date"
+                min={defaultBusinessDate}
+                value={businessDate}
+                onChange={(event) => setBusinessDate(event.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-[#09090D] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-gold focus:ring-2 focus:ring-gold/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                <Clock3 className="mr-1 inline h-4 w-4" />
+                {ui.arrival}
+              </label>
+              <select
+                value={mapArrivalTime}
+                onChange={(event) => setMapArrivalTime(event.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-[#09090D] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-gold focus:ring-2 focus:ring-gold/10"
+              >
+                {mapTimeOptions.map((time) => {
+                  const timeReason = getBusinessSlotDisableReason(
+                    businessDate,
+                    time,
+                    openingHours,
+                    now,
+                    PUBLIC_BOOKING_LEAD_MINUTES,
+                  );
+                  const fullyBooked = isMapTimeFullyBooked(time);
+                  const suffix =
+                    timeReason === "PAST"
+                      ? ` · ${ui.past}`
+                      : timeReason === "LEAD_TIME"
+                        ? ` · ${ui.lead} ${PUBLIC_BOOKING_LEAD_MINUTES} ${ui.minutes}`
+                        : fullyBooked
+                          ? ` · ${ui.full}`
+                          : "";
+                  return (
+                    <option
+                      key={time}
+                      value={time}
+                      disabled={Boolean(timeReason) || fullyBooked}
+                      className="bg-[#09090D] text-white"
+                    >
+                      {formatBusinessSlotLabel(businessDate, time, openingHours, ui.nextDaySuffix)}
+                      {suffix}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+        </div>
+
         <FloorPlanSelector
-          venue={venue}
+          venue={displayVenue}
           selectedTableId={selectedTable?.id}
+          disabledTableIds={disabledTableIds}
           onSelectTable={(table) => setSelectedTableId(table.id)}
           onRequestTable={(table) => openReservationForm(table)}
         />
       </section>
 
       <section className="mb-20 grid grid-cols-1 gap-12 border-t border-gold/10 pt-16 md:grid-cols-2">
-        <div className="glass-card rounded-2xl border border-gold/10 p-8">
+        <div className="glass-card rounded-[24px] border border-gold/10 p-8">
           <h3 className="mb-4 text-xl text-gold">{c.menuTitle}</h3>
           <p className="mb-4 border-b border-gold/10 pb-4 text-xs font-light leading-relaxed text-on-surface-variant">
             {c.menuText}
@@ -509,11 +761,11 @@ export default function VenueDetailView({
               rel="noopener noreferrer"
               className="mb-4 inline-flex items-center gap-2 rounded-full border border-gold/20 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold/10"
             >
-              <FileText className="h-4 w-4" /> Xem menu PDF
+              <FileText className="h-4 w-4" /> {ui.menuPdf}
             </a>
           )}
           <div className="space-y-4 text-sm leading-relaxed">
-            {(venue.menuUrl || "")
+            {(displayVenue.menuUrl || "")
               .split(",")
               .filter(Boolean)
               .map((item, idx) => (
@@ -521,12 +773,12 @@ export default function VenueDetailView({
                   key={idx}
                   className="flex items-start justify-between gap-4"
                 >
-                  <span className="font-light text-red-500">
+                  <span className="font-light text-on-surface-variant">
                     {item.trim().split("(")[0]}
                   </span>
                   {item.includes("(") && (
                     <span className="font-mono font-bold text-gold">
-                      {item.match(/\(([^)]+)\)/)?.[1] || "Market"}
+                      {item.match(/\(([^)]+)\)/)?.[1] || ui.market}
                     </span>
                   )}
                 </div>
@@ -534,7 +786,7 @@ export default function VenueDetailView({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gold/10 bg-dark-navy/35 p-5">
+        <div className="rounded-[24px] border border-gold/10 bg-dark-navy/35 p-5">
           <div className="mb-4 flex items-center justify-between gap-4">
             <h3 className="text-xl text-gold">{c.reelsTitle}</h3>
           </div>
@@ -545,7 +797,7 @@ export default function VenueDetailView({
               ))}
             </div>
           ) : (
-            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-gold/20 bg-deep-black/60 px-6 text-center text-xs leading-relaxed text-on-surface-variant">
+            <div className="flex min-h-[220px] items-center justify-center rounded-[24px] border border-dashed border-gold/20 bg-deep-black/60 px-6 text-center text-xs leading-relaxed text-on-surface-variant">
               {c.reelsEmpty}
             </div>
           )}
@@ -554,24 +806,35 @@ export default function VenueDetailView({
 
       {showRequestForm && (
         <div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/75 p-0 backdrop-blur-xl sm:items-center sm:p-6"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 px-4 py-4 backdrop-blur-xl"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="reservation-modal-title"
+          aria-describedby="reservation-modal-description"
         >
-          <div className="relative max-h-[96dvh] w-full max-w-2xl overflow-y-auto rounded-t-[32px] border border-gold/20 bg-[#101217] shadow-2xl shadow-black/60 sm:rounded-[32px]">
+          <div
+            ref={modalRef}
+            className="relative mx-auto flex h-[calc(100dvh-2rem)] max-h-[900px] w-full max-w-[min(940px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[32px] border border-gold/20 bg-[#030304] shadow-2xl shadow-black/75"
+          >
             <button
               type="button"
               onClick={() => setShowRequestForm(false)}
-              aria-label="Đóng form đặt bàn"
-              className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/45 text-white backdrop-blur transition hover:border-gold hover:text-gold"
+              aria-label={ui.closeForm}
+              className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#07070A]/85 text-white transition hover:border-gold hover:text-gold focus:outline-none focus:ring-2 focus:ring-gold/50"
             >
               <X className="h-5 w-5" />
             </button>
             <ReservationForm
-              venue={venue}
+              venue={displayVenue}
               onSubmit={onSubmitRequest}
               onClose={() => setShowRequestForm(false)}
               initialPreferredTableId={selectedTable?.id}
+              initialBusinessDate={businessDate}
+              initialArrivalTime={mapArrivalTime}
+              onScheduleChange={(nextBusinessDate, nextArrivalTime) => {
+                setBusinessDate(nextBusinessDate);
+                setMapArrivalTime(nextArrivalTime);
+              }}
             />
           </div>
         </div>

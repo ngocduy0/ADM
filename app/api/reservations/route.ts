@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { INITIAL_RESERVATIONS } from '@/components/aurelius/data';
 import { BookingStatus, type ReservationRequest } from '@/components/aurelius/types';
 import { validateReservation } from '@/lib/booking-rules';
+import { PUBLIC_BOOKING_LEAD_MINUTES } from '@/lib/business-session';
 import { requireAdminApi } from '@/lib/admin-api';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 import { consumeRateLimit, getClientIp } from '@/lib/request-rate-limit';
@@ -72,7 +73,12 @@ export async function POST(request: Request) {
       source: isAdmin && body.source ? body.source : 'Web Form',
     };
 
-    const validation = validateReservation(reservation, current.venues, current.reservations);
+    const validation = validateReservation(
+      reservation,
+      current.venues,
+      current.reservations,
+      { minimumLeadMinutes: isAdmin ? 0 : PUBLIC_BOOKING_LEAD_MINUTES },
+    );
     if (!validation.valid) return validationResponse(validation.issues);
 
     const saved = await upsertReservationFast(reservation, current);

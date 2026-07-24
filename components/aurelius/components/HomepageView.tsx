@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { HomepageReel, Venue } from "../types";
 import { useI18n, Locale } from "../i18n";
-import { localizeVenue } from "../localize";
+import { localizeCategory, localizeVenue } from "../localize";
 import { SiteSettings } from "../siteSettings";
 
 interface HomepageViewProps {
@@ -637,7 +637,7 @@ function getVenueReelCards(
   venue: Venue,
   displayVenue: ReturnType<typeof localizeVenue>,
 ) {
-  const storedReels = venue.reels;
+  const storedReels = displayVenue.reels;
 
   if (Array.isArray(storedReels) && storedReels.length) {
     return storedReels
@@ -841,7 +841,7 @@ function HomepageReelsSection({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Open Instagram Reel: ${card.tag} — ${card.caption}`}
-                className="group relative block overflow-hidden rounded-2xl bg-[#111318] no-underline shadow-[0_1px_3px_rgba(0,0,0,0.5),0_18px_40px_-16px_rgba(0,0,0,0.7)] transition duration-300 hover:-translate-y-1 hover:shadow-gold/10"
+                className="group relative block overflow-hidden rounded-[24px] bg-[#111318] no-underline shadow-[0_1px_3px_rgba(0,0,0,0.5),0_18px_40px_-16px_rgba(0,0,0,0.7)] transition duration-300 hover:-translate-y-1 hover:shadow-gold/10"
                 style={{ aspectRatio: "9 / 16" }}
               >
                 <ReelCardMedia
@@ -900,29 +900,45 @@ function HomepageReelsSection({
 }
 
 
-function HomeConciergeSection({ locale, conciergeCards, logoUrl }: { locale: Locale; conciergeCards: ReelCard[]; logoUrl?: string }) {
+function HomeConciergeSection({ locale }: { locale: Locale }) {
   const copy = homeConciergeCopy[locale] || homeConciergeCopy.vi;
+  const sectionUi = ({
+    vi: { title: "Dịch vụ Concierge", dockLabel: "Kênh liên hệ trực tiếp" },
+    en: { title: "Private Concierge", dockLabel: "Direct contact channels" },
+    ko: { title: "프라이빗 컨시어지", dockLabel: "직접 연락 채널" },
+    zh: { title: "私人礼宾服务", dockLabel: "直接联系渠道" },
+    th: { title: "คอนเซียร์จส่วนตัว", dockLabel: "ช่องทางติดต่อโดยตรง"},
+    ja: { title: "プライベートコンシェルジュ", dockLabel: "直接連絡チャネル"},
+    hi: { title: "निजी कंसीयर्ज", dockLabel: "सीधे संपर्क चैनल"},
+  } as const)[locale];
+  const title = sectionUi.title;
+  const dockLabel = sectionUi.dockLabel;
+
   return (
-    <section className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
-      <div className="grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr]">
+    <section id="concierge-service" className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
+      <div className="grid items-center gap-12 lg:grid-cols-[0.82fr_1.18fr]">
         <div className="space-y-6">
-          <div className="flex h-20 w-32 items-center justify-center rounded-2xl border border-gold/15 bg-dark-navy/60 p-4">
-            <img src={logoUrl || '/duyt-logo.png'} alt="DuyT Booking" className="max-h-full max-w-full object-contain" />
+          <div className="relative h-24 w-24 overflow-hidden rounded-full border border-[#d0bcff]/30 bg-black shadow-[0_0_42px_rgba(160,120,255,.18)]">
+            <img src="/duyt-avatar.jpg" alt="DuyT Concierge" className="h-full w-full object-cover" />
+            <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
           </div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">{copy.curatedBy} DuyT Booking</p>
-          <h2 className="font-serif text-3xl leading-tight text-on-surface md:text-5xl">Dịch vụ Concierge</h2>
-          <p className="text-sm font-light leading-7 text-on-surface-variant">{copy.description}</p>
-          <p className="rounded-2xl border border-gold/10 bg-gold/5 p-4 text-xs leading-6 text-on-surface-variant">{copy.guidance}</p>
+          <h2 className="duyt-editorial text-4xl leading-none text-on-surface md:text-6xl">{title}</h2>
+          <p className="max-w-xl text-sm font-light leading-7 text-on-surface-variant">{copy.description}</p>
+          <p className="max-w-xl rounded-[24px] border border-gold/10 bg-gold/5 p-4 text-xs leading-6 text-on-surface-variant">{copy.guidance}</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {conciergeCards.slice(0, 6).map((card) => (
-            <a key={card.id} href={card.instagramUrl} target="_blank" rel="noopener noreferrer" className="group relative aspect-[9/14] overflow-hidden rounded-2xl border border-gold/10 bg-dark-navy">
-              <ReelCardMedia videoUrl={card.videoUrl} poster={card.poster} label={card.label} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/10" />
-              <div className="absolute inset-x-0 bottom-0 p-3"><p className="text-[9px] font-bold uppercase tracking-wider text-gold">{card.tag}</p><p className="mt-1 line-clamp-2 text-xs font-bold text-white">{card.caption}</p></div>
-            </a>
-          ))}
-          {!conciergeCards.length ? <div className="col-span-full grid min-h-56 place-items-center rounded-2xl border border-dashed border-gold/15 text-xs text-on-surface-variant">Chưa có Reel Concierge.</div> : null}
+
+        <div
+          id="concierge-contact-dock"
+          className="relative min-h-[330px] overflow-hidden rounded-[32px] border border-dashed border-[#d0bcff]/18 bg-[radial-gradient(circle_at_50%_30%,rgba(160,120,255,.09),transparent_52%),rgba(3,3,5,.68)] shadow-[inset_0_1px_0_rgba(255,255,255,.025),0_30px_80px_rgba(0,0,0,.38)] sm:min-h-[390px]"
+          aria-label={dockLabel}
+        >
+          <div className="pointer-events-none absolute inset-0 grid place-items-center px-8 text-center">
+            <div>
+              <div className="mx-auto mb-4 h-px w-16 bg-gradient-to-r from-transparent via-[#d0bcff]/50 to-transparent" />
+              <p className="text-[10px] font-black uppercase tracking-[.26em] text-[#d0bcff]/42">{dockLabel}</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -952,33 +968,33 @@ export default function HomepageView({
       fallback: "Video sẽ cập nhật sau",
     },
     ko: {
-      eyebrow: "DuyT moments",
-      title: "Venue highlights",
+      eyebrow: "DuyT 장소의 순간",
+      title: "장소 하이라이트",
       cta: "최신 릴스 보기",
       fallback: "영상은 곧 업데이트됩니다",
     },
     zh: {
-      eyebrow: "DuyT moments",
-      title: "Venue highlights",
+      eyebrow: "DuyT 场地瞬间",
+      title: "场地亮点",
       cta: "查看更多短视频",
       fallback: "视频即将更新",
     },
     th: {
-      eyebrow: "DuyT moments",
-      title: "Venue highlights",
+      eyebrow: "ช่วงเวลาของสถานที่ DuyT",
+      title: "ไฮไลต์สถานที่",
       cta: "ดู reels ล่าสุด",
       fallback: "วิดีโอจะอัปเดตเร็ว ๆ นี้",
     },
     ja: {
-      eyebrow: "DuyT moments",
-      title: "Venue highlights",
+      eyebrow: "DuyT会場の瞬間",
+      title: "会場ハイライト",
       cta: "最新リールを見る",
       fallback: "動画は近日更新予定です",
     },
     hi: {
-      eyebrow: "DuyT moments",
-      title: "Venue highlights",
-      cta: "Latest reels देखें",
+      eyebrow: "DuyT स्थान की झलकियाँ",
+      title: "स्थान की खास झलकियाँ",
+      cta: "नवीनतम रील देखें",
       fallback: "Video जल्द अपडेट होगा",
     },
   }[locale] || {
@@ -993,9 +1009,6 @@ export default function HomepageView({
   const feedCards = homepageCards
     .filter((card) => card.placement !== "HOME_HOST")
     .slice(0, 10);
-  const conciergeCards = homepageCards
-    .filter((card) => card.placement === "HOME_HOST")
-    .slice(0, 6);
   const heroFallbackImage =
     featuredVenues[1]?.image ||
     featuredVenues[0]?.image ||
@@ -1024,7 +1037,26 @@ export default function HomepageView({
     ? configuredVenueIds.map((id) => featuredVenues.find((venue) => venue.id === id)).filter((venue): venue is Venue => Boolean(venue))
     : featuredVenues;
 
+  const localizedSectionText = (section: (typeof sections)[number]) => {
+    if (locale === "vi") {
+      return { title: section.title, subtitle: section.subtitle };
+    }
+
+    const fallback = {
+      HERO: { title: "Hero", subtitle: "" },
+      FEATURED_VENUES: { title: t("featured"), subtitle: t("pickWhere") },
+      REELS_FEED: { title: feedCopy.title, subtitle: feedCopy.eyebrow },
+      CONCIERGE: { title: "Private Concierge", subtitle: homeConciergeCopy[locale]?.description || homeConciergeCopy.en.description },
+      WHY_DUYT: { title: c.whyTitle, subtitle: c.whyText },
+      TESTIMONIALS: { title: c.testimonialsTitle, subtitle: "" },
+      FAQ: { title: c.faqTitle, subtitle: c.faqIntro },
+    }[section.id];
+
+    return fallback || { title: section.title, subtitle: section.subtitle };
+  };
+
   const renderSection = (section: (typeof sections)[number]) => {
+    const sectionText = localizedSectionText(section);
     switch (section.id) {
       case "HERO":
         return (
@@ -1046,8 +1078,8 @@ export default function HomepageView({
           <section key={section.id} className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
             <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
               <div>
-                <h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-5xl">{section.title || t("featured")}</h2>
-                {section.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{section.subtitle}</p> : null}
+                <h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-5xl">{sectionText.title || t("featured")}</h2>
+                {sectionText.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{sectionText.subtitle}</p> : null}
               </div>
               <button onClick={() => onNavigate("VENUES")} className="flex cursor-pointer items-center gap-1 border-b border-gold pb-1 text-xs font-bold uppercase text-gold transition-all hover:border-gold-light hover:text-gold-light">{t("browseAll")} <ArrowRight className="h-3.5 w-3.5" /></button>
             </div>
@@ -1055,11 +1087,11 @@ export default function HomepageView({
               {homepageVenues.slice(0, 6).map((v) => {
                 const displayVenue = localizeVenue(v, locale);
                 return (
-                  <div key={v.id} onClick={() => onSelectVenue(v.id)} className="group relative h-[550px] cursor-pointer overflow-hidden rounded-2xl border border-gold/10 transition-all duration-500 hover:border-gold/30">
+                  <div key={v.id} onClick={() => onSelectVenue(v.id)} className="group relative h-[550px] cursor-pointer overflow-hidden rounded-[24px] border border-gold/10 transition-all duration-500 hover:border-gold/30">
                     <img src={v.image} alt={displayVenue.name} referrerPolicy="no-referrer" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-deep-black/30 to-transparent" />
                     <div className="absolute inset-0 z-10 flex flex-col justify-between p-8">
-                      <div><span className="rounded-full border border-gold/20 bg-deep-black/50 px-3.5 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">{displayVenue.category}</span></div>
+                      <div><span className="rounded-full border border-gold/20 bg-deep-black/50 px-3.5 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">{localizeCategory(v.category, locale)}</span></div>
                       <div><div className="mb-4 flex items-center justify-between text-xs text-gold"><span>★ {v.rating.toFixed(1)}</span></div><h3 className="mb-2 break-words font-serif text-2xl text-on-surface">{displayVenue.name}</h3><p className="mb-6 line-clamp-2 text-xs font-light leading-relaxed text-on-surface-variant">{displayVenue.location}</p><button className="text-[11px] font-bold tracking-widest text-gold transition-transform duration-300 group-hover:translate-x-2">{t("discover")} →</button></div>
                     </div>
                   </div>
@@ -1069,25 +1101,25 @@ export default function HomepageView({
           </section>
         );
       case "REELS_FEED":
-        return <div key={section.id}><HomepageReelsSection feedCopy={{ ...feedCopy, title: section.title || feedCopy.title }} feedCards={feedCards} /></div>;
+        return <div key={section.id}><HomepageReelsSection feedCopy={{ ...feedCopy, title: sectionText.title || feedCopy.title }} feedCards={feedCards} /></div>;
       case "CONCIERGE":
-        return <div key={section.id}><HomeConciergeSection locale={locale} conciergeCards={conciergeCards} logoUrl={siteSettings?.logoUrl} /></div>;
+        return <div key={section.id}><HomeConciergeSection locale={locale} /></div>;
       case "WHY_DUYT":
         return (
           <section key={section.id} className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
             <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
-              <div className="space-y-6 lg:col-span-5"><h2 className="break-words font-serif text-3xl leading-tight tracking-wide text-on-surface md:text-5xl">{section.title || c.whyTitle}</h2><p className="text-sm font-light leading-relaxed text-on-surface-variant">{section.subtitle || c.whyText}</p></div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-7">{c.blocks.map(([title, text], i) => <div key={i} className="glass-card rounded-2xl border border-gold/10 p-6"><h4 className="mb-1.5 font-serif text-sm tracking-wide text-gold">{title}</h4><p className="text-xs font-light leading-relaxed text-on-surface-variant">{text}</p></div>)}</div>
+              <div className="space-y-6 lg:col-span-5"><h2 className="break-words font-serif text-3xl leading-tight tracking-wide text-on-surface md:text-5xl">{sectionText.title || c.whyTitle}</h2><p className="text-sm font-light leading-relaxed text-on-surface-variant">{sectionText.subtitle || c.whyText}</p></div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-7">{c.blocks.map(([title, text], i) => <div key={i} className="glass-card rounded-[24px] border border-gold/10 p-6"><h4 className="mb-1.5 font-serif text-sm tracking-wide text-gold">{title}</h4><p className="text-xs font-light leading-relaxed text-on-surface-variant">{text}</p></div>)}</div>
             </div>
           </section>
         );
       case "TESTIMONIALS":
         return (
-          <section key={section.id} className="border-t border-gold/10 bg-dark-navy/20 px-6 py-24 md:px-16"><div className="mx-auto max-w-[1440px]"><div className="mx-auto mb-16 max-w-2xl text-center"><h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-4xl">{section.title || c.testimonialsTitle}</h2>{section.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{section.subtitle}</p> : null}</div><div className="grid grid-cols-1 gap-8 md:grid-cols-3">{c.reviews.map(([author, vip, venue, text], i) => <div key={i} className="glass-card flex flex-col justify-between rounded-2xl border border-gold/10 p-8"><div><div className="mb-4 flex gap-1">{Array.from({ length: 5 }).map((_, sIdx) => <Star key={sIdx} className="h-3.5 w-3.5 fill-gold text-gold" />)}</div><p className="mb-6 font-serif text-sm font-light italic leading-relaxed text-on-surface-variant">“{text}”</p></div><div className="flex items-center justify-between border-t border-gold/10 pt-4"><div><span className="block text-sm font-semibold text-on-surface">{author}</span><span className="text-[10px] font-light text-on-surface-variant">{c.visited} {venue}</span></div></div></div>)}</div></div></section>
+          <section key={section.id} className="border-t border-gold/10 bg-dark-navy/20 px-6 py-24 md:px-16"><div className="mx-auto max-w-[1440px]"><div className="mx-auto mb-16 max-w-2xl text-center"><h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-4xl">{sectionText.title || c.testimonialsTitle}</h2>{sectionText.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{sectionText.subtitle}</p> : null}</div><div className="grid grid-cols-1 gap-8 md:grid-cols-3">{c.reviews.map(([author, vip, venue, text], i) => <div key={i} className="glass-card flex flex-col justify-between rounded-[24px] border border-gold/10 p-8"><div><div className="mb-4 flex gap-1">{Array.from({ length: 5 }).map((_, sIdx) => <Star key={sIdx} className="h-3.5 w-3.5 fill-gold text-gold" />)}</div><p className="mb-6 font-serif text-sm font-light italic leading-relaxed text-on-surface-variant">“{text}”</p></div><div className="flex items-center justify-between border-t border-gold/10 pt-4"><div><span className="block text-sm font-semibold text-on-surface">{author}</span><span className="text-[10px] font-light text-on-surface-variant">{c.visited} {venue}</span></div></div></div>)}</div></div></section>
         );
       case "FAQ":
         return (
-          <section key={section.id} id="faq" className="mx-auto max-w-[1440px] scroll-mt-28 border-t border-gold/10 px-6 py-24 md:px-16"><div className="grid grid-cols-1 gap-12 lg:grid-cols-12"><div className="space-y-4 text-left lg:col-span-4"><h3 className="break-words font-serif text-3xl tracking-wide text-on-surface">{section.title || c.faqTitle}</h3><p className="text-xs font-light leading-relaxed text-on-surface-variant">{section.subtitle || c.faqIntro}</p></div><div className="space-y-4 text-left font-sans lg:col-span-8">{c.faqs.map(([q, a], idx) => { const isOpen = activeFaq === idx; return <div key={idx} className="overflow-hidden rounded-xl border border-gold/15 transition-all duration-300"><button onClick={() => setActiveFaq(isOpen ? null : idx)} className="flex w-full cursor-pointer items-center justify-between bg-dark-navy/30 p-5 text-left transition-colors hover:bg-gold/5"><span className="text-sm font-semibold text-on-surface">{q}</span><ChevronDown className={`h-4 w-4 text-gold transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} /></button>{isOpen ? <div className="border-t border-gold/10 bg-deep-black/40 p-5 font-sans text-xs font-light leading-relaxed text-on-surface-variant">{a}</div> : null}</div>; })}</div></div></section>
+          <section key={section.id} id="faq" className="mx-auto max-w-[1440px] scroll-mt-28 border-t border-gold/10 px-6 py-24 md:px-16"><div className="grid grid-cols-1 gap-12 lg:grid-cols-12"><div className="space-y-4 text-left lg:col-span-4"><h3 className="break-words font-serif text-3xl tracking-wide text-on-surface">{sectionText.title || c.faqTitle}</h3><p className="text-xs font-light leading-relaxed text-on-surface-variant">{sectionText.subtitle || c.faqIntro}</p></div><div className="space-y-4 text-left font-sans lg:col-span-8">{c.faqs.map(([q, a], idx) => { const isOpen = activeFaq === idx; return <div key={idx} className="overflow-hidden rounded-xl border border-gold/15 transition-all duration-300"><button onClick={() => setActiveFaq(isOpen ? null : idx)} className="flex w-full cursor-pointer items-center justify-between bg-dark-navy/30 p-5 text-left transition-colors hover:bg-gold/5"><span className="text-sm font-semibold text-on-surface">{q}</span><ChevronDown className={`h-4 w-4 text-gold transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} /></button>{isOpen ? <div className="border-t border-gold/10 bg-deep-black/40 p-5 font-sans text-xs font-light leading-relaxed text-on-surface-variant">{a}</div> : null}</div>; })}</div></div></section>
         );
       default:
         return null;

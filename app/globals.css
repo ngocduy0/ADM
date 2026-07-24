@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -651,4 +651,311 @@ h3,
 .duyt-phone-pulse { animation: duytPhonePulse 3.2s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .duyt-contact-bar, .duyt-contact-item, .duyt-phone-ring, .duyt-phone-pulse { animation: none !important; }
+}
+
+
+/* === DuyT Booking public redesign (scoped; admin remains unchanged) === */
+.duyt-public-app {
+  --duyt-public-bg: #020203;
+  --duyt-public-surface-lowest: #050507;
+  --duyt-public-surface-low: #09090d;
+  --duyt-public-surface: #0d0d12;
+  --duyt-public-surface-high: #15151d;
+  --duyt-public-text: #f8f5ff;
+  --duyt-public-muted: #c5becf;
+  --duyt-public-primary: #d0bcff;
+  --duyt-public-primary-soft: #e9ddff;
+  --duyt-public-primary-strong: #a078ff;
+  --duyt-public-primary-dark: #6d3bd7;
+  --duyt-public-outline: #494454;
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  color-scheme: dark;
+  background:
+    radial-gradient(circle at 14% 10%, rgba(125,78,225,.10), transparent 30rem),
+    radial-gradient(circle at 86% 30%, rgba(208,188,255,.045), transparent 34rem),
+    var(--duyt-public-bg) !important;
+  color: var(--duyt-public-text) !important;
+  font-family: Inter, "Segoe UI", Arial, ui-sans-serif, system-ui, sans-serif;
+}
+
+.duyt-public-app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .14;
+  background-image: linear-gradient(rgba(255,255,255,.014) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+.duyt-public-app .font-serif,
+.duyt-public-app .serif-heading,
+.duyt-public-app h1,
+.duyt-public-app h2,
+.duyt-public-app h3 {
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif !important;
+  font-stretch: normal;
+  font-synthesis: none;
+  letter-spacing: -0.018em !important;
+}
+
+.duyt-public-app h1,
+.duyt-public-app h2 {
+  text-wrap: balance;
+  color: #fbf9ff;
+}
+
+.duyt-public-app h1 {
+  font-weight: 650;
+  line-height: .96;
+}
+
+.duyt-public-app h2 {
+  font-weight: 650;
+  line-height: 1;
+}
+
+.duyt-public-app h3 {
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.duyt-public-app h4 {
+  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+  letter-spacing: -.01em;
+}
+
+.duyt-public-app .sans-label {
+  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+}
+
+.duyt-public-app [class*="text-on-surface"] { color: var(--duyt-public-text) !important; }
+.duyt-public-app [class*="text-on-surface-variant"] { color: var(--duyt-public-muted) !important; }
+.duyt-public-app .text-gold,
+.duyt-public-app .text-gold-light,
+.duyt-public-app [class*="text-gold"] { color: var(--duyt-public-primary) !important; }
+.duyt-public-app .fill-gold { fill: var(--duyt-public-primary) !important; }
+.duyt-public-app .border-gold,
+.duyt-public-app [class*="border-gold"] { border-color: rgba(208,188,255,.24) !important; }
+.duyt-public-app .border-gold\/10 { border-color: rgba(208,188,255,.11) !important; }
+.duyt-public-app .border-gold\/15 { border-color: rgba(208,188,255,.15) !important; }
+.duyt-public-app .border-gold\/20 { border-color: rgba(208,188,255,.20) !important; }
+.duyt-public-app .border-gold\/25 { border-color: rgba(208,188,255,.25) !important; }
+.duyt-public-app .border-gold\/30 { border-color: rgba(208,188,255,.30) !important; }
+.duyt-public-app .bg-gold { background: linear-gradient(110deg, var(--duyt-public-primary), var(--duyt-public-primary-dark)) !important; color: #23005c !important; }
+.duyt-public-app .bg-gold\/5 { background-color: rgba(208,188,255,.05) !important; }
+.duyt-public-app .bg-gold\/10 { background-color: rgba(208,188,255,.10) !important; }
+.duyt-public-app .bg-gold\/15 { background-color: rgba(208,188,255,.15) !important; }
+.duyt-public-app .bg-gold\/20 { background-color: rgba(208,188,255,.20) !important; }
+.duyt-public-app .bg-deep-black { background-color: var(--duyt-public-surface-lowest) !important; }
+.duyt-public-app .bg-dark-navy { background-color: var(--duyt-public-surface-low) !important; }
+.duyt-public-app [class*="bg-dark-navy/"] { background-color: rgba(9,9,13,.76) !important; }
+.duyt-public-app [class*="bg-deep-black/"] { background-color: rgba(5,5,7,.82) !important; }
+.duyt-public-app [class*="shadow-gold"] { --tw-shadow-color: rgba(208,188,255,.18) !important; }
+
+.duyt-public-app .glass-card {
+  background: linear-gradient(145deg, rgba(16,16,22,.88), rgba(5,5,8,.88)) !important;
+  border-color: rgba(208,188,255,.13) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.duyt-public-app .glass-card-hover:hover,
+.duyt-public-app .glass-card:hover {
+  border-color: rgba(208,188,255,.38) !important;
+  box-shadow: 0 20px 64px rgba(0,0,0,.32), 0 0 28px rgba(208,188,255,.11) !important;
+}
+
+.duyt-public-app section:not(:first-child) {
+  scroll-margin-top: 92px;
+}
+
+.duyt-public-app .duyt-public-page {
+  position: relative;
+}
+
+.duyt-public-app .duyt-public-page::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  width: min(84vw, 760px);
+  height: 320px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(160,120,255,.055);
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.duyt-public-app article,
+.duyt-public-app [class*="rounded-[24px]"] {
+  transform: translateZ(0);
+}
+
+.duyt-public-app article:hover {
+  border-color: rgba(208,188,255,.34) !important;
+}
+
+.duyt-public-app button[class*="bg-gold"],
+.duyt-public-app a[class*="bg-gold"] {
+  box-shadow: 0 0 0 1px rgba(233,221,255,.10), 0 12px 32px rgba(109,59,215,.22) !important;
+}
+
+.duyt-public-app button[class*="bg-gold"]:hover,
+.duyt-public-app a[class*="bg-gold"]:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 0 1px rgba(233,221,255,.22), 0 16px 42px rgba(160,120,255,.32) !important;
+}
+
+.duyt-public-app input,
+.duyt-public-app select,
+.duyt-public-app textarea {
+  background: var(--duyt-public-surface-lowest) !important;
+  border-color: rgba(208,188,255,.16) !important;
+  color: var(--duyt-public-text) !important;
+}
+
+.duyt-public-app input:focus,
+.duyt-public-app select:focus,
+.duyt-public-app textarea:focus {
+  border-color: rgba(208,188,255,.72) !important;
+  box-shadow: 0 0 0 3px rgba(208,188,255,.10) !important;
+}
+
+.duyt-public-app input::placeholder,
+.duyt-public-app textarea::placeholder { color: rgba(220,214,230,.58) !important; }
+
+.duyt-public-app input[type="date"]::-webkit-calendar-picker-indicator,
+.duyt-public-app input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(.82) sepia(.2) saturate(3) hue-rotate(220deg);
+}
+
+.duyt-public-app .duyt-public-footer {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(160,120,255,.08), transparent 22rem),
+    var(--duyt-public-surface-lowest) !important;
+}
+
+.duyt-public-app .duyt-contact-bar {
+  border-color: rgba(208,188,255,.20) !important;
+}
+
+.duyt-public-app ::selection {
+  background: rgba(160,120,255,.38);
+  color: white;
+}
+
+.duyt-public-app ::-webkit-scrollbar-track { background: var(--duyt-public-bg); }
+.duyt-public-app ::-webkit-scrollbar-thumb { background: rgba(208,188,255,.24); }
+.duyt-public-app ::-webkit-scrollbar-thumb:hover { background: rgba(208,188,255,.42); }
+
+@media (max-width: 767px) {
+  .duyt-public-app h1 { line-height: 1.02; }
+  .duyt-public-app .duyt-public-page { padding-top: 2.5rem; }
+  .duyt-public-app article { border-radius: 22px !important; }
+}
+
+
+/* Editorial accents and motion for the public concierge experience. */
+.duyt-public-app .duyt-editorial {
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.022em !important;
+  text-wrap: balance;
+}
+
+@keyframes duytBookPulse {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 22px rgba(160,120,255,.38), 0 10px 30px rgba(0,0,0,.28); }
+  50% { transform: translateY(-1px) scale(1.025); box-shadow: 0 0 38px rgba(208,188,255,.58), 0 14px 38px rgba(0,0,0,.34); }
+}
+@keyframes duytBookShine {
+  0% { transform: translateX(-180%) skewX(-18deg); opacity: 0; }
+  18% { opacity: .65; }
+  48%, 100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+}
+.duyt-book-now { animation: duytBookPulse 2.8s ease-in-out infinite; }
+.duyt-book-now-shine {
+  position: absolute;
+  inset-block: -30%;
+  left: 0;
+  width: 28%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
+  animation: duytBookShine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.duyt-contact-morph {
+  transition:
+    left .72s cubic-bezier(.22,1,.36,1),
+    top .72s cubic-bezier(.22,1,.36,1),
+    width .72s cubic-bezier(.22,1,.36,1),
+    height .72s cubic-bezier(.22,1,.36,1);
+  will-change: left, top, width, height;
+}
+.duyt-contact-morph .duyt-contact-bar {
+  transition: border-radius .58s cubic-bezier(.22,1,.36,1), padding .58s ease, background .4s ease;
+}
+.duyt-contact-morph[data-docked="true"] .duyt-contact-bar {
+  animation: none !important;
+  background: linear-gradient(145deg, rgba(12,10,18,.96), rgba(3,3,5,.95)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 30px 80px rgba(0,0,0,.48), 0 0 42px rgba(160,120,255,.11) !important;
+}
+.duyt-contact-morph[data-docked="true"] .duyt-contact-item {
+  animation: duytContactItemEnter .5s cubic-bezier(.22,1,.36,1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duyt-book-now,
+  .duyt-book-now-shine,
+  .duyt-contact-morph,
+  .duyt-contact-morph .duyt-contact-bar { animation: none !important; transition-duration: .01ms !important; }
+}
+
+
+/* Vietnamese-safe editorial typography.
+   Cormorant keeps the JeongJay-inspired look for Latin locales; Noto Serif is
+   used for Vietnamese because it has complete precomposed and combining-mark
+   coverage in both roman and italic styles. */
+html:lang(vi) .duyt-public-app .font-serif,
+html:lang(vi) .duyt-public-app .serif-heading,
+html:lang(vi) .duyt-public-app .duyt-editorial,
+html:lang(vi) .duyt-public-app h1,
+html:lang(vi) .duyt-public-app h2,
+html:lang(vi) .duyt-public-app h3 {
+  font-family: "Noto Serif", "Times New Roman", Georgia, serif !important;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures contextual;
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1;
+  font-synthesis: none;
+  letter-spacing: 0 !important;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
+  text-rendering: optimizeLegibility;
+}
+
+html:lang(vi) .duyt-public-app .duyt-editorial,
+html:lang(vi) .duyt-public-app h1,
+html:lang(vi) .duyt-public-app h2 {
+  text-wrap: pretty;
+}
+
+/* The floating row must start at its real first item when it becomes
+   horizontally scrollable; centering overflowing content makes both ends
+   unreachable in Chromium. */
+.duyt-contact-morph[data-docked="false"] .duyt-contact-bar {
+  scroll-padding-inline: .375rem;
+}
+.duyt-contact-morph[data-docked="false"] .duyt-contact-item:first-child {
+  margin-left: 0;
+}
+.duyt-contact-morph[data-docked="false"] .duyt-contact-item:last-child {
+  margin-right: 0;
 }

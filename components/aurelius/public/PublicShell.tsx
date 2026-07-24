@@ -24,8 +24,10 @@ export default function PublicShell({
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
+    setLocaleState(initialLocale);
     if (typeof window !== 'undefined') {
       localStorage.setItem('aurelius-locale', initialLocale);
+      document.documentElement.lang = initialLocale;
     }
   }, [initialLocale]);
 
@@ -33,6 +35,7 @@ export default function PublicShell({
     setLocaleState(nextLocale);
     if (typeof window !== 'undefined') {
       localStorage.setItem('aurelius-locale', nextLocale);
+      document.documentElement.lang = nextLocale;
     }
   };
 
@@ -40,7 +43,7 @@ export default function PublicShell({
     <I18nProvider locale={locale} setLocale={setLocale}>
       <div
         id="app-viewport-root"
-        className="relative flex min-h-screen flex-col justify-between bg-deep-black text-on-surface"
+        className="duyt-public-app relative flex min-h-screen flex-col justify-between bg-black text-on-surface"
       >
         <Header currentView={activeView} logoUrl={logoUrl} />
         <main className={["flex-grow", activeView === 'HOME' ? 'pt-0' : 'pt-[84px]'].join(' ')}>

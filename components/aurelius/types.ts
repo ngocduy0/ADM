@@ -16,6 +16,21 @@ export enum VipStatus {
 
 export type HomepageReelPlacement = 'HOME_FEED' | 'HOME_HOST';
 
+export type VenueLocale = 'en' | 'ko' | 'zh' | 'vi' | 'th' | 'ja' | 'hi';
+
+export interface VenueTranslation {
+  name?: string;
+  location?: string;
+  shortDescription?: string;
+  longDescription?: string;
+  menuUrl?: string;
+  floorPlanHelperText?: string;
+  zones?: Record<string, { name?: string; label?: string; description?: string }>;
+  tables?: Record<string, { name?: string; area?: string; description?: string }>;
+  elements?: Record<string, { label?: string }>;
+  reels?: Record<string, { title?: string; tag?: string; caption?: string }>;
+}
+
 export interface HomepageReel {
   id: string;
   venueId: string;
@@ -119,6 +134,7 @@ export interface Venue {
   preferredTables: PreferredTable[];
   rating: number;
   reviewsCount: number;
+  translations?: Partial<Record<VenueLocale, VenueTranslation>>;
 }
 
 export interface ReservationRequest {

@@ -24,6 +24,10 @@ export default function LanguageSelector({ compact = false, variant = 'dark' }: 
       const publicLocale = LANGUAGES.some((language) => language.code === first);
       if (publicLocale) {
         parts[0] = nextLocale;
+        const segment = parts[1] || '';
+        if (['lien-he', 'contact'].includes(segment)) parts[1] = nextLocale === 'vi' ? 'lien-he' : 'contact';
+        else if (['gioi-thieu', 'about'].includes(segment)) parts[1] = nextLocale === 'vi' ? 'gioi-thieu' : 'about';
+        else if (['cach-hoat-dong', 'how-it-works', 'cau-hoi', 'questions'].includes(segment)) parts.splice(1);
         router.replace(`/${parts.join('/')}`);
       }
     }
@@ -38,7 +42,7 @@ export default function LanguageSelector({ compact = false, variant = 'dark' }: 
         className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
           light
             ? 'border-[#E8E8ED] bg-white text-[#1D1D1F] shadow-sm hover:border-[#D6A85F]'
-            : 'border-white/15 bg-[#0B0D11]/70 text-white hover:border-[#D6A85F]/60 hover:text-[#F4C377]'
+            : 'border-[#d0bcff]/20 bg-black/55 text-white hover:border-[#d0bcff]/60 hover:text-[#e9ddff]'
         }`}
         aria-label="Change language"
       >
@@ -62,14 +66,14 @@ export default function LanguageSelector({ compact = false, variant = 'dark' }: 
                   selected
                     ? light
                       ? 'bg-[#F5F5F7] text-[#7C5816]'
-                      : 'bg-[#D6A85F]/18 text-[#F4C377]'
+                      : 'bg-[#d0bcff]/15 text-[#e9ddff]'
                     : light
                       ? 'text-[#515154] hover:bg-[#F5F5F7] hover:text-[#1D1D1F]'
                       : 'text-white hover:bg-white/7'
                 }`}
               >
                 <span>{language.native}</span>
-                {selected && <Check className="h-4 w-4 text-[#D6A85F]" />}
+                {selected && <Check className="h-4 w-4 text-[#d0bcff]" />}
               </button>
             );
           })}

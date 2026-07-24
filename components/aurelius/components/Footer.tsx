@@ -23,11 +23,11 @@ export default function Footer({ onNavigate, logoUrl }: FooterProps) {
   };
 
   return (
-    <footer className="bg-dark-navy border-t border-gold/10 py-20 mt-16">
+    <footer className="duyt-public-footer mt-16 border-t border-gold/10 bg-dark-navy py-20">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 px-6 md:px-16 max-w-[1440px] mx-auto">
         <div className="col-span-1 md:col-span-2 flex flex-col justify-between">
           <div>
-            <img src={logoUrl || '/duyt-logo.png'} alt="DuyT Da Nang Concierge" className="mb-6 h-16 w-auto object-contain" />
+            <img src={logoUrl || '/duyt-logo.png'} alt="DuyT Da Nang Concierge" className="mb-6 h-14 w-auto object-contain" />
             <p className="text-sm font-sans text-on-surface-variant max-w-sm leading-relaxed mb-8">
               {t('heroSubtitle')}
             </p>

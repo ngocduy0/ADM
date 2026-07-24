@@ -20,6 +20,7 @@ import {
   SiteSettings,
 } from '../siteSettings';
 import { Venue } from '../types';
+import { venuePublicSlug } from './routes';
 
 type PublicVenuesState = {
   venues: Venue[];
@@ -44,11 +45,16 @@ function normalizeVenueKey(venueId: string) {
   return decodeURIComponent(venueId || '').trim();
 }
 
-function findVenueLocal(venues: Venue[], venueId: string) {
-  const safeId = normalizeVenueKey(venueId);
+function findVenueLocal(venues: Venue[], venueKey: string) {
+  const safeKey = normalizeVenueKey(venueKey).toLowerCase();
   return venues.find(
-    (venue) => venue.id === safeId || venue.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === safeId,
+    (venue) => venue.id.toLowerCase() === safeKey || venuePublicSlug(venue) === safeKey,
   ) || null;
+}
+
+function cacheVenueAliases(venue: Venue) {
+  venueCache.set(venue.id, venue);
+  venueCache.set(venuePublicSlug(venue), venue);
 }
 
 async function getPublicSettings() {
@@ -78,13 +84,13 @@ async function getPublicVenues() {
     venuesPromise = loadVenuesFromServer()
       .then((venues) => {
         venuesCache = venues;
-        venues.forEach((venue) => venueCache.set(venue.id, venue));
+        venues.forEach(cacheVenueAliases);
         return venues;
       })
       .catch(() => {
         const fallback = loadData().venues;
         venuesCache = fallback;
-        fallback.forEach((venue) => venueCache.set(venue.id, venue));
+        fallback.forEach(cacheVenueAliases);
         return fallback;
       })
       .finally(() => {
@@ -94,32 +100,49 @@ async function getPublicVenues() {
   return venuesPromise;
 }
 
-async function getPublicVenue(venueId: string) {
-  const safeId = normalizeVenueKey(venueId);
-  const cachedById = venueCache.get(safeId) || (venuesCache ? findVenueLocal(venuesCache, safeId) : null);
-  if (cachedById) return cachedById;
+async function getPublicVenue(venueKey: string) {
+  const safeKey = normalizeVenueKey(venueKey).toLowerCase();
+  const cached = venueCache.get(safeKey) || (venuesCache ? findVenueLocal(venuesCache, safeKey) : null);
+  if (cached) return cached;
 
-  const existingPromise = venuePromiseCache.get(safeId);
+  const existingPromise = venuePromiseCache.get(safeKey);
   if (existingPromise) return existingPromise;
 
-  const promise = loadVenueFromServer(safeId)
-    .then((venue) => {
-      venueCache.set(venue.id, venue);
-      return venue;
-    })
-    .catch(async (error) => {
-      const localVenue = findVenueLocal(loadData().venues, safeId);
-      if (localVenue) return localVenue;
+  const promise = (async () => {
+    // Human-readable slugs are resolved against the venue list first. This avoids
+    // a noisy API 404 for URLs such as /dia-diem/adm-club.
+    if (!/^venue-[a-z0-9_-]+$/i.test(safeKey)) {
       const allVenues = await getPublicVenues();
-      const fallback = findVenueLocal(allVenues, safeId);
-      if (fallback) return fallback;
-      throw error;
-    })
-    .finally(() => {
-      venuePromiseCache.delete(safeId);
-    });
+      const bySlug = findVenueLocal(allVenues, safeKey);
+      if (bySlug) {
+        cacheVenueAliases(bySlug);
+        return bySlug;
+      }
+    }
 
-  venuePromiseCache.set(safeId, promise);
+    try {
+      const venue = await loadVenueFromServer(safeKey);
+      cacheVenueAliases(venue);
+      return venue;
+    } catch (error) {
+      const localVenue = findVenueLocal(loadData().venues, safeKey);
+      if (localVenue) {
+        cacheVenueAliases(localVenue);
+        return localVenue;
+      }
+      const allVenues = await getPublicVenues();
+      const fallback = findVenueLocal(allVenues, safeKey);
+      if (fallback) {
+        cacheVenueAliases(fallback);
+        return fallback;
+      }
+      throw error;
+    }
+  })().finally(() => {
+    venuePromiseCache.delete(safeKey);
+  });
+
+  venuePromiseCache.set(safeKey, promise);
   return promise;
 }
 
@@ -209,7 +232,7 @@ export function usePublicData() {
 
   const cacheData = useCallback((payload: ConciergeDataPayload) => {
     venuesCache = payload.venues;
-    payload.venues.forEach((venue) => venueCache.set(venue.id, venue));
+    payload.venues.forEach(cacheVenueAliases);
     saveVenues(payload.venues);
     saveCustomers(payload.customers);
     saveReservations(payload.reservations);

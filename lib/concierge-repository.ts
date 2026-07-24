@@ -153,6 +153,7 @@ function buildVenueDescription(venue: Venue) {
     viewCount: Math.max(0, Number(venue.viewCount || 0)),
     rating: Number(venue.rating) || 4.8,
     reviewsCount: Math.max(0, Number(venue.reviewsCount || 0)),
+    translations: venue.translations || undefined,
   })}`;
 
   return `${base}${video}${reels}${meta}`.trim();
@@ -1096,6 +1097,7 @@ export async function readAllData(): Promise<ConciergePayload> {
       }),
       rating: Number(descriptions.meta?.rating) || 4.8,
       reviewsCount: Math.max(0, Number(descriptions.meta?.reviewsCount ?? Math.max(venueBookings.length * 7, 1))),
+      translations: (descriptions.meta?.translations || undefined) as Venue['translations'],
     };
   });
 

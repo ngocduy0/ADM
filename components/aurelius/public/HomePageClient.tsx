@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import HomepageView from '../components/HomepageView';
 import PublicShell from './PublicShell';
-import { publicPath } from './routes';
+import { publicPath, venuePublicSlug } from './routes';
 import { Locale } from '../i18n';
 import { usePublicVenues } from './usePublicData';
 
@@ -33,7 +33,10 @@ export default function HomePageClient({ initialLocale = 'vi' }: { initialLocale
         featuredVenues={venues}
         siteSettings={siteSettings}
         onNavigate={navigate}
-        onSelectVenue={(venueId) => router.push(publicPath(initialLocale, 'VENUE_DETAIL', venueId))}
+        onSelectVenue={(venueId) => {
+          const venue = venues.find((item) => item.id === venueId);
+          router.push(publicPath(initialLocale, 'VENUE_DETAIL', venue ? venuePublicSlug(venue) : venueId));
+        }}
       />
     </PublicShell>
   );

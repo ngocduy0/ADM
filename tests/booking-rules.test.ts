@@ -45,6 +45,7 @@ test('Vietnam booking time is converted with UTC+7', () => {
 test('overnight opening hours accept evening and early morning', () => {
   assert.equal(isWithinOpeningHours('23:30', venue.openingHours), true);
   assert.equal(isWithinOpeningHours('01:30', venue.openingHours), true);
+  assert.equal(isWithinOpeningHours('02:00', venue.openingHours), false);
   assert.equal(isWithinOpeningHours('12:00', venue.openingHours), false);
 });
 
@@ -93,6 +94,16 @@ test('table conflict inside turnover window is rejected', () => {
 
 test('valid future booking passes all rules', () => {
   const result = validateReservation(reservation(), [venue], [], { now: new Date('2026-07-18T00:00:00.000Z') });
+  assert.equal(result.valid, true, JSON.stringify(result.issues));
+});
+
+test('international E.164 phone number is accepted', () => {
+  const result = validateReservation(
+    reservation({ phoneNumber: '+14155552671' }),
+    [venue],
+    [],
+    { now: new Date('2026-07-18T00:00:00.000Z') },
+  );
   assert.equal(result.valid, true, JSON.stringify(result.issues));
 });
 
@@ -162,6 +173,21 @@ test('hidden table cannot receive a booking', () => {
     { now: new Date('2026-07-18T00:00:00.000Z') },
   );
   assert.ok(result.issues.some((issue) => issue.message.includes('đang bị ẩn')));
+});
+
+
+test('reserved table cannot receive a public booking', () => {
+  const reservedVenue: Venue = {
+    ...venue,
+    preferredTables: [{ ...venue.preferredTables[0], status: 'RESERVED' }],
+  };
+  const result = validateReservation(
+    reservation(),
+    [reservedVenue],
+    [],
+    { now: new Date('2026-07-18T00:00:00.000Z') },
+  );
+  assert.ok(result.issues.some((issue) => issue.message.includes('vô hiệu hóa')));
 });
 
 test('cancelled booking does not block the same table slot', () => {
