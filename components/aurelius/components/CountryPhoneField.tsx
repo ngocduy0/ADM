@@ -343,7 +343,7 @@ export default function CountryPhoneField({
       </div>
 
       {open ? (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-[120] w-full min-w-[300px] overflow-hidden rounded-2xl border border-white/10 bg-[#0B0F17] shadow-2xl shadow-black/70 sm:w-[390px]">
+        <div className="absolute left-0 top-[calc(100%+8px)] z-[120] w-[min(390px,calc(100vw-2rem))] min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#0B0F17] shadow-2xl shadow-black/70">
           <div className="border-b border-white/10 p-3">
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/25 px-3">
               <Search className="h-4 w-4 text-on-surface-variant" />

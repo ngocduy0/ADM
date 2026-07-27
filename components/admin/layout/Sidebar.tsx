@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react';
 import { useAdminData } from '../AdminDataProvider';
+import { BookingStatus } from '@/components/aurelius/types';
+import { isContactNotification } from '../notification-utils';
 import { cn } from '../utils';
 import { adminNavigation } from './navigation';
 
@@ -14,7 +16,9 @@ export function Sidebar({ mobileOpen, setMobileOpen, collapsed, setCollapsed }: 
   setCollapsed: (collapsed: boolean) => void;
 }) {
   const pathname = usePathname();
-  const { settings, logout, unreadCount } = useAdminData();
+  const { settings, logout, unreadCount, reservations, notifications } = useAdminData();
+  const openRequestCount = reservations.filter((item) => item.status === BookingStatus.NEW || item.status === BookingStatus.CONTACTED).length
+    + notifications.filter((notice) => isContactNotification(notice) && !notice.read).length;
   const sections = adminNavigation.reduce<Record<string, typeof adminNavigation>>((result, item) => {
     (result[item.section] ||= []).push(item);
     return result;
@@ -56,7 +60,11 @@ export function Sidebar({ mobileOpen, setMobileOpen, collapsed, setCollapsed }: 
                 <div className="space-y-1">
                   {items.map((item) => {
                     const active = item.href === '/admin' ? pathname === '/admin' : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                    const badge = item.href === '/admin/notifications' ? unreadCount : 0;
+                    const badge = item.href === '/admin/notifications'
+                      ? unreadCount
+                      : item.href === '/admin/requests'
+                        ? openRequestCount
+                        : 0;
                     return (
                       <Link
                         key={item.href}

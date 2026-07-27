@@ -29,10 +29,14 @@ type DbBookingContact = Record<string, any>;
 const SUPABASE_TIMEOUT_MS = Math.max(3_000, Number(process.env.SUPABASE_REQUEST_TIMEOUT_MS || 5_000));
 const READ_CACHE_TTL_MS = Math.max(500, Number(process.env.CONCIERGE_READ_CACHE_TTL_MS || 3_000));
 let dataCache: { expiresAt: number; value: ConciergePayload } | null = null;
+let publicVenuesCache: { expiresAt: number; value: Venue[] } | null = null;
+let homepageVenuesCache: { expiresAt: number; value: Venue[] } | null = null;
 let seedPromise: Promise<void> | null = null;
 
 export function invalidateConciergeCache() {
   dataCache = null;
+  publicVenuesCache = null;
+  homepageVenuesCache = null;
 }
 
 function timedFetch(input: RequestInfo | URL, init?: RequestInit) {
@@ -938,6 +942,177 @@ async function ensureSeeded() {
     throw error;
   });
   return seedPromise;
+}
+
+/** Public-only venue reader used by the website homepage. It intentionally
+ * avoids loading customers, bookings and contact history, which were the main
+ * source of unnecessary work during first page load. */
+export async function readHomepageVenues(): Promise<Venue[]> {
+  if (homepageVenuesCache && homepageVenuesCache.expiresAt > Date.now()) return homepageVenuesCache.value;
+
+  const supabase = getSupabaseAdminClient();
+  await ensureSeeded();
+  const [venuesDb, imagesDb] = await Promise.all([
+    checked(
+      supabase.from('Venue').select('id,name,category,address,description,createdAt').order('createdAt', { ascending: true }),
+      'read homepage Venue',
+    ),
+    checked(supabase.from('VenueImage').select('venueId,imageUrl'), 'read homepage VenueImage'),
+  ]) as [DbVenue[], DbVenueImage[]];
+
+  const imagesByVenue = new Map<string, string[]>();
+  for (const image of imagesDb) {
+    const list = imagesByVenue.get(image.venueId) || [];
+    if (image.imageUrl) list.push(image.imageUrl);
+    imagesByVenue.set(image.venueId, list);
+  }
+
+  const venues: Venue[] = venuesDb.map((venue) => {
+    const descriptions = splitDescription(venue.description);
+    const images = imagesByVenue.get(venue.id) || [];
+    return {
+      id: venue.id,
+      name: venue.name,
+      category: (venue.category || 'Nightclub') as Venue['category'],
+      location: venue.address || '',
+      shortDescription: descriptions.shortDescription,
+      longDescription: descriptions.longDescription,
+      image: images[0] || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1200&auto=format&fit=crop',
+      images: images.slice(1),
+      videoUrl: descriptions.videoUrl || undefined,
+      reels: descriptions.reels?.map((reel, index) => ({
+        ...reel,
+        venueId: reel.venueId || venue.id,
+        order: Number(reel.order) || index + 1,
+      })) || [],
+      menuUrl: String(descriptions.meta?.menuUrl || ''),
+      menuPdfUrl: String(descriptions.meta?.menuPdfUrl || ''),
+      openingHours: (() => {
+        const hours = descriptions.meta?.openingHours as Venue['openingHours'];
+        return hours?.open && hours?.close
+          ? hours
+          : { open: '18:00', close: '02:00', label: '18:00 - 02:00' };
+      })(),
+      viewCount: Math.max(0, Number(descriptions.meta?.viewCount || 0)),
+      preferredTables: [],
+      rating: Number(descriptions.meta?.rating) || 4.8,
+      reviewsCount: Math.max(1, Number(descriptions.meta?.reviewsCount || 1)),
+      translations: (descriptions.meta?.translations || undefined) as Venue['translations'],
+    };
+  });
+
+  homepageVenuesCache = {
+    value: venues,
+    expiresAt: Date.now() + Math.max(30_000, READ_CACHE_TTL_MS),
+  };
+  return venues;
+}
+
+export async function readPublicVenues(): Promise<Venue[]> {
+  if (publicVenuesCache && publicVenuesCache.expiresAt > Date.now()) return publicVenuesCache.value;
+
+  const supabase = getSupabaseAdminClient();
+  await ensureSeeded();
+  const [venuesDb, imagesDb, zonesDb, mapElementsDb, mapConfigsDb, spotsDb] = await Promise.all([
+    checked(supabase.from('Venue').select('*').order('createdAt', { ascending: true }), 'read public Venue'),
+    checked(supabase.from('VenueImage').select('*'), 'read public VenueImage'),
+    checked(supabase.from('VenueTableZone').select('*').order('sortOrder', { ascending: true }), 'read public VenueTableZone'),
+    checked(supabase.from('VenueMapElement').select('*').order('sortOrder', { ascending: true }), 'read public VenueMapElement'),
+    checked(supabase.from('VenueMapConfig').select('*'), 'read public VenueMapConfig'),
+    checked(supabase.from('VenueSpot').select('*').order('sortOrder', { ascending: true }), 'read public VenueSpot'),
+  ]) as [DbVenue[], DbVenueImage[], DbVenueTableZone[], DbVenueMapElement[], DbVenueMapConfig[], DbVenueSpot[]];
+
+  const imagesByVenue = new Map<string, DbVenueImage[]>();
+  for (const image of imagesDb) {
+    const list = imagesByVenue.get(image.venueId) || [];
+    list.push(image);
+    imagesByVenue.set(image.venueId, list);
+  }
+  const zonesByVenue = new Map<string, DbVenueTableZone[]>();
+  for (const zone of zonesDb) {
+    const list = zonesByVenue.get(zone.venueId) || [];
+    list.push(zone);
+    zonesByVenue.set(zone.venueId, list);
+  }
+  const mapElementsByVenue = new Map<string, DbVenueMapElement[]>();
+  for (const element of mapElementsDb) {
+    const list = mapElementsByVenue.get(element.venueId) || [];
+    list.push(element);
+    mapElementsByVenue.set(element.venueId, list);
+  }
+  const mapConfigByVenue = new Map<string, DbVenueMapConfig>();
+  for (const config of mapConfigsDb) mapConfigByVenue.set(config.venueId, config);
+  const spotsByVenue = new Map<string, DbVenueSpot[]>();
+  for (const spot of spotsDb) {
+    const list = spotsByVenue.get(spot.venueId) || [];
+    list.push(spot);
+    spotsByVenue.set(spot.venueId, list);
+  }
+
+  const venues: Venue[] = venuesDb.map((venue) => {
+    const descriptions = splitDescription(venue.description);
+    const images = (imagesByVenue.get(venue.id) || []).map((image) => image.imageUrl);
+    return {
+      id: venue.id,
+      name: venue.name,
+      category: (venue.category || 'Nightclub') as Venue['category'],
+      location: venue.address || '',
+      shortDescription: descriptions.shortDescription,
+      longDescription: descriptions.longDescription,
+      image: images[0] || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1200&auto=format&fit=crop',
+      images: images.slice(1),
+      videoUrl: descriptions.videoUrl || undefined,
+      reels: descriptions.reels?.map((reel, index) => ({ ...reel, venueId: reel.venueId || venue.id, order: Number(reel.order) || index + 1 })) || [],
+      menuUrl: String(descriptions.meta?.menuUrl || ''),
+      menuPdfUrl: String(descriptions.meta?.menuPdfUrl || ''),
+      openingHours: (() => {
+        const hours = descriptions.meta?.openingHours as Venue['openingHours'];
+        return hours?.open && hours?.close ? hours : { open: '18:00', close: '02:00', label: '18:00 - 02:00' };
+      })(),
+      viewCount: Math.max(0, Number(descriptions.meta?.viewCount || 0)),
+      floorPlanTheme: (() => {
+        const config = mapConfigByVenue.get(venue.id);
+        return config ? {
+          style: config.style || 'NIGHTCLUB', ratio: config.ratio || 'PORTRAIT',
+          backgroundColor: config.backgroundColor || '#070A12', accentColor: config.accentColor || '#D6A85F',
+          surfaceColor: config.surfaceColor || '#111827', gridColor: config.gridColor || 'rgba(255,255,255,0.055)',
+          texture: config.texture || 'GRID', helperText: config.helperText || '', showGrid: config.showGrid !== false,
+        } : undefined;
+      })(),
+      floorPlanElements: (mapElementsByVenue.get(venue.id) || []).map((element, index) => ({
+        id: element.id, type: element.type || 'CUSTOM', label: element.label || element.type || `Element ${index + 1}`,
+        x: Number(element.x) || 50, y: Number(element.y) || 50, width: Number(element.width) || 20,
+        height: Number(element.height) || 5, rotation: Number(element.rotation) || 0,
+        color: element.color || '#D6A85F', order: Number(element.sortOrder) || index + 1, isActive: element.isActive !== false,
+      })),
+      tableZones: (zonesByVenue.get(venue.id) || []).map((zone, index) => ({
+        id: zone.id, name: zone.name || `Zone ${index + 1}`, label: zone.label || zone.name || `Zone ${index + 1}`,
+        description: zone.description || '', minimumSpend: Number(zone.minimumSpend) || 0,
+        capacity: Number(zone.capacity) || 1, color: zone.color || '#D6A85F',
+        order: Number(zone.sortOrder) || index + 1, isActive: zone.isActive !== false,
+      })),
+      preferredTables: (spotsByVenue.get(venue.id) || []).map((spot, index) => {
+        const legacyParts = String(spot.description || '').split('—');
+        const legacyArea = legacyParts.length > 1 ? legacyParts[0].trim() : 'VIP Area';
+        const legacyDescription = legacyParts.length > 1 ? legacyParts.slice(1).join('—').trim() : spot.description || '';
+        return {
+          id: spot.id, name: spot.name, area: spot.area || legacyArea, zoneId: spot.zoneId || undefined,
+          minimumSpend: Number(spot.minimumSpend) || 0, capacity: Number(spot.capacity) || 2,
+          description: legacyDescription, status: spot.status || 'AVAILABLE', shape: spot.shape || 'RECT',
+          bookingMode: spot.bookingMode || 'REQUEST', x: Number(spot.x) || 20 + (index % 5) * 12,
+          y: Number(spot.y) || 22 + Math.floor(index / 5) * 8, width: Number(spot.width) || 8,
+          height: Number(spot.height) || 5, rotation: Number(spot.rotation) || 0,
+          color: spot.color || undefined, sortOrder: Number(spot.sortOrder) || index + 1, badge: spot.badge || 'NONE',
+        };
+      }),
+      rating: Number(descriptions.meta?.rating) || 4.8,
+      reviewsCount: Math.max(1, Number(descriptions.meta?.reviewsCount || 1)),
+      translations: (descriptions.meta?.translations || undefined) as Venue['translations'],
+    };
+  });
+
+  publicVenuesCache = { value: venues, expiresAt: Date.now() + Math.max(15_000, READ_CACHE_TTL_MS) };
+  return venues;
 }
 
 export async function readAllData(): Promise<ConciergePayload> {

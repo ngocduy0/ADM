@@ -269,7 +269,7 @@ function PublicAppContent() {
         {currentView === "ABOUT" && <AboutView />}
         {currentView === "CONTACT" && <ContactView />}
       </main>
-      <FloatingContact />
+      {currentView === "HOME" ? <FloatingContact siteSettings={siteSettings} /> : null}
       <Footer onNavigate={handleNavigate} logoUrl={siteSettings.logoUrl} />
     </div>
   );

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   ExternalLink,
   Send,
@@ -134,6 +136,16 @@ const bookingCopy = {
   },
 } as const;
 
+const mobileBookingFlowCopy: Record<string, { step1: string; step2: string; continue: string; back: string; secure: string }> = {
+  vi: { step1: "Bàn & thời gian", step2: "Thông tin của bạn", continue: "Tiếp tục điền thông tin", back: "Quay lại", secure: "Booking chỉ được gửi khi bàn và khung giờ còn trống." },
+  en: { step1: "Table & time", step2: "Your details", continue: "Continue to your details", back: "Back", secure: "The request is sent only while the table and time remain available." },
+  ko: { step1: "테이블 및 시간", step2: "고객 정보", continue: "고객 정보 입력", back: "뒤로", secure: "테이블과 시간이 모두 가능한 경우에만 요청이 전송됩니다." },
+  zh: { step1: "桌位与时间", step2: "您的信息", continue: "继续填写信息", back: "返回", secure: "仅在桌位与时间仍可用时发送请求。" },
+  th: { step1: "โต๊ะและเวลา", step2: "ข้อมูลของคุณ", continue: "กรอกข้อมูลต่อ", back: "ย้อนกลับ", secure: "ระบบจะส่งคำขอเมื่อโต๊ะและเวลายังว่างเท่านั้น" },
+  ja: { step1: "テーブルと時間", step2: "お客様情報", continue: "お客様情報へ", back: "戻る", secure: "テーブルと時間が空いている場合のみ送信されます。" },
+  hi: { step1: "टेबल और समय", step2: "आपकी जानकारी", continue: "अपनी जानकारी भरें", back: "वापस", secure: "टेबल और समय उपलब्ध होने पर ही अनुरोध भेजा जाता है।" },
+};
+
 export default function ReservationForm({
   venue,
   onSubmit,
@@ -146,6 +158,7 @@ export default function ReservationForm({
   const { siteSettings } = usePublicSettings();
   const { t, locale } = useI18n();
   const c = bookingCopy[locale] || bookingCopy.en;
+  const mobileC = mobileBookingFlowCopy[locale] || mobileBookingFlowCopy.en;
   const now = useBusinessClock();
   const openingHours = venue.openingHours || DEFAULT_OPENING_HOURS;
   const minimumBusinessDate = useMemo(
@@ -201,6 +214,7 @@ export default function ReservationForm({
     >
   >({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [mobileStep, setMobileStep] = useState<1 | 2>(1);
 
   const selectedTable =
     availableTables.find((table) => table.id === preferredTableId) ||
@@ -319,6 +333,31 @@ export default function ReservationForm({
     if (next) setPreferredTableId(next.id);
   }, [arrivalTime, availability, availableTables, preferredTableId]);
 
+  const showFormError = (message: string, step?: 1 | 2) => {
+    if (step) setMobileStep(step);
+    setError(message);
+    window.requestAnimationFrame(() => {
+      document.getElementById("reservation-form-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
+  const moveToContactStep = () => {
+    setError("");
+    const slotReason = getSlotReason(arrivalTime);
+    if (slotReason === "PAST") return showFormError(c.errPast, 1);
+    if (slotReason === "LEAD_TIME")
+      return showFormError(`${c.errLead} ${c.ahead} ${PUBLIC_BOOKING_LEAD_MINUTES} ${c.minutes}.`, 1);
+    if (!selectedTable) return showFormError(c.errNoTable, 1);
+    if (isTableBlocked(selectedTable.id)) return showFormError(c.errBooked, 1);
+    if (guestCount < 1 || guestCount > maxGuests)
+      return showFormError(`${c.errCapacity} ${selectedTable?.name || c.chooseFallback}.`, 1);
+
+    setMobileStep(2);
+    window.requestAnimationFrame(() => {
+      document.getElementById("reservation-form-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
   const copyMessage = async (message: string) => {
     try {
       await navigator.clipboard.writeText(message);
@@ -333,30 +372,30 @@ export default function ReservationForm({
     setError("");
 
     if (fullName.trim().length < 2)
-      return setError(c.errName);
+      return showFormError(c.errName, 2);
     const phoneCountry =
       PHONE_COUNTRIES.find((country) => country.iso === phoneCountryIso) ||
       PHONE_COUNTRIES[0];
     const fullPhone = buildInternationalPhone(phoneCountry, phoneNumber);
     if (!isValidInternationalPhone(fullPhone))
-      return setError(c.errPhone);
+      return showFormError(c.errPhone, 2);
     const slotReason = getSlotReason(arrivalTime);
     if (slotReason === "PAST")
-      return setError(c.errPast);
+      return showFormError(c.errPast, 1);
     if (slotReason === "LEAD_TIME")
-      return setError(`${c.errLead} ${c.ahead} ${PUBLIC_BOOKING_LEAD_MINUTES} ${c.minutes}.`);
+      return showFormError(`${c.errLead} ${c.ahead} ${PUBLIC_BOOKING_LEAD_MINUTES} ${c.minutes}.`, 1);
     if (!selectedTable)
-      return setError(c.errNoTable);
+      return showFormError(c.errNoTable, 1);
     if (isTableBlocked(selectedTable.id))
-      return setError(c.errBooked);
+      return showFormError(c.errBooked, 1);
     const actualBookingDate = getActualBookingDate(
       date,
       arrivalTime,
       openingHours,
     );
     if (guestCount < 1 || guestCount > maxGuests)
-      return setError(`${c.errCapacity} ${selectedTable?.name || c.chooseFallback}.`);
-    if (notes.length > 500) return setError(c.errNotes);
+      return showFormError(`${c.errCapacity} ${selectedTable?.name || c.chooseFallback}.`, 1);
+    if (notes.length > 500) return showFormError(c.errNotes, 2);
 
     const referenceCode = `DUYT-${Date.now().toString().slice(-6)}`;
     const payload = {
@@ -382,10 +421,9 @@ export default function ReservationForm({
         referenceCode,
       });
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : c.errSend,
+      showFormError(
+        submitError instanceof Error ? submitError.message : c.errSend,
+        2,
       );
     } finally {
       setSubmitting(false);
@@ -481,28 +519,32 @@ export default function ReservationForm({
       onSubmit={handleSubmit}
       className="flex h-full min-h-0 flex-col overflow-hidden bg-[#050507] text-left font-sans text-on-surface"
     >
-      <div className="border-b border-gold/15 px-6 py-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-gold/80">
+      <div className="shrink-0 border-b border-gold/15 px-4 pb-3 pt-[max(.85rem,env(safe-area-inset-top))] sm:px-6 sm:py-6">
+        <div className="flex items-end justify-between gap-4 pr-12 sm:flex-row sm:pr-0">
+          <div className="min-w-0 flex-1 space-y-1.5 sm:space-y-3">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold/80 sm:text-[11px] sm:tracking-[0.28em]">
               {c.formEyebrow}
             </p>
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-gold/80">
+              <p className="truncate text-[10px] uppercase tracking-[0.18em] text-gold/80 sm:text-xs sm:tracking-[0.22em]">
                 {selectedTable?.area || venue.name}
               </p>
               <h2
                 id="reservation-modal-title"
-                className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl"
+                className="mt-1 truncate text-2xl font-black leading-tight text-white sm:mt-2 sm:text-4xl"
               >
                 {selectedTable?.name || c.chooseFallback}
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-on-surface-variant">
+              <p id="reservation-modal-description" className="mt-3 hidden max-w-2xl text-sm leading-6 text-on-surface-variant sm:block">
                 {c.formIntro}
               </p>
             </div>
+            <div className="grid grid-cols-2 gap-2 pt-1 sm:hidden">
+              <Info label={c.minSpend} value={formatMoney(selectedTable?.minimumSpend || 0, locale)} gold />
+              <Info label={c.capacity} value={`${c.upTo} ${maxGuests}`} />
+            </div>
           </div>
-          <div className="rounded-3xl border border-gold/15 bg-[#0B0B10] p-4 text-sm text-on-surface-variant">
+          <div className="hidden rounded-3xl border border-gold/15 bg-[#0B0B10] p-4 text-sm text-on-surface-variant sm:block">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold/80">
               {c.tableInfo}
             </p>
@@ -514,215 +556,242 @@ export default function ReservationForm({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="space-y-6">
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-gold/80">
-              {c.tableInfo}
-            </h3>
-            <div className="rounded-3xl border border-white/10 bg-[#0D0D12] p-4">
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                {c.chooseTable}
-              </label>
-              <select
-                value={preferredTableId}
-                onChange={(e) => setPreferredTableId(e.target.value)}
-                className="w-full rounded-3xl border border-white/10 bg-[#09090D] px-4 py-3 text-sm font-semibold text-on-surface outline-none transition duration-150 focus:border-gold focus:ring-2 focus:ring-gold/10"
-              >
-                {availableTables.map((table) => {
-                  const blocked = isTableBlocked(table.id);
-                  const blockedLabel =
-                    table.status === "RESERVED" ? c.disabled : c.booked;
-                  return (
-                    <option
-                      key={table.id}
-                      value={table.id}
-                      disabled={blocked}
-                      className="bg-[#09090D] text-on-surface"
-                    >
-                      {table.name} · {table.area} · {formatMoney(table.minimumSpend, locale)} · {c.upTo} {table.capacity}
-                      {blocked ? ` · ${blockedLabel}` : ""}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          </section>
+      <div id="reservation-form-scroll" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-4 sm:px-6 sm:py-6">
+        <div className="mx-auto max-w-[860px]">
+          <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-[#0A0A0E] p-1.5 sm:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileStep(1)}
+              className={`rounded-xl px-3 py-2.5 text-left transition ${mobileStep === 1 ? "bg-gold/15 text-gold" : "text-on-surface-variant"}`}
+            >
+              <span className="block text-[9px] font-black uppercase tracking-[.18em]">01</span>
+              <span className="mt-0.5 block text-xs font-bold">{mobileC.step1}</span>
+            </button>
+            <button
+              type="button"
+              onClick={moveToContactStep}
+              className={`rounded-xl px-3 py-2.5 text-left transition ${mobileStep === 2 ? "bg-gold/15 text-gold" : "text-on-surface-variant"}`}
+            >
+              <span className="block text-[9px] font-black uppercase tracking-[.18em]">02</span>
+              <span className="mt-0.5 block text-xs font-bold">{mobileC.step2}</span>
+            </button>
+          </div>
 
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-gold/80">
-              {c.schedule}
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                  <CalendarDays className="mr-1 inline h-4 w-4" />
-                  {c.businessDate}
-                </label>
-                <input
-                  type="date"
-                  required
-                  min={minimumBusinessDate}
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className={inputClass}
-                />
-                <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                  {c.businessDateHelp}
-                </p>
-              </div>
-              <div>
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                  {c.arrival}
+          {error ? (
+            <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold leading-5 text-red-200 sm:hidden" role="alert">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="space-y-4 sm:space-y-6">
+            <section className={`${mobileStep === 1 ? "block" : "hidden"} space-y-2 sm:block sm:space-y-4`}>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 sm:text-sm sm:tracking-[0.24em]">
+                {c.tableInfo}
+              </h3>
+              <div className="rounded-2xl border border-white/10 bg-[#0D0D12] p-3 sm:rounded-3xl sm:p-4">
+                <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant sm:text-[11px] sm:tracking-[0.18em]">
+                  {c.chooseTable}
                 </label>
                 <select
-                  required
-                  value={arrivalTime}
-                  onChange={(e) => setArrivalTime(e.target.value)}
-                  className={inputClass}
+                  value={preferredTableId}
+                  onChange={(e) => { setPreferredTableId(e.target.value); setError(""); }}
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-[#09090D] px-3 py-3 text-sm font-semibold text-on-surface outline-none transition duration-150 focus:border-gold focus:ring-2 focus:ring-gold/10 sm:rounded-3xl sm:px-4"
                 >
-                  {arrivalOptions.map((option) => {
-                    const timeReason = getSlotReason(option);
-                    const blocked = selectedTable
-                      ? isTableBlocked(selectedTable.id, option)
-                      : false;
-                    const suffix =
-                      timeReason === "PAST"
+                  {availableTables.map((table) => {
+                    const blocked = isTableBlocked(table.id);
+                    const blockedLabel = table.status === "RESERVED" ? c.disabled : c.booked;
+                    return (
+                      <option key={table.id} value={table.id} disabled={blocked} className="bg-[#09090D] text-on-surface">
+                        {table.name} · {table.area} · {formatMoney(table.minimumSpend, locale)} · {c.upTo} {table.capacity}
+                        {blocked ? ` · ${blockedLabel}` : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </section>
+
+            <section className={`${mobileStep === 1 ? "block" : "hidden"} space-y-2 sm:block sm:space-y-4`}>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 sm:text-sm sm:tracking-[0.24em]">
+                {c.schedule}
+              </h3>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant sm:mb-2 sm:text-[11px] sm:tracking-[0.18em]">
+                    <CalendarDays className="mr-1 inline h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    {c.businessDate}
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={minimumBusinessDate}
+                    value={date}
+                    onChange={(e) => { setDate(e.target.value); setError(""); }}
+                    className={inputClass}
+                  />
+                  <p className="mt-2 hidden text-xs leading-relaxed text-on-surface-variant sm:block">{c.businessDateHelp}</p>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant sm:mb-2 sm:text-[11px] sm:tracking-[0.18em]">
+                    {c.arrival}
+                  </label>
+                  <select
+                    required
+                    value={arrivalTime}
+                    onChange={(e) => { setArrivalTime(e.target.value); setError(""); }}
+                    className={inputClass}
+                  >
+                    {arrivalOptions.map((option) => {
+                      const timeReason = getSlotReason(option);
+                      const blocked = selectedTable ? isTableBlocked(selectedTable.id, option) : false;
+                      const suffix = timeReason === "PAST"
                         ? ` · ${c.past}`
                         : timeReason === "LEAD_TIME"
                           ? ` · ${c.lead} ${PUBLIC_BOOKING_LEAD_MINUTES} ${c.minutes}`
                           : blocked
                             ? ` · ${c.tableBooked}`
                             : "";
-                    return (
-                      <option
-                        key={option}
-                        value={option}
-                        disabled={Boolean(timeReason) || blocked}
-                        className="bg-[#09090D] text-on-surface"
-                      >
-                        {formatBusinessSlotLabel(date, option, openingHours, c.nextDay)}
-                        {suffix}
-                      </option>
-                    );
-                  })}
-                </select>
-                <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                  {c.hours}: {openingHours.open} – {openingHours.close}. {c.slotsHelp}
+                      return (
+                        <option key={option} value={option} disabled={Boolean(timeReason) || blocked} className="bg-[#09090D] text-on-surface">
+                          {formatBusinessSlotLabel(date, option, openingHours, c.nextDay)}{suffix}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="mt-2 hidden text-xs leading-relaxed text-on-surface-variant sm:block">
+                    {c.hours}: {openingHours.open} – {openingHours.close}. {c.slotsHelp}
+                  </p>
+                </div>
+              </div>
+              <p className="rounded-xl border border-white/[.08] bg-white/[.025] px-3 py-2 text-[10px] leading-4 text-on-surface-variant sm:hidden">
+                {c.hours}: {openingHours.open} – {openingHours.close}. {c.businessDateHelp}
+              </p>
+            </section>
+
+            <section className={`${mobileStep === 1 ? "block" : "hidden"} space-y-2 sm:block sm:space-y-4`}>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 sm:text-sm sm:tracking-[0.24em]">
+                {c.party}
+              </h3>
+              <div className="rounded-2xl border border-white/10 bg-[#0D0D12] p-3 sm:rounded-3xl sm:p-4">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
+                  {c.guests} · {guestCount}
                 </p>
+                <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-3 sm:overflow-visible sm:pb-0">
+                  {guestOptions.map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => { setGuestCount(num); setError(""); }}
+                      className={`min-w-[2.75rem] shrink-0 rounded-full border px-3 py-2 text-sm font-semibold transition sm:min-w-[3rem] ${guestCount === num ? "border-gold bg-gold text-dark-navy" : "border-white/10 bg-[#09090D] text-on-surface hover:border-gold/40"}`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-gold/80">
-              {c.party}
-            </h3>
-            <div className="rounded-3xl border border-white/10 bg-[#0D0D12] p-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                {c.guests} · {guestCount}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {guestOptions.map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setGuestCount(num)}
-                    className={`min-w-[3rem] rounded-full border px-3 py-2 text-sm font-semibold transition ${guestCount === num ? "border-gold bg-gold text-dark-navy" : "border-white/10 bg-[#09090D] text-on-surface hover:border-gold/40"}`}
-                  >
-                    {num}
-                  </button>
-                ))}
+            <section className={`${mobileStep === 2 ? "block" : "hidden"} space-y-2 sm:block sm:space-y-4`}>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 sm:text-sm sm:tracking-[0.24em]">
+                {c.contact}
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant sm:mb-2 sm:text-[11px] sm:tracking-[0.18em]">{c.name}</label>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="name"
+                    placeholder={c.namePlaceholder}
+                    value={fullName}
+                    onChange={(e) => { setFullName(e.target.value); setError(""); }}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant sm:mb-2 sm:text-[11px] sm:tracking-[0.18em]">{c.phone}</label>
+                  <CountryPhoneField
+                    countryIso={phoneCountryIso}
+                    onCountryChange={(country) => { setPhoneCountryIso(country.iso); setError(""); }}
+                    nationalNumber={phoneNumber}
+                    onNationalNumberChange={(value) => { setPhoneNumber(value); setError(""); }}
+                    inputClassName={inputClass}
+                    disabled={submitting}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-gold/80">
-              {c.contact}
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                  {c.name}
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={c.namePlaceholder}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className={inputClass}
-                />
+            <section className={`${mobileStep === 2 ? "block" : "hidden"} space-y-2 sm:block sm:space-y-4`}>
+              <div className="flex items-end justify-between gap-3">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 sm:text-sm sm:tracking-[0.24em]">{c.special}</h3>
+                <span className="text-[10px] text-on-surface-variant/65">{notes.length}/500</span>
               </div>
-              <div>
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                  {c.phone}
-                </label>
-                <CountryPhoneField
-                  countryIso={phoneCountryIso}
-                  onCountryChange={(country) => setPhoneCountryIso(country.iso)}
-                  nationalNumber={phoneNumber}
-                  onNationalNumberChange={setPhoneNumber}
-                  inputClassName={inputClass}
-                  disabled={submitting}
-                />
+              <textarea
+                rows={3}
+                maxLength={500}
+                placeholder={c.notePlaceholder}
+                value={notes}
+                onChange={(e) => { setNotes(e.target.value); setError(""); }}
+                className={`${inputClass} min-h-[96px] resize-none leading-relaxed sm:min-h-[120px]`}
+              />
+            </section>
+
+            {error && (
+              <div className="hidden rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold leading-5 text-red-200 sm:block sm:rounded-3xl" role="alert">
+                {error}
               </div>
+            )}
+
+            <div className={`${mobileStep === 2 ? "block" : "hidden"} rounded-2xl border border-gold/15 bg-[#08080C] p-3 text-[11px] leading-5 text-on-surface-variant sm:block sm:rounded-3xl sm:p-4 sm:text-sm sm:leading-relaxed`}>
+              <p><span aria-hidden="true">🔒</span> <span className="sm:hidden">{mobileC.secure}</span><span className="hidden sm:inline">{c.security}</span></p>
+              {checkingAvailability ? <p className="mt-2 text-xs text-on-surface-variant/80">{c.checking}</p> : null}
             </div>
-          </section>
-
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-gold/80">
-              {c.special}
-            </h3>
-            <textarea
-              rows={4}
-              maxLength={500}
-              placeholder={c.notePlaceholder}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className={`${inputClass} min-h-[120px] resize-none leading-relaxed`}
-            />
-            <p className="text-right text-[11px] text-on-surface-variant/70">
-              {notes.length}/500
-            </p>
-          </section>
-
-          {error && (
-            <div className="rounded-3xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200">
-              {error}
-            </div>
-          )}
-
-          <div className="rounded-3xl border border-gold/15 bg-[#08080C] p-4 text-sm leading-relaxed text-on-surface-variant">
-            <p>
-              🔒 {c.security}
-            </p>
-            {checkingAvailability ? (
-              <p className="mt-2 text-xs text-on-surface-variant/80">
-                {c.checking}
-              </p>
-            ) : null}
           </div>
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 border-t border-gold/15 bg-[#050507]/95 px-6 py-4 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[860px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-relaxed text-on-surface-variant">
-            {c.footer}
-          </p>
+      <div className="shrink-0 border-t border-gold/15 bg-[#050507] px-4 pb-[max(.8rem,env(safe-area-inset-bottom))] pt-3 sm:bg-[#050507]/95 sm:px-6 sm:py-4 sm:backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[860px] items-center gap-2 sm:justify-between sm:gap-4">
+          <p className="hidden text-sm leading-relaxed text-on-surface-variant sm:block">{c.footer}</p>
+
+          {mobileStep === 1 ? (
+            <button
+              type="button"
+              onClick={moveToContactStep}
+              disabled={checkingAvailability || !hasAvailableTable}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gold px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-dark-navy transition active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-60 sm:hidden"
+            >
+              {mobileC.continue}<ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <div className="flex w-full gap-2 sm:hidden">
+              <button
+                type="button"
+                onClick={() => { setMobileStep(1); setError(""); }}
+                className="inline-flex min-h-12 shrink-0 items-center justify-center gap-1 rounded-2xl border border-white/[.12] px-3 text-xs font-bold text-on-surface-variant"
+                aria-label={mobileC.back}
+              >
+                <ChevronLeft className="h-4 w-4" />{mobileC.back}
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || checkingAvailability || !hasAvailableTable}
+                className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl bg-gold px-3 py-3 text-xs font-black uppercase tracking-[0.13em] text-dark-navy transition active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <Send className="h-4 w-4 shrink-0" />
+                <span className="truncate">{submitting ? c.sending : !hasAvailableTable ? c.soldOut : t("requestReservation")}</span>
+              </button>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={submitting || checkingAvailability || !hasAvailableTable}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-3xl bg-gold px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-dark-navy transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            className="hidden items-center justify-center gap-2 rounded-3xl bg-gold px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-dark-navy transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-70 sm:inline-flex"
           >
             <Send className="h-4 w-4" />
-            {submitting
-              ? c.sending
-              : !hasAvailableTable
-                ? c.soldOut
-                : t("requestReservation")}
+            {submitting ? c.sending : !hasAvailableTable ? c.soldOut : t("requestReservation")}
           </button>
         </div>
       </div>
@@ -731,7 +800,7 @@ export default function ReservationForm({
 }
 
 const inputClass =
-  "w-full rounded-2xl border border-gold/10 bg-deep-black/80 px-4 py-3 text-sm font-semibold text-on-surface outline-none transition focus:border-gold";
+  "w-full min-w-0 rounded-xl border border-gold/10 bg-deep-black/80 px-3 py-3 text-[13px] font-semibold text-on-surface outline-none transition focus:border-gold focus:ring-2 focus:ring-gold/10 sm:rounded-2xl sm:px-4 sm:text-sm";
 
 function Info({
   label,
@@ -743,7 +812,7 @@ function Info({
   gold?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-gold/10 bg-deep-black/45 p-3">
+    <div className="rounded-xl border border-gold/10 bg-deep-black/45 p-2.5 sm:rounded-2xl sm:p-3">
       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/65">
         {label}
       </p>

@@ -13,9 +13,10 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { PageHeader } from '../ui/PageHeader';
 import { formatCompact, formatDate, formatVnd, getMonday, addDays, localDateKey, reservationMinimumSpend, statusLabels, statusTone } from '../utils';
+import { isContactNotification } from '../notification-utils';
 
 export function DashboardPage() {
-  const { reservations, venues, customers } = useAdminData();
+  const { reservations, venues, customers, notifications } = useAdminData();
   const [bookingOpen, setBookingOpen] = useState(false);
   const today = localDateKey();
 
@@ -25,11 +26,12 @@ export function DashboardPage() {
       total: reservations.length,
       today: reservations.filter((item) => item.date === today).length,
       revenue: active.reduce((sum, item) => sum + reservationMinimumSpend(item, venues), 0),
-      pending: reservations.filter((item) => item.status === BookingStatus.NEW || item.status === BookingStatus.CONTACTED).length,
+      pending: reservations.filter((item) => item.status === BookingStatus.NEW || item.status === BookingStatus.CONTACTED).length
+        + notifications.filter((notice) => isContactNotification(notice) && !notice.read).length,
       views: venues.reduce((sum, venue) => sum + Number(venue.viewCount || 0), 0),
       rating: venues.length ? venues.reduce((sum, venue) => sum + Number(venue.rating || 0), 0) / venues.length : 0,
     };
-  }, [reservations, today, venues]);
+  }, [notifications, reservations, today, venues]);
 
   const weekData = useMemo(() => {
     const monday = getMonday(new Date());

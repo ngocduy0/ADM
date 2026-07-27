@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CheckCircle2, Menu, Search } from 'lucide-react';
+import { Bell, CheckCircle2, Mail, Menu, Search } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useAdminData } from '../AdminDataProvider';
 import { formatDateTime } from '../utils';
 import { getAdminPageTitle } from './navigation';
+import { getNotificationHref, isContactNotification } from '../notification-utils';
 
 export function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
   const pathname = usePathname();
@@ -55,20 +56,25 @@ export function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
               {unreadCount ? <button onClick={() => markNotificationsRead()} className="text-xs font-bold text-[#1F3A8A] hover:underline">Đánh dấu đã đọc</button> : null}
             </div>
             <div className="custom-scrollbar max-h-[430px] overflow-y-auto">
-              {notifications.slice(0, 8).map((notice) => (
-                <button
-                  key={notice.id}
-                  onClick={() => { markNotificationsRead([notice.id]); setOpen(false); router.push(`/admin/bookings?bookingId=${encodeURIComponent(notice.reservationId)}`); }}
-                  className={`flex w-full gap-3 border-b border-slate-50 p-4 text-left transition hover:bg-slate-50 ${notice.read ? '' : 'bg-[#1F3A8A]/[0.035]'}`}
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#1F3A8A]/10 text-[#1F3A8A]"><CheckCircle2 size={19} /></span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-extrabold text-slate-900">{notice.title}</span>
-                    <span className="mt-1 block line-clamp-2 text-xs font-medium leading-5 text-slate-500">{notice.message}</span>
-                    <span className="mt-1.5 block text-[10px] font-bold text-slate-400">{formatDateTime(notice.createdAt)}</span>
-                  </span>
-                </button>
-              ))}
+              {notifications.slice(0, 8).map((notice) => {
+                const contactNotice = isContactNotification(notice);
+                return (
+                  <button
+                    key={notice.id}
+                    onClick={() => { markNotificationsRead([notice.id]); setOpen(false); router.push(getNotificationHref(notice)); }}
+                    className={`flex w-full gap-3 border-b border-slate-50 p-4 text-left transition hover:bg-slate-50 ${notice.read ? '' : 'bg-[#1F3A8A]/[0.035]'}`}
+                  >
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${contactNotice ? 'bg-violet-100 text-violet-700' : 'bg-[#1F3A8A]/10 text-[#1F3A8A]'}`}>
+                      {contactNotice ? <Mail size={19} /> : <CheckCircle2 size={19} />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-extrabold text-slate-900">{notice.title}</span>
+                      <span className="mt-1 block line-clamp-2 whitespace-pre-line text-xs font-medium leading-5 text-slate-500">{notice.message}</span>
+                      <span className="mt-1.5 block text-[10px] font-bold text-slate-400">{formatDateTime(notice.createdAt)}</span>
+                    </span>
+                  </button>
+                );
+              })}
               {!notifications.length ? <div className="p-10 text-center text-sm font-medium text-slate-500">Chưa có thông báo.</div> : null}
             </div>
             <div className="border-t border-slate-100 bg-slate-50/50 p-3">

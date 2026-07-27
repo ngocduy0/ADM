@@ -1,8 +1,13 @@
 import React, { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useI18n } from "../i18n";
 import { getLocalizedContactChannels } from "../contactConfig";
 import { usePublicSettings } from "../public/usePublicData";
+import CountryPhoneField, {
+  PHONE_COUNTRIES,
+  buildInternationalPhone,
+  isValidInternationalPhone,
+} from "./CountryPhoneField";
 
 const aboutCopy = {
   en: {
@@ -181,6 +186,7 @@ const contactCopy = {
     another: "Send another request",
     formTitle: "Private contact form",
     name: "Your name",
+    phone: "Phone number",
     message: "Request details",
     placeholder:
       "Venue name, table or room, birthday setup, guest count and arrival time...",
@@ -198,6 +204,7 @@ const contactCopy = {
     another: "Gửi yêu cầu khác",
     formTitle: "Biểu mẫu liên hệ riêng tư",
     name: "Tên của bạn",
+    phone: "Số điện thoại",
     message: "Nội dung yêu cầu",
     placeholder:
       "Tên địa điểm, bàn hoặc phòng, setup sinh nhật, số khách và giờ đến...",
@@ -214,6 +221,7 @@ const contactCopy = {
     another: "다른 요청 보내기",
     formTitle: "프라이빗 문의 양식",
     name: "이름",
+    phone: "전화번호",
     message: "요청 내용",
     placeholder:
       "장소명, 테이블 또는 룸, 생일 세팅, 인원과 도착 시간...",
@@ -229,6 +237,7 @@ const contactCopy = {
     another: "发送其他请求",
     formTitle: "私密联系表",
     name: "您的姓名",
+    phone: "电话号码",
     message: "请求内容",
     placeholder: "场地名称、桌位或包厢、生日布置、人数与到达时间...",
     button: "发送信息",
@@ -244,6 +253,7 @@ const contactCopy = {
     another: "ส่งคำขออื่น",
     formTitle: "แบบฟอร์มติดต่อส่วนตัว",
     name: "ชื่อของคุณ",
+    phone: "เบอร์โทรศัพท์",
     message: "รายละเอียดคำขอ",
     placeholder:
       "ชื่อสถานที่ โต๊ะหรือห้อง เซ็ตอัพวันเกิด จำนวนแขกและเวลามาถึง...",
@@ -260,6 +270,7 @@ const contactCopy = {
     another: "別のリクエストを送る",
     formTitle: "プライベート問い合わせフォーム",
     name: "お名前",
+    phone: "電話番号",
     message: "リクエスト内容",
     placeholder:
       "会場名、テーブルまたは個室、誕生日セットアップ、人数、到着時間...",
@@ -276,11 +287,36 @@ const contactCopy = {
     another: "दूसरा अनुरोध भेजें",
     formTitle: "निजी संपर्क फ़ॉर्म",
     name: "आपका नाम",
+    phone: "फ़ोन नंबर",
     message: "अनुरोध विवरण",
     placeholder:
       "स्थान का नाम, टेबल या कक्ष, जन्मदिन की सजावट, अतिथि संख्या और आगमन समय...",
     button: "जानकारी भेजें",
   },
+} as const;
+
+const contactStatusCopy = {
+  vi: {
+    sending: "Đang gửi yêu cầu...",
+    reference: "Mã yêu cầu",
+    received: "Yêu cầu đã được lưu và chuyển tới trang quản trị. DuyT sẽ phản hồi qua số điện thoại hoặc email bạn đã cung cấp.",
+    invalidPhone: "Số điện thoại không hợp lệ. Vui lòng kiểm tra quốc gia, mã vùng và số điện thoại.",
+    errorTitle: "Chưa gửi được thông tin",
+    fallbackError: "Không thể gửi yêu cầu lúc này. Vui lòng thử lại hoặc dùng một kênh liên hệ trực tiếp.",
+  },
+  en: {
+    sending: "Sending request...",
+    reference: "Request code",
+    received: "Your request has been recorded and delivered to the admin inbox. DuyT will reply by phone or email.",
+    invalidPhone: "The phone number is invalid. Check the country, calling code, and number.",
+    errorTitle: "Information not sent",
+    fallbackError: "The request could not be sent. Please try again or use a direct contact channel.",
+  },
+  ko: { sending: "요청 전송 중...", reference: "요청 코드", received: "요청이 관리자에게 전달되었습니다. 전화 또는 이메일로 답변드립니다.", invalidPhone: "전화번호가 올바르지 않습니다. 국가와 국가번호를 확인해 주세요.", errorTitle: "전송하지 못했습니다", fallbackError: "요청을 전송할 수 없습니다. 다시 시도하거나 직접 연락 채널을 이용해 주세요." },
+  zh: { sending: "正在发送...", reference: "请求编号", received: "请求已保存并发送至管理后台。DuyT 将通过电话或邮箱回复。", invalidPhone: "电话号码格式不正确，请检查国家和区号。", errorTitle: "信息未发送", fallbackError: "暂时无法发送请求，请重试或使用直接联系渠道。" },
+  th: { sending: "กำลังส่งคำขอ...", reference: "รหัสคำขอ", received: "ระบบบันทึกคำขอแล้ว DuyT จะตอบกลับทางโทรศัพท์หรืออีเมล", invalidPhone: "หมายเลขโทรศัพท์ไม่ถูกต้อง กรุณาตรวจสอบประเทศและรหัสโทรศัพท์", errorTitle: "ยังส่งข้อมูลไม่ได้", fallbackError: "ไม่สามารถส่งคำขอได้ในขณะนี้ โปรดลองอีกครั้งหรือใช้ช่องทางติดต่อโดยตรง" },
+  ja: { sending: "送信中...", reference: "リクエスト番号", received: "リクエストは管理画面に保存されました。電話またはメールへ返信します。", invalidPhone: "電話番号が正しくありません。国と国番号を確認してください。", errorTitle: "送信できませんでした", fallbackError: "現在送信できません。再試行するか、直接連絡チャネルをご利用ください。" },
+  hi: { sending: "अनुरोध भेजा जा रहा है...", reference: "अनुरोध कोड", received: "अनुरोध एडमिन इनबॉक्स में भेज दिया गया है। DuyT फ़ोन या ईमेल से जवाब देगा।", invalidPhone: "फ़ोन नंबर सही नहीं है। देश और calling code जाँचें।", errorTitle: "जानकारी नहीं भेजी गई", fallbackError: "अभी अनुरोध नहीं भेजा जा सका। दोबारा प्रयास करें या सीधे संपर्क माध्यम का उपयोग करें।" },
 } as const;
 
 export function AboutView() {
@@ -356,126 +392,136 @@ export function ContactView() {
   const contactChannels = getLocalizedContactChannels(siteSettings, locale);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneCountryIso, setPhoneCountryIso] = useState("VN");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [msg, setMsg] = useState("");
+  const [website, setWebsite] = useState("");
   const [conReady, setConReady] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [referenceCode, setReferenceCode] = useState("");
   const c = contactCopy[locale] || contactCopy.vi;
+  const statusCopy = contactStatusCopy[locale] || contactStatusCopy.vi;
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setConReady(false);
+    setSubmitError("");
+    setReferenceCode("");
+    setName("");
+    setEmail("");
+    setPhoneCountryIso("VN");
+    setPhoneNumber("");
+    setMsg("");
+    setWebsite("");
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && email && msg) setConReady(true);
+    if (submitting) return;
+
+    setSubmitError("");
+    const phoneCountry = PHONE_COUNTRIES.find((country) => country.iso === phoneCountryIso) || PHONE_COUNTRIES[0];
+    const phone = buildInternationalPhone(phoneCountry, phoneNumber);
+    if (!isValidInternationalPhone(phone)) {
+      setSubmitError(statusCopy.invalidPhone);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/contact-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, message: msg, locale, website }),
+      });
+      const json = await response.json().catch(() => null);
+      if (!response.ok || !json?.ok) throw new Error(json?.error || statusCopy.fallbackError);
+      setReferenceCode(String(json.data?.referenceCode || json.referenceCode || ""));
+      setConReady(true);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : statusCopy.fallbackError);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="duyt-public-page text-left font-sans max-w-[1440px] mx-auto px-6 md:px-16 pt-6 space-y-16">
-      <div className="text-center max-w-2xl mx-auto space-y-3">
-        <span className="text-xs sans-label text-gold font-bold tracking-widest uppercase">
-          {c.eyebrow}
-        </span>
-        <h2 className="duyt-editorial text-5xl md:text-7xl text-on-surface leading-[.95]">
-          {c.title}
-        </h2>
-        <p className="text-sm font-light text-on-surface-variant leading-relaxed">
-          {c.intro}
-        </p>
+    <div className="duyt-public-page mx-auto max-w-[1440px] space-y-10 px-4 pt-4 text-left font-sans sm:space-y-16 sm:px-6 sm:pt-6 md:px-16">
+      <div className="mx-auto max-w-2xl space-y-3 text-center">
+        <span className="text-xs sans-label text-gold font-bold tracking-widest uppercase">{c.eyebrow}</span>
+        <h2 className="duyt-editorial text-4xl leading-[.95] text-on-surface sm:text-5xl md:text-7xl">{c.title}</h2>
+        <p className="text-sm font-light text-on-surface-variant leading-relaxed">{c.intro}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-12 bg-dark-navy/25 rounded-3xl p-8 md:p-12 border border-gold/10">
-        <div className="lg:col-span-6 space-y-8">
-          <h3 className="text-xl font-serif text-gold tracking-wide">
-            {c.channelsTitle}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="mt-8 grid grid-cols-1 gap-8 rounded-3xl border border-gold/10 bg-dark-navy/25 p-5 sm:mt-12 sm:p-8 lg:grid-cols-12 lg:gap-12 md:p-12">
+        <div className="order-2 space-y-5 sm:space-y-8 lg:order-1 lg:col-span-6">
+          <h3 className="text-xl font-serif text-gold tracking-wide">{c.channelsTitle}</h3>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {contactChannels.map((chan) => (
-              <a
-                key={chan.name}
-                href={chan.href}
-                target={chan.href.startsWith("http") ? "_blank" : undefined}
-                rel={chan.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="flex flex-col items-center justify-center p-6 rounded-[24px] border border-gold/10 bg-deep-black/30 hover:bg-gold/5 hover:border-gold/30 transition-all duration-300 text-center group cursor-pointer"
-              >
-                <img
-                  src={chan.icon}
-                  alt={chan.name}
-                  className="mb-2 h-10 w-10 rounded-full object-contain transition-transform duration-300 group-hover:scale-110"
-                />
-                <span className="text-xs sans-label text-on-surface font-bold tracking-widest uppercase">
-                  {chan.name}
-                </span>
-                <span className="text-[10px] text-on-surface-variant font-light mt-1.5 leading-snug">
-                  {chan.label}
-                </span>
+              <a key={chan.name} href={chan.href} target={chan.href.startsWith("http") ? "_blank" : undefined} rel={chan.href.startsWith("http") ? "noopener noreferrer" : undefined} className="flex min-h-[132px] flex-col items-center justify-center p-3 sm:min-h-0 sm:p-6 rounded-[24px] border border-gold/10 bg-deep-black/30 hover:bg-gold/5 hover:border-gold/30 transition-all duration-300 text-center group cursor-pointer">
+                <img src={chan.icon} alt={chan.name} className="mb-2 h-10 w-10 rounded-full object-contain transition-transform duration-300 group-hover:scale-110" />
+                <span className="text-xs sans-label text-on-surface font-bold tracking-widest uppercase">{chan.name}</span>
+                <span className="text-[10px] text-on-surface-variant font-light mt-1.5 leading-snug">{chan.label}</span>
               </a>
             ))}
           </div>
         </div>
 
-        <div className="lg:col-span-6">
+        <div className="order-1 lg:order-2 lg:col-span-6">
           {conReady ? (
-            <div className="bg-gold/5 border border-gold/15 rounded-[24px] p-8 text-center h-full flex flex-col justify-center items-center space-y-4">
-              <CheckCircle2 className="w-12 h-12 text-gold" />
+            <div className="bg-gold/5 border border-gold/15 rounded-[24px] p-8 text-center min-h-[390px] h-full flex flex-col justify-center items-center space-y-4" role="status" aria-live="polite">
+              <span className="grid h-16 w-16 place-items-center rounded-full border border-gold/25 bg-gold/10"><CheckCircle2 className="w-9 h-9 text-gold" /></span>
               <h4 className="text-xl font-serif text-gold">{c.successTitle}</h4>
-              <p className="text-xs text-on-surface-variant max-w-sm font-light leading-relaxed">
-                {c.successText}
-              </p>
-              <button
-                onClick={() => setConReady(false)}
-                className="text-[10px] sans-label text-gold border-b border-gold/35 pb-0.5"
-              >
-                {c.another}
-              </button>
+              <p className="text-xs text-on-surface-variant max-w-sm font-light leading-relaxed">{statusCopy.received}</p>
+              {referenceCode ? (
+                <div className="rounded-xl border border-gold/15 bg-deep-black/70 px-5 py-3">
+                  <span className="block text-[9px] font-bold uppercase tracking-[.18em] text-on-surface-variant">{statusCopy.reference}</span>
+                  <strong className="mt-1 block text-sm tracking-[.12em] text-on-surface">{referenceCode}</strong>
+                </div>
+              ) : null}
+              <button type="button" onClick={resetForm} className="text-[10px] sans-label text-gold border-b border-gold/35 pb-0.5">{c.another}</button>
             </div>
           ) : (
-            <form
-              onSubmit={handleContactSubmit}
-              className="space-y-5 text-left"
-            >
-              <h3 className="text-xl font-serif text-on-surface tracking-wide mb-6">
-                {c.formTitle}
-              </h3>
-              <div>
-                <label className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">
-                  {c.name}
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Nguyễn Minh A"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors"
-                />
+            <form onSubmit={handleContactSubmit} className="space-y-5 text-left">
+              <h3 className="text-xl font-serif text-on-surface tracking-wide mb-6">{c.formTitle}</h3>
+              <div className="sr-only" aria-hidden="true">
+                <label htmlFor="contact-website">Website</label>
+                <input id="contact-website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
               </div>
               <div>
-                <label className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="guest@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors"
-                />
+                <label htmlFor="contact-name" className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">{c.name}</label>
+                <input id="contact-name" type="text" required minLength={2} maxLength={80} autoComplete="name" placeholder="Nguyễn Minh A" value={name} onChange={(e) => setName(e.target.value)} disabled={submitting} className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors disabled:cursor-wait disabled:opacity-60" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="contact-email" className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">Email</label>
+                  <input id="contact-email" type="email" required maxLength={160} autoComplete="email" inputMode="email" placeholder="guest@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={submitting} className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors disabled:cursor-wait disabled:opacity-60" />
+                </div>
+                <div>
+                  <label className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">{c.phone}</label>
+                  <CountryPhoneField
+                    countryIso={phoneCountryIso}
+                    onCountryChange={(country) => setPhoneCountryIso(country.iso)}
+                    nationalNumber={phoneNumber}
+                    onNationalNumberChange={setPhoneNumber}
+                    inputClassName="w-full min-w-0 bg-transparent px-3 py-3 text-sm text-on-surface outline-none"
+                    disabled={submitting}
+                  />
+                </div>
               </div>
               <div>
-                <label className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">
-                  {c.message}
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder={c.placeholder}
-                  value={msg}
-                  onChange={(e) => setMsg(e.target.value)}
-                  className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors text-on-surface font-light leading-relaxed"
-                />
+                <label htmlFor="contact-message" className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">{c.message}</label>
+                <textarea id="contact-message" rows={4} required minLength={10} maxLength={1500} placeholder={c.placeholder} value={msg} onChange={(e) => setMsg(e.target.value)} disabled={submitting} className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors text-on-surface font-light leading-relaxed disabled:cursor-wait disabled:opacity-60" />
+                <p className="mt-1.5 text-right text-[9px] font-medium text-on-surface-variant/70">{msg.length}/1500</p>
               </div>
-              <button
-                type="submit"
-                className="w-full py-4 bg-gold hover:bg-gold-light active:scale-98 text-dark-navy text-xs sans-label tracking-widest font-bold uppercase rounded-xl transition-all shadow-lg shadow-gold/10 cursor-pointer"
-              >
-                {c.button}
+              {submitError ? (
+                <div className="flex items-start gap-2.5 rounded-xl border border-red-400/20 bg-red-500/10 px-3.5 py-3 text-xs leading-5 text-red-100" role="alert" aria-live="assertive">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span><strong className="block font-bold">{statusCopy.errorTitle}</strong>{submitError}</span>
+                </div>
+              ) : null}
+              <button type="submit" disabled={submitting || name.trim().length < 2 || !email.trim() || !phoneNumber.trim() || msg.trim().length < 10} className="w-full min-h-12 py-4 bg-gold hover:bg-gold-light active:scale-98 text-dark-navy text-xs sans-label tracking-widest font-bold uppercase rounded-xl transition-all shadow-lg shadow-gold/10 cursor-pointer disabled:cursor-not-allowed disabled:opacity-55">
+                <span className="inline-flex items-center justify-center gap-2">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{submitting ? statusCopy.sending : c.button}</span>
               </button>
             </form>
           )}
@@ -484,3 +530,4 @@ export function ContactView() {
     </div>
   );
 }
+
