@@ -43,4 +43,6 @@ next-env.d.ts
 /lib/generated/prisma
 .tmp-stitch-readonly/
 .tmp-stitch-qa/
-.codex-dev.*.log
+.codex-dev.*.log.env*.local
+!.env.example
+node_modules/

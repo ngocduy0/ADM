@@ -1,15 +1,17 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Star,
   ArrowRight,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  PhoneCall,
 } from "lucide-react";
 import { HomepageReel, Venue } from "../types";
 import { useI18n, Locale } from "../i18n";
 import { localizeCategory, localizeVenue } from "../localize";
 import { SiteSettings } from "../siteSettings";
+import { getLocalizedContactChannels } from "../contactConfig";
 
 interface HomepageViewProps {
   featuredVenues: Venue[];
@@ -720,40 +722,148 @@ function InstagramGlyph() {
   );
 }
 
+function useRichMediaAllowed({ disableOnMobile = false }: { disableOnMobile?: boolean } = {}) {
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mobile = disableOnMobile && window.matchMedia("(max-width: 767px)").matches;
+    const slowConnection = connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g";
+    setAllowed(!reducedMotion && !connection?.saveData && !slowConnection && !mobile);
+  }, [disableOnMobile]);
+
+  return allowed;
+}
+
+function AdaptiveHeroMedia({
+  videoUrl,
+  posterUrl,
+  alt,
+  canPlayVideo,
+}: {
+  videoUrl: string;
+  posterUrl: string;
+  alt: string;
+  canPlayVideo: boolean;
+}) {
+  const [loadVideo, setLoadVideo] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    if (!videoUrl || !canPlayVideo) {
+      setLoadVideo(false);
+      return;
+    }
+
+    const win = window as Window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const idleId = win.requestIdleCallback?.(() => setLoadVideo(true), { timeout: 1000 });
+    const timeoutId = idleId == null ? window.setTimeout(() => setLoadVideo(true), 320) : null;
+
+    return () => {
+      if (idleId != null) win.cancelIdleCallback?.(idleId);
+      if (timeoutId != null) window.clearTimeout(timeoutId);
+    };
+  }, [canPlayVideo, videoUrl]);
+
+  return (
+    <>
+      <img
+        src={posterUrl}
+        alt={alt}
+        referrerPolicy="no-referrer"
+        fetchPriority="high"
+        decoding="async"
+        className="h-full w-full object-cover brightness-[1.18] contrast-[1.05] saturate-[1.08]"
+      />
+      {loadVideo ? (
+        <video
+          key={videoUrl}
+          src={videoUrl}
+          poster={posterUrl || undefined}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          onCanPlay={() => setVideoReady(true)}
+          className={[
+            "absolute inset-0 h-full w-full object-cover brightness-[1.28] contrast-[1.06] saturate-[1.12] transition-opacity duration-500",
+            videoReady ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function ReelCardMedia({
   videoUrl,
   poster,
   label,
+  canPlayVideo,
 }: {
   videoUrl?: string;
   poster: string;
   label: string;
+  canPlayVideo: boolean;
 }) {
-  if (videoUrl && isDirectVideoUrl(videoUrl)) {
-    return (
-      <video
-        src={videoUrl}
-        poster={poster}
-        muted
-        loop
-        playsInline
-        autoPlay
-        preload="metadata"
-        controls={false}
-        aria-label={`${label} reel video`}
-        className="h-full w-full object-cover"
-      />
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [nearViewport, setNearViewport] = useState(false);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || !videoUrl || !canPlayVideo || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setNearViewport(entry.isIntersecting),
+      { rootMargin: "180px 140px", threshold: 0.1 },
     );
-  }
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [canPlayVideo, videoUrl]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (nearViewport) {
+      void video.play().catch(() => undefined);
+    } else {
+      video.pause();
+    }
+  }, [nearViewport]);
+
+  const showVideo = Boolean(videoUrl && isDirectVideoUrl(videoUrl) && canPlayVideo && nearViewport);
 
   return (
-    <img
-      src={poster}
-      alt={label}
-      referrerPolicy="no-referrer"
-      loading="lazy"
-      className="h-full w-full object-cover"
-    />
+    <div ref={hostRef} className="relative h-full w-full bg-[#090a0d]">
+      <img
+        src={poster}
+        alt={label}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover"
+      />
+      {showVideo ? (
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          poster={poster}
+          muted
+          loop
+          playsInline
+          preload="none"
+          controls={false}
+          aria-label={`${label} reel video`}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -782,9 +892,11 @@ function CarouselArrow({
 function HomepageReelsSection({
   feedCopy,
   feedCards,
+  canPlayVideo,
 }: {
   feedCopy: { eyebrow: string; title: string; cta: string; fallback: string };
   feedCards: ReelCard[];
+  canPlayVideo: boolean;
 }) {
   const reelTrackRef = useRef<HTMLUListElement | null>(null);
   const scrollReels = (direction: -1 | 1) => {
@@ -848,6 +960,7 @@ function HomepageReelsSection({
                   videoUrl={card.videoUrl}
                   poster={card.poster}
                   label={card.label}
+                  canPlayVideo={canPlayVideo}
                 />
                 <div
                   aria-hidden="true"
@@ -900,44 +1013,78 @@ function HomepageReelsSection({
 }
 
 
-function HomeConciergeSection({ locale }: { locale: Locale }) {
+function HomeConciergeSection({ locale, siteSettings }: { locale: Locale; siteSettings?: SiteSettings }) {
   const copy = homeConciergeCopy[locale] || homeConciergeCopy.vi;
+  const contactChannels = getLocalizedContactChannels(siteSettings, locale);
   const sectionUi = ({
     vi: { title: "Dịch vụ Concierge", dockLabel: "Kênh liên hệ trực tiếp" },
     en: { title: "Private Concierge", dockLabel: "Direct contact channels" },
     ko: { title: "프라이빗 컨시어지", dockLabel: "직접 연락 채널" },
     zh: { title: "私人礼宾服务", dockLabel: "直接联系渠道" },
-    th: { title: "คอนเซียร์จส่วนตัว", dockLabel: "ช่องทางติดต่อโดยตรง"},
-    ja: { title: "プライベートコンシェルジュ", dockLabel: "直接連絡チャネル"},
-    hi: { title: "निजी कंसीयर्ज", dockLabel: "सीधे संपर्क चैनल"},
+    th: { title: "คอนเซียร์จส่วนตัว", dockLabel: "ช่องทางติดต่อโดยตรง" },
+    ja: { title: "プライベートコンシェルジュ", dockLabel: "直接連絡チャネル" },
+    hi: { title: "निजी कंसीयर्ज", dockLabel: "सीधे संपर्क चैनल" },
   } as const)[locale];
-  const title = sectionUi.title;
-  const dockLabel = sectionUi.dockLabel;
 
   return (
-    <section id="concierge-service" className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
-      <div className="grid items-center gap-12 lg:grid-cols-[0.82fr_1.18fr]">
+    <section id="concierge-service" className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-20 md:px-16 md:py-24">
+      <div className="grid items-center gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
         <div className="space-y-6">
-          <div className="relative h-24 w-24 overflow-hidden rounded-full border border-[#d0bcff]/30 bg-black shadow-[0_0_42px_rgba(160,120,255,.18)]">
-            <img src="/duyt-avatar.jpg" alt="DuyT Concierge" className="h-full w-full object-cover" />
+          <div className="relative h-20 w-20 overflow-hidden rounded-full border border-[#d0bcff]/30 bg-black shadow-[0_0_32px_rgba(160,120,255,.15)] md:h-24 md:w-24">
+            <img src="/duyt-avatar.jpg" alt="DuyT Concierge" width={96} height={96} decoding="async" className="h-full w-full object-cover" />
             <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
           </div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">{copy.curatedBy} DuyT Booking</p>
-          <h2 className="duyt-editorial text-4xl leading-none text-on-surface md:text-6xl">{title}</h2>
+          <h2 className="duyt-editorial text-4xl leading-none text-on-surface md:text-6xl">{sectionUi.title}</h2>
           <p className="max-w-xl text-sm font-light leading-7 text-on-surface-variant">{copy.description}</p>
           <p className="max-w-xl rounded-[24px] border border-gold/10 bg-gold/5 p-4 text-xs leading-6 text-on-surface-variant">{copy.guidance}</p>
         </div>
 
         <div
           id="concierge-contact-dock"
-          className="relative min-h-[330px] overflow-hidden rounded-[32px] border border-dashed border-[#d0bcff]/18 bg-[radial-gradient(circle_at_50%_30%,rgba(160,120,255,.09),transparent_52%),rgba(3,3,5,.68)] shadow-[inset_0_1px_0_rgba(255,255,255,.025),0_30px_80px_rgba(0,0,0,.38)] sm:min-h-[390px]"
-          aria-label={dockLabel}
+          className="duyt-concierge-panel relative overflow-hidden rounded-[30px] border border-[#d0bcff]/16 bg-[radial-gradient(circle_at_50%_20%,rgba(160,120,255,.08),transparent_48%),rgba(5,5,8,.92)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.025),0_24px_60px_rgba(0,0,0,.32)] sm:p-4"
+          aria-label={sectionUi.dockLabel}
         >
-          <div className="pointer-events-none absolute inset-0 grid place-items-center px-8 text-center">
-            <div>
-              <div className="mx-auto mb-4 h-px w-16 bg-gradient-to-r from-transparent via-[#d0bcff]/50 to-transparent" />
-              <p className="text-[10px] font-black uppercase tracking-[.26em] text-[#d0bcff]/42">{dockLabel}</p>
-            </div>
+          <span
+            id="concierge-contact-trigger"
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 h-px w-px opacity-0"
+          />
+          <div className="mb-3 flex items-center justify-between px-2 pt-1 sm:mb-4">
+            <p className="text-[10px] font-black uppercase tracking-[.24em] text-[#d0bcff]/58">{sectionUi.dockLabel}</p>
+            <span className="h-px w-12 bg-gradient-to-r from-[#d0bcff]/45 to-transparent sm:w-20" aria-hidden="true" />
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
+            {contactChannels.map((contact, index) => {
+              const isPhone = contact.href.startsWith("tel:") || contact.id === "phone";
+              const external = !contact.href.startsWith("mailto:") && !contact.href.startsWith("tel:");
+              return (
+                <a
+                  key={contact.id}
+                  href={contact.href || "#"}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noreferrer" : undefined}
+                  className="duyt-concierge-contact-card group flex min-h-[116px] min-w-0 items-center gap-3 rounded-[20px] border border-white/8 bg-white/[.035] px-3 py-4 transition duration-200 hover:-translate-y-0.5 hover:border-[#d0bcff]/24 hover:bg-[#d0bcff]/[.065] sm:min-h-[138px] sm:gap-4 sm:px-4"
+                  style={{ animationDelay: `${90 + index * 45}ms` }}
+                  aria-label={`${contact.name}: ${contact.label}`}
+                >
+                  <span className={[
+                    "grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full p-2 sm:h-11 sm:w-11",
+                    isPhone ? "bg-gradient-to-br from-[#d0bcff] to-[#6d3bd7] text-[#23005c]" : "bg-white/10",
+                  ].join(" ")}>
+                    {isPhone ? (
+                      <PhoneCall className="h-4 w-4 sm:h-5 sm:w-5" />
+                    ) : (
+                      <img src={contact.icon} alt="" width={44} height={44} loading="lazy" decoding="async" className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105" />
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[10px] font-black uppercase tracking-[.07em] text-white sm:text-[11px]">{contact.name}</span>
+                    <span className="mt-1 block break-all text-[9px] leading-4 text-white/48 sm:text-[10px]">{contact.label}</span>
+                  </span>
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -952,6 +1099,7 @@ export default function HomepageView({
   onSelectVenue,
 }: HomepageViewProps) {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const richMediaAllowed = useRichMediaAllowed({ disableOnMobile: true });
   const { t, locale } = useI18n();
   const c = pageCopy[locale] || pageCopy.vi;
   const feedCopy = {
@@ -1062,11 +1210,12 @@ export default function HomepageView({
         return (
           <section key={section.id} className="relative flex min-h-screen w-full flex-col items-start justify-center overflow-hidden px-6 md:px-16">
             <div className="absolute inset-0 z-0 overflow-hidden">
-              {heroVideoUrl ? (
-                <video key={heroVideoUrl} src={heroVideoUrl} poster={heroPosterUrl || undefined} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover brightness-[1.28] contrast-[1.06] saturate-[1.12]" />
-              ) : (
-                <img src={heroFallbackImage} alt={siteSettings?.brandName || "DuyT Booking"} referrerPolicy="no-referrer" className="h-full w-full object-cover brightness-[1.18] contrast-[1.05] saturate-[1.08]" />
-              )}
+              <AdaptiveHeroMedia
+                videoUrl={heroVideoUrl}
+                posterUrl={heroPosterUrl || heroFallbackImage}
+                alt={siteSettings?.brandName || "DuyT Booking"}
+                canPlayVideo={richMediaAllowed}
+              />
               <div className="absolute inset-0 bg-black/[0.12]" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/12 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 h-[28vh] bg-gradient-to-t from-[#05070A] via-[#05070A]/45 to-transparent" />
@@ -1075,7 +1224,7 @@ export default function HomepageView({
         );
       case "FEATURED_VENUES":
         return (
-          <section key={section.id} className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
+          <section key={section.id} className="duyt-deferred-section mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-20 md:px-16 md:py-24">
             <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
               <div>
                 <h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-5xl">{sectionText.title || t("featured")}</h2>
@@ -1088,7 +1237,7 @@ export default function HomepageView({
                 const displayVenue = localizeVenue(v, locale);
                 return (
                   <div key={v.id} onClick={() => onSelectVenue(v.id)} className="group relative h-[550px] cursor-pointer overflow-hidden rounded-[24px] border border-gold/10 transition-all duration-500 hover:border-gold/30">
-                    <img src={v.image} alt={displayVenue.name} referrerPolicy="no-referrer" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+                    <img src={v.image} alt={displayVenue.name} referrerPolicy="no-referrer" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-deep-black/30 to-transparent" />
                     <div className="absolute inset-0 z-10 flex flex-col justify-between p-8">
                       <div><span className="rounded-full border border-gold/20 bg-deep-black/50 px-3.5 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">{localizeCategory(v.category, locale)}</span></div>
@@ -1101,12 +1250,12 @@ export default function HomepageView({
           </section>
         );
       case "REELS_FEED":
-        return <div key={section.id}><HomepageReelsSection feedCopy={{ ...feedCopy, title: sectionText.title || feedCopy.title }} feedCards={feedCards} /></div>;
+        return <div key={section.id} className="duyt-deferred-section"><HomepageReelsSection feedCopy={{ ...feedCopy, title: sectionText.title || feedCopy.title }} feedCards={feedCards} canPlayVideo={richMediaAllowed} /></div>;
       case "CONCIERGE":
-        return <div key={section.id}><HomeConciergeSection locale={locale} /></div>;
+        return <div key={section.id}><HomeConciergeSection locale={locale} siteSettings={siteSettings} /></div>;
       case "WHY_DUYT":
         return (
-          <section key={section.id} className="mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-24 md:px-16">
+          <section key={section.id} className="duyt-deferred-section mx-auto max-w-[1440px] border-t border-gold/10 px-6 py-20 md:px-16 md:py-24">
             <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
               <div className="space-y-6 lg:col-span-5"><h2 className="break-words font-serif text-3xl leading-tight tracking-wide text-on-surface md:text-5xl">{sectionText.title || c.whyTitle}</h2><p className="text-sm font-light leading-relaxed text-on-surface-variant">{sectionText.subtitle || c.whyText}</p></div>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-7">{c.blocks.map(([title, text], i) => <div key={i} className="glass-card rounded-[24px] border border-gold/10 p-6"><h4 className="mb-1.5 font-serif text-sm tracking-wide text-gold">{title}</h4><p className="text-xs font-light leading-relaxed text-on-surface-variant">{text}</p></div>)}</div>
@@ -1115,11 +1264,11 @@ export default function HomepageView({
         );
       case "TESTIMONIALS":
         return (
-          <section key={section.id} className="border-t border-gold/10 bg-dark-navy/20 px-6 py-24 md:px-16"><div className="mx-auto max-w-[1440px]"><div className="mx-auto mb-16 max-w-2xl text-center"><h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-4xl">{sectionText.title || c.testimonialsTitle}</h2>{sectionText.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{sectionText.subtitle}</p> : null}</div><div className="grid grid-cols-1 gap-8 md:grid-cols-3">{c.reviews.map(([author, vip, venue, text], i) => <div key={i} className="glass-card flex flex-col justify-between rounded-[24px] border border-gold/10 p-8"><div><div className="mb-4 flex gap-1">{Array.from({ length: 5 }).map((_, sIdx) => <Star key={sIdx} className="h-3.5 w-3.5 fill-gold text-gold" />)}</div><p className="mb-6 font-serif text-sm font-light italic leading-relaxed text-on-surface-variant">“{text}”</p></div><div className="flex items-center justify-between border-t border-gold/10 pt-4"><div><span className="block text-sm font-semibold text-on-surface">{author}</span><span className="text-[10px] font-light text-on-surface-variant">{c.visited} {venue}</span></div></div></div>)}</div></div></section>
+          <section key={section.id} className="duyt-deferred-section border-t border-gold/10 bg-dark-navy/20 px-6 py-20 md:px-16 md:py-24"><div className="mx-auto max-w-[1440px]"><div className="mx-auto mb-16 max-w-2xl text-center"><h2 className="break-words font-serif text-3xl tracking-wide text-on-surface md:text-4xl">{sectionText.title || c.testimonialsTitle}</h2>{sectionText.subtitle ? <p className="mt-3 text-sm text-on-surface-variant">{sectionText.subtitle}</p> : null}</div><div className="grid grid-cols-1 gap-8 md:grid-cols-3">{c.reviews.map(([author, vip, venue, text], i) => <div key={i} className="glass-card flex flex-col justify-between rounded-[24px] border border-gold/10 p-8"><div><div className="mb-4 flex gap-1">{Array.from({ length: 5 }).map((_, sIdx) => <Star key={sIdx} className="h-3.5 w-3.5 fill-gold text-gold" />)}</div><p className="mb-6 font-serif text-sm font-light italic leading-relaxed text-on-surface-variant">“{text}”</p></div><div className="flex items-center justify-between border-t border-gold/10 pt-4"><div><span className="block text-sm font-semibold text-on-surface">{author}</span><span className="text-[10px] font-light text-on-surface-variant">{c.visited} {venue}</span></div></div></div>)}</div></div></section>
         );
       case "FAQ":
         return (
-          <section key={section.id} id="faq" className="mx-auto max-w-[1440px] scroll-mt-28 border-t border-gold/10 px-6 py-24 md:px-16"><div className="grid grid-cols-1 gap-12 lg:grid-cols-12"><div className="space-y-4 text-left lg:col-span-4"><h3 className="break-words font-serif text-3xl tracking-wide text-on-surface">{sectionText.title || c.faqTitle}</h3><p className="text-xs font-light leading-relaxed text-on-surface-variant">{sectionText.subtitle || c.faqIntro}</p></div><div className="space-y-4 text-left font-sans lg:col-span-8">{c.faqs.map(([q, a], idx) => { const isOpen = activeFaq === idx; return <div key={idx} className="overflow-hidden rounded-xl border border-gold/15 transition-all duration-300"><button onClick={() => setActiveFaq(isOpen ? null : idx)} className="flex w-full cursor-pointer items-center justify-between bg-dark-navy/30 p-5 text-left transition-colors hover:bg-gold/5"><span className="text-sm font-semibold text-on-surface">{q}</span><ChevronDown className={`h-4 w-4 text-gold transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} /></button>{isOpen ? <div className="border-t border-gold/10 bg-deep-black/40 p-5 font-sans text-xs font-light leading-relaxed text-on-surface-variant">{a}</div> : null}</div>; })}</div></div></section>
+          <section key={section.id} id="faq" className="duyt-deferred-section mx-auto max-w-[1440px] scroll-mt-28 border-t border-gold/10 px-6 py-24 md:px-16"><div className="grid grid-cols-1 gap-12 lg:grid-cols-12"><div className="space-y-4 text-left lg:col-span-4"><h3 className="break-words font-serif text-3xl tracking-wide text-on-surface">{sectionText.title || c.faqTitle}</h3><p className="text-xs font-light leading-relaxed text-on-surface-variant">{sectionText.subtitle || c.faqIntro}</p></div><div className="space-y-4 text-left font-sans lg:col-span-8">{c.faqs.map(([q, a], idx) => { const isOpen = activeFaq === idx; return <div key={idx} className="overflow-hidden rounded-xl border border-gold/15 transition-all duration-300"><button onClick={() => setActiveFaq(isOpen ? null : idx)} className="flex w-full cursor-pointer items-center justify-between bg-dark-navy/30 p-5 text-left transition-colors hover:bg-gold/5"><span className="text-sm font-semibold text-on-surface">{q}</span><ChevronDown className={`h-4 w-4 text-gold transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} /></button>{isOpen ? <div className="border-t border-gold/10 bg-deep-black/40 p-5 font-sans text-xs font-light leading-relaxed text-on-surface-variant">{a}</div> : null}</div>; })}</div></div></section>
         );
       default:
         return null;

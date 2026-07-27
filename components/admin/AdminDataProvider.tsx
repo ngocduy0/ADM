@@ -38,6 +38,7 @@ import { databaseTimestampMs, reservationEventIso, reservationEventTimestamp } f
 import type { AdminNotification, ConciergePayload, ToastMessage } from './types';
 import { normalizePhone, slugId } from './utils';
 import { ToastHost } from './ui/ToastHost';
+import { isContactNotification } from './notification-utils';
 
 interface AdminContextValue {
   venues: Venue[];
@@ -137,6 +138,15 @@ function synthesizeNotifications(reservations: ReservationRequest[]) {
   return normalizeNotifications([], reservations).slice(0, 100);
 }
 
+async function loadAdminNotifications() {
+  const response = await fetch('/api/admin-notifications?limit=150', { cache: 'no-store' });
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json?.ok || !Array.isArray(json.notifications)) {
+    throw new Error(json?.error || 'Không tải được thông báo quản trị.');
+  }
+  return json.notifications as AdminNotification[];
+}
+
 function playBell() {
   try {
     const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -171,10 +181,13 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const knownReservations = useRef<Set<string>>(new Set());
+  const knownNotifications = useRef<Set<string>>(new Set());
   const channelRef = useRef<RealtimeChannel | null>(null);
   const refreshTimer = useRef<number | null>(null);
+  const notificationRefreshTimer = useRef<number | null>(null);
   const localPersistTimer = useRef<number | null>(null);
   const refreshInFlight = useRef<Promise<void> | null>(null);
+  const notificationRefreshInFlight = useRef<Promise<void> | null>(null);
   const lastRefreshAt = useRef(0);
   const lastMutationAt = useRef(0);
   const lastReportedErrorAt = useRef(0);
@@ -184,6 +197,26 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     setToast(next);
     window.setTimeout(() => setToast((current) => current?.id === next.id ? null : current), 3600);
   }, []);
+
+
+  const applyNotificationPayload = useCallback((rawNotices: AdminNotification[], currentReservations: ReservationRequest[], notifyNew = false) => {
+    const normalized = normalizeNotifications(rawNotices, currentReservations);
+    const newContactNotices = notifyNew
+      ? normalized.filter((notice) => isContactNotification(notice) && !knownNotifications.current.has(notice.id))
+      : [];
+
+    setNotifications(normalized);
+    knownNotifications.current = new Set(normalized.map((notice) => notice.id));
+
+    if (newContactNotices.length) {
+      playBell();
+      const first = newContactNotices[0];
+      const name = first.title.replace(/^Liên hệ mới\s*·\s*/i, '').trim();
+      showToast('info', newContactNotices.length === 1
+        ? `Có yêu cầu liên hệ mới${name ? ` từ ${name}` : ''}.`
+        : `Có ${newContactNotices.length} yêu cầu liên hệ mới.`);
+    }
+  }, [showToast]);
 
   const persistLocalSoon = useCallback((payload: ConciergePayload) => {
     if (localPersistTimer.current) window.clearTimeout(localPersistTimer.current);
@@ -246,6 +279,22 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     return task;
   }, [applyPayload, reportSyncError]);
 
+  const refreshNotifications = useCallback(async (notifyNew = true, reservationSnapshot?: ReservationRequest[]) => {
+    if (notificationRefreshInFlight.current) return notificationRefreshInFlight.current;
+    const task = (async () => {
+      try {
+        const notices = await loadAdminNotifications();
+        applyNotificationPayload(notices, reservationSnapshot || reservations, notifyNew);
+      } catch (error) {
+        reportSyncError('Không thể làm mới thông báo', error);
+      } finally {
+        notificationRefreshInFlight.current = null;
+      }
+    })();
+    notificationRefreshInFlight.current = task;
+    return task;
+  }, [applyNotificationPayload, reportSyncError, reservations]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -253,22 +302,17 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
         .then((payload) => ({ payload, server: true }))
         .catch(() => ({ payload: loadData(), server: false }));
       const settingsPromise = loadSiteSettingsFromServer().catch(() => loadSiteSettingsLocal());
-      const notificationsPromise = fetch('/api/admin-notifications?limit=150', { cache: 'no-store' })
-        .then(async (response) => {
-          const json = await response.json().catch(() => null);
-          return response.ok && json?.ok && Array.isArray(json.notifications) ? json.notifications : null;
-        })
-        .catch(() => null);
+      const notificationsPromise = loadAdminNotifications().catch(() => null);
 
       const [dataResult, nextSettings, noticeResult] = await Promise.all([dataPromise, settingsPromise, notificationsPromise]);
       if (!mounted) return;
       applyPayload(dataResult.payload, false, !dataResult.server);
       setSettings(nextSettings);
-      setNotifications(normalizeNotifications(noticeResult || synthesizeNotifications(dataResult.payload.reservations), dataResult.payload.reservations));
+      applyNotificationPayload(noticeResult || synthesizeNotifications(dataResult.payload.reservations), dataResult.payload.reservations, false);
       setLoading(false);
     })();
     return () => { mounted = false; };
-  }, [applyPayload]);
+  }, [applyNotificationPayload, applyPayload]);
 
   useEffect(() => {
     if (loading) return;
@@ -279,22 +323,41 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
       refreshTimer.current = window.setTimeout(() => refresh(), 700);
     };
 
-    const onFocus = () => scheduleRefresh();
-    const onOnline = () => scheduleRefresh();
+    const scheduleNotificationRefresh = () => {
+      if (notificationRefreshTimer.current) window.clearTimeout(notificationRefreshTimer.current);
+      notificationRefreshTimer.current = window.setTimeout(() => refreshNotifications(true), 350);
+    };
+
+    const onFocus = () => {
+      scheduleRefresh();
+      scheduleNotificationRefresh();
+    };
+    const onOnline = () => {
+      scheduleRefresh();
+      scheduleNotificationRefresh();
+    };
     window.addEventListener('focus', onFocus);
     window.addEventListener('online', onOnline);
 
-    const pollId = window.setInterval(() => {
+    const dataPollId = window.setInterval(() => {
       if (!document.hidden) refresh();
     }, 300_000);
+    const notificationPollId = window.setInterval(() => {
+      if (!document.hidden) refreshNotifications(true);
+    }, 30_000);
 
     if (!REALTIME_DISABLED) {
       try {
         const supabase = getSupabaseBrowserClient();
         channelRef.current = supabase
-          .channel('duyt-admin-routes-sync-v1')
+          .channel('duyt-admin-routes-sync-v2')
           .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
-            if (payload.table && REALTIME_TABLES.has(payload.table)) scheduleRefresh();
+            const table = payload.table || '';
+            if (table === 'AdminNotification' || table === 'admin_notifications') {
+              scheduleNotificationRefresh();
+              return;
+            }
+            if (REALTIME_TABLES.has(table)) scheduleRefresh();
           })
           .subscribe();
       } catch {
@@ -305,15 +368,17 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('online', onOnline);
-      window.clearInterval(pollId);
+      window.clearInterval(dataPollId);
+      window.clearInterval(notificationPollId);
       if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
+      if (notificationRefreshTimer.current) window.clearTimeout(notificationRefreshTimer.current);
       if (localPersistTimer.current) window.clearTimeout(localPersistTimer.current);
       if (channelRef.current) {
         try { getSupabaseBrowserClient().removeChannel(channelRef.current); } catch { /* ignore */ }
         channelRef.current = null;
       }
     };
-  }, [loading, refresh]);
+  }, [loading, refresh, refreshNotifications]);
 
   const commit = useCallback(async (payload: ConciergePayload, successMessage?: string) => {
     const previous = { venues, reservations, customers };

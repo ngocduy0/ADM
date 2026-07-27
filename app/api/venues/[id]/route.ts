@@ -3,7 +3,7 @@ import { INITIAL_VENUES } from '@/components/aurelius/data';
 import type { Venue } from '@/components/aurelius/types';
 import { validateVenue } from '@/lib/booking-rules';
 import { requireAdminApi } from '@/lib/admin-api';
-import { deleteVenueFast, readAllData, upsertVenueFast, venueExistsFast, venueHasBookingsFast, writeSecurityLog } from '@/lib/concierge-repository';
+import { deleteVenueFast, readAllData, readPublicVenues, upsertVenueFast, venueExistsFast, venueHasBookingsFast, writeSecurityLog } from '@/lib/concierge-repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +17,8 @@ function findVenue(venues: Venue[], id: string) {
 export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
   try {
-    const data = await readAllData();
-    const venue = findVenue(data.venues, id);
+    const venues = await readPublicVenues();
+    const venue = findVenue(venues, id);
     if (!venue) return NextResponse.json({ ok: false, error: 'Không tìm thấy địa điểm.' }, { status: 404 });
     return NextResponse.json({ ok: true, source: 'supabase', data: venue });
   } catch (error) {

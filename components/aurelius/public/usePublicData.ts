@@ -102,26 +102,29 @@ async function getPublicVenues() {
 
 async function getPublicVenue(venueKey: string) {
   const safeKey = normalizeVenueKey(venueKey).toLowerCase();
-  const cached = venueCache.get(safeKey) || (venuesCache ? findVenueLocal(venuesCache, safeKey) : null);
+
+  // Only venueCache contains full venue-detail payloads. venuesCache can be
+  // populated by the server-rendered homepage and intentionally contains a
+  // lightweight summary without floor-plan tables.
+  const cached = venueCache.get(safeKey);
   if (cached) return cached;
 
   const existingPromise = venuePromiseCache.get(safeKey);
   if (existingPromise) return existingPromise;
 
   const promise = (async () => {
-    // Human-readable slugs are resolved against the venue list first. This avoids
-    // a noisy API 404 for URLs such as /dia-diem/adm-club.
+    let requestKey = safeKey;
+
+    // Resolve a human-readable slug from the lightweight list, but always load
+    // the full venue by id before rendering its floor plan.
     if (!/^venue-[a-z0-9_-]+$/i.test(safeKey)) {
       const allVenues = await getPublicVenues();
       const bySlug = findVenueLocal(allVenues, safeKey);
-      if (bySlug) {
-        cacheVenueAliases(bySlug);
-        return bySlug;
-      }
+      if (bySlug) requestKey = bySlug.id;
     }
 
     try {
-      const venue = await loadVenueFromServer(safeKey);
+      const venue = await loadVenueFromServer(requestKey);
       cacheVenueAliases(venue);
       return venue;
     } catch (error) {
@@ -130,12 +133,10 @@ async function getPublicVenue(venueKey: string) {
         cacheVenueAliases(localVenue);
         return localVenue;
       }
+
       const allVenues = await getPublicVenues();
       const fallback = findVenueLocal(allVenues, safeKey);
-      if (fallback) {
-        cacheVenueAliases(fallback);
-        return fallback;
-      }
+      if (fallback) return fallback;
       throw error;
     }
   })().finally(() => {
@@ -167,13 +168,33 @@ export function usePublicSettings() {
   return { siteSettings, isLoadingData };
 }
 
-export function usePublicVenues(): PublicVenuesState {
-  const [venues, setVenues] = useState<Venue[]>(venuesCache || []);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(settingsCache || DEFAULT_SITE_SETTINGS);
-  const [isLoadingData, setIsLoadingData] = useState(!venuesCache || !settingsCache);
+export function usePublicVenues(
+  initialVenues?: Venue[],
+  initialSiteSettings?: SiteSettings,
+): PublicVenuesState {
+  const hasInitialData = Boolean(initialSiteSettings);
+  const [venues, setVenues] = useState<Venue[]>(initialVenues || venuesCache || []);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(
+    initialSiteSettings || settingsCache || DEFAULT_SITE_SETTINGS,
+  );
+  const [isLoadingData, setIsLoadingData] = useState(
+    !hasInitialData && (!venuesCache || !settingsCache),
+  );
 
   useEffect(() => {
     let isMounted = true;
+
+    if (initialSiteSettings) {
+      const nextVenues = initialVenues || [];
+      venuesCache = nextVenues;
+      settingsCache = initialSiteSettings;
+      // Homepage summaries must not enter venueCache because detail pages rely
+      // on that cache containing complete floor-plan data.
+      setIsLoadingData(false);
+      return () => {
+        isMounted = false;
+      };
+    }
 
     Promise.all([getPublicVenues(), getPublicSettings()])
       .then(([nextVenues, nextSettings]) => {
@@ -188,14 +209,15 @@ export function usePublicVenues(): PublicVenuesState {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [initialVenues, initialSiteSettings]);
 
   return { venues, siteSettings, isLoadingData };
 }
 
 export function usePublicVenue(venueId: string): PublicVenueState {
   const safeId = normalizeVenueKey(venueId);
-  const initialVenue = safeId ? venueCache.get(safeId) || (venuesCache ? findVenueLocal(venuesCache, safeId) : null) : null;
+  // Never render a lightweight homepage summary as a venue-detail payload.
+  const initialVenue = safeId ? venueCache.get(safeId) || null : null;
   const [venue, setVenue] = useState<Venue | null>(initialVenue);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(settingsCache || DEFAULT_SITE_SETTINGS);
   const [isLoadingData, setIsLoadingData] = useState(!initialVenue || !settingsCache);

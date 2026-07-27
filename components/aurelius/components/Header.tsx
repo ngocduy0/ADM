@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarCheck2, Menu, X } from "lucide-react";
 import LanguageSelector from "./LanguageSelector";
@@ -16,14 +16,31 @@ interface HeaderProps {
 export default function Header({ currentView, onNavigate, logoUrl }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const scrollFrameRef = useRef<number | null>(null);
+  const scrolledRef = useRef(false);
   const { t, locale } = useI18n();
   const router = useRouter();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 40);
-    handleScroll();
+    const update = () => {
+      scrollFrameRef.current = null;
+      const next = window.scrollY > 40;
+      if (next === scrolledRef.current) return;
+      scrolledRef.current = next;
+      setIsScrolled(next);
+    };
+    const handleScroll = () => {
+      if (scrollFrameRef.current != null) return;
+      scrollFrameRef.current = window.requestAnimationFrame(update);
+    };
+
+    scrolledRef.current = window.scrollY > 40;
+    setIsScrolled(scrolledRef.current);
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollFrameRef.current != null) window.cancelAnimationFrame(scrollFrameRef.current);
+    };
   }, []);
 
   const navItems = [
@@ -46,14 +63,14 @@ export default function Header({ currentView, onNavigate, logoUrl }: HeaderProps
       className={[
         "fixed left-0 top-0 z-50 w-full transition-all duration-300",
         isScrolled
-          ? "border-b border-[#d0bcff]/14 bg-black/82 shadow-[0_16px_48px_rgba(0,0,0,0.58)] backdrop-blur-2xl"
+          ? "border-b border-[#d0bcff]/14 bg-black/94 shadow-[0_12px_34px_rgba(0,0,0,0.48)] md:bg-black/82 md:shadow-[0_16px_48px_rgba(0,0,0,0.58)] md:backdrop-blur-xl"
           : "!border-transparent !bg-transparent !shadow-none !backdrop-blur-0",
       ].join(" ")}
       style={!isScrolled ? { background: "transparent", backdropFilter: "none", WebkitBackdropFilter: "none" } : undefined}
     >
       <div className={["relative mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-5 transition-all duration-300 md:px-10 lg:grid lg:grid-cols-[minmax(190px,1fr)_auto_minmax(190px,1fr)] lg:px-12", isScrolled ? "h-[74px]" : "h-[84px]"].join(" ")}>
         <button type="button" onClick={() => handleNav("HOME")} className="flex items-center justify-self-start text-left transition hover:opacity-85" aria-label={t("home")}>
-          <img src={logoUrl || "/duyt-logo.png"} alt="DuyT Da Nang Concierge" className="h-12 w-auto object-contain md:h-[54px]" />
+          <img src={logoUrl || "/duyt-logo.png"} alt="DuyT Da Nang Concierge" width={150} height={54} decoding="async" className="h-12 w-auto object-contain md:h-[54px]" />
         </button>
 
         <nav className="hidden items-center justify-center gap-11 lg:flex" aria-label="Main navigation">
@@ -98,7 +115,7 @@ export default function Header({ currentView, onNavigate, logoUrl }: HeaderProps
         <div className="fixed inset-0 z-[90] min-h-screen bg-[#030305] px-5 py-4 text-white lg:hidden">
           <div className="mb-8 flex items-center justify-between">
             <button type="button" onClick={() => handleNav("HOME")} className="text-left">
-              <img src={logoUrl || "/duyt-logo.png"} alt="DuyT Da Nang Concierge" className="h-12 w-auto object-contain" />
+              <img src={logoUrl || "/duyt-logo.png"} alt="DuyT Da Nang Concierge" width={134} height={48} decoding="async" className="h-12 w-auto object-contain" />
             </button>
             <div className="flex items-center gap-3">
               <LanguageSelector compact />

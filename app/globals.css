@@ -644,7 +644,7 @@ h3,
   90% { opacity: 0; transform: scale(1.55); }
 }
 .duyt-contact-bar {
-  animation: duytContactEnter .55s cubic-bezier(.22,1,.36,1) both, duytContactFloat 5s ease-in-out 1.2s infinite;
+  animation: duytContactEnter .42s cubic-bezier(.22,1,.36,1) both;
 }
 .duyt-contact-item { animation: duytContactItemEnter .42s cubic-bezier(.22,1,.36,1) both; }
 .duyt-phone-ring { animation: duytPhoneRing 3.2s ease-in-out infinite; transform-origin: 50% 50%; }
@@ -794,11 +794,6 @@ h3,
   z-index: -1;
 }
 
-.duyt-public-app article,
-.duyt-public-app [class*="rounded-[24px]"] {
-  transform: translateZ(0);
-}
-
 .duyt-public-app article:hover {
   border-color: rgba(208,188,255,.34) !important;
 }
@@ -891,31 +886,62 @@ h3,
   pointer-events: none;
 }
 
-.duyt-contact-morph {
-  transition:
-    left .72s cubic-bezier(.22,1,.36,1),
-    top .72s cubic-bezier(.22,1,.36,1),
-    width .72s cubic-bezier(.22,1,.36,1),
-    height .72s cubic-bezier(.22,1,.36,1);
-  will-change: left, top, width, height;
+.duyt-contact-float {
+  --duyt-contact-dock-x: 0px;
+  --duyt-contact-dock-y: 14px;
+  --duyt-contact-dock-scale: .92;
+  transform: translate3d(-50%, 0, 0);
+  opacity: 1;
+  contain: layout style;
+  will-change: transform, opacity;
+  width: max-content;
+  max-width: calc(100vw - 20px);
+  visibility: visible;
+  transition: transform .48s cubic-bezier(.22,1,.36,1), opacity .30s ease, visibility 0s linear 0s;
 }
-.duyt-contact-morph .duyt-contact-bar {
-  transition: border-radius .58s cubic-bezier(.22,1,.36,1), padding .58s ease, background .4s ease;
+.duyt-contact-float[data-panel-visible="true"] {
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(calc(-50% + var(--duyt-contact-dock-x)), var(--duyt-contact-dock-y), 0) scale(var(--duyt-contact-dock-scale));
+  transition-delay: 0s, 0s, .30s;
 }
-.duyt-contact-morph[data-docked="true"] .duyt-contact-bar {
-  animation: none !important;
-  background: linear-gradient(145deg, rgba(12,10,18,.96), rgba(3,3,5,.95)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 30px 80px rgba(0,0,0,.48), 0 0 42px rgba(160,120,255,.11) !important;
+.duyt-contact-float[data-panel-visible="true"] .duyt-contact-bar {
+  pointer-events: none;
 }
-.duyt-contact-morph[data-docked="true"] .duyt-contact-item {
-  animation: duytContactItemEnter .5s cubic-bezier(.22,1,.36,1) both;
+.duyt-contact-bar {
+  width: max-content;
+  max-width: 100%;
+}
+
+@keyframes duytConciergeCardEnter {
+  0% { opacity: 0; transform: translate3d(0, 18px, 0) scale(.96); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+.duyt-concierge-panel {
+  contain: layout paint style;
+}
+.duyt-concierge-panel[data-contact-active="false"] .duyt-concierge-contact-card {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0) scale(.97);
+  pointer-events: none;
+}
+.duyt-concierge-panel[data-contact-active="true"] .duyt-concierge-contact-card {
+  animation: duytConciergeCardEnter .46s cubic-bezier(.22,1,.36,1) both;
+}
+
+.duyt-deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 780px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .duyt-book-now,
   .duyt-book-now-shine,
-  .duyt-contact-morph,
-  .duyt-contact-morph .duyt-contact-bar { animation: none !important; transition-duration: .01ms !important; }
+  .duyt-contact-float,
+  .duyt-contact-bar,
+  .duyt-contact-item,
+  .duyt-concierge-contact-card { animation: none !important; transition-duration: .01ms !important; }
 }
 
 
@@ -947,15 +973,42 @@ html:lang(vi) .duyt-public-app h2 {
   text-wrap: pretty;
 }
 
-/* The floating row must start at its real first item when it becomes
-   horizontally scrollable; centering overflowing content makes both ends
-   unreachable in Chromium. */
-.duyt-contact-morph[data-docked="false"] .duyt-contact-bar {
-  scroll-padding-inline: .375rem;
-}
-.duyt-contact-morph[data-docked="false"] .duyt-contact-item:first-child {
-  margin-left: 0;
-}
-.duyt-contact-morph[data-docked="false"] .duyt-contact-item:last-child {
-  margin-right: 0;
+
+
+/* Mobile performance budget: avoid fixed blur layers and perpetual motion. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  .duyt-public-app::before,
+  .duyt-public-app .duyt-public-page::before {
+    display: none;
+  }
+
+  .duyt-public-app .glass-card,
+  .duyt-public-app [class*="backdrop-blur"],
+  .duyt-contact-bar {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .duyt-public-app .glass-card {
+    background: rgba(10,10,14,.96) !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.02);
+  }
+
+  .duyt-book-now,
+  .duyt-book-now-shine,
+  .duyt-phone-ring,
+  .duyt-phone-pulse,
+  .duyt-contact-item {
+    animation: none !important;
+  }
+
+  .duyt-contact-item:hover,
+  .duyt-concierge-contact-card:hover,
+  .duyt-public-app article:hover {
+    transform: none !important;
+  }
+
+  .duyt-deferred-section {
+    contain-intrinsic-size: auto 640px;
+  }
 }

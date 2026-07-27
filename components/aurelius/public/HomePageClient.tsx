@@ -6,10 +6,23 @@ import PublicShell from './PublicShell';
 import { publicPath, venuePublicSlug } from './routes';
 import { Locale } from '../i18n';
 import { usePublicVenues } from './usePublicData';
+import type { Venue } from '../types';
+import type { SiteSettings } from '../siteSettings';
 
-export default function HomePageClient({ initialLocale = 'vi' }: { initialLocale?: Locale }) {
+export default function HomePageClient({
+  initialLocale = 'vi',
+  initialVenues = [],
+  initialSiteSettings,
+}: {
+  initialLocale?: Locale;
+  initialVenues?: Venue[];
+  initialSiteSettings?: SiteSettings;
+}) {
   const router = useRouter();
-  const { venues, siteSettings, isLoadingData } = usePublicVenues();
+  const { venues, siteSettings, isLoadingData } = usePublicVenues(
+    initialSiteSettings ? initialVenues : undefined,
+    initialSiteSettings,
+  );
 
   const navigate = (view: string, targetId?: string) => {
     const url = publicPath(initialLocale, view);

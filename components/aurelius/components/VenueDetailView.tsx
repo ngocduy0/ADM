@@ -806,7 +806,7 @@ export default function VenueDetailView({
 
       {showRequestForm && (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 px-4 py-4 backdrop-blur-xl"
+          className="fixed inset-0 z-[90] bg-black/90 sm:flex sm:items-center sm:justify-center sm:bg-black/80 sm:px-4 sm:py-4 sm:backdrop-blur-xl"
           role="dialog"
           aria-modal="true"
           aria-labelledby="reservation-modal-title"
@@ -814,13 +814,13 @@ export default function VenueDetailView({
         >
           <div
             ref={modalRef}
-            className="relative mx-auto flex h-[calc(100dvh-2rem)] max-h-[900px] w-full max-w-[min(940px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[32px] border border-gold/20 bg-[#030304] shadow-2xl shadow-black/75"
+            className="relative mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-[#030304] shadow-2xl shadow-black/75 sm:h-[calc(100dvh-2rem)] sm:max-h-[900px] sm:max-w-[min(940px,calc(100vw-2rem))] sm:rounded-[32px] sm:border sm:border-gold/20"
           >
             <button
               type="button"
               onClick={() => setShowRequestForm(false)}
               aria-label={ui.closeForm}
-              className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#07070A]/85 text-white transition hover:border-gold hover:text-gold focus:outline-none focus:ring-2 focus:ring-gold/50"
+              className="absolute right-3 top-[max(.75rem,env(safe-area-inset-top))] z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-[#07070A]/95 text-white shadow-lg transition hover:border-gold hover:text-gold focus:outline-none focus:ring-2 focus:ring-gold/50 sm:right-4 sm:top-4 sm:h-10 sm:w-10"
             >
               <X className="h-5 w-5" />
             </button>
