@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { FormField, inputClass } from '../ui/FormField';
 import { PageHeader } from '../ui/PageHeader';
+import { PushNotificationSettings } from '../push/PushNotificationSettings';
 
 export function SettingsPage() {
   const { settings, saveSettings, uploadMedia, saving, showToast } = useAdminData();
@@ -43,6 +44,7 @@ export function SettingsPage() {
               <div className="space-y-4"><FormField label="Logo URL"><input className={inputClass} value={draft.logoUrl || ''} onChange={(event) => setDraft({ ...draft, logoUrl: event.target.value, logoPath: '' })} placeholder="https://cdn.../logo.png" /></FormField><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => inputRef.current?.click()} disabled={uploading}>{uploading ? <Loader2 size={17} className="animate-spin" /> : <UploadCloud size={17} />}{uploading ? 'Đang tải...' : 'Upload logo'}</Button><Button variant="secondary" onClick={() => setDraft({ ...draft, logoUrl: '', logoPath: '' })}><RotateCcw size={17} />Dùng logo mặc định</Button></div><input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={(event) => uploadLogo(event.target.files?.[0])} /><p className="text-xs font-medium leading-5 text-slate-400">Khuyến nghị PNG/WebP nền trong suốt, chiều rộng tối thiểu 512px. Không đưa file logo vào base64/localStorage.</p></div>
             </div>
           </Card>
+          <PushNotificationSettings />
           <Card>
             <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><ShieldCheck size={23} /></span><div><h2 className="text-lg font-black">Bảo mật quản trị</h2><p className="mt-1 text-sm font-medium text-slate-500">Phiên admin sử dụng cookie HTTP-only, được kiểm tra ở route layout và API cần quyền.</p></div></div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2"><Status title="Phiên đăng nhập" text="Cookie ký HMAC, tự hết hạn" /><Status title="Upload media" text="Yêu cầu phiên admin hợp lệ" /><Status title="Dữ liệu" text="Đồng bộ Supabase + cache local" /><Status title="Realtime" text="Supabase Realtime + polling dự phòng" /></div>

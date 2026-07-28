@@ -35,6 +35,7 @@ import { getSupabaseBrowserClient } from '@/components/aurelius/supabaseBrowser'
 import { BookingStatus, VipStatus, type Customer, type ReservationRequest, type Venue } from '@/components/aurelius/types';
 import { getStatusTransitionDecision, validateCustomer, validateReservation, validateVenue } from '@/lib/booking-rules';
 import { databaseTimestampMs, reservationEventIso, reservationEventTimestamp } from '@/lib/date-time';
+import { disableAdminPush } from '@/lib/admin-push-client';
 import type { AdminNotification, ConciergePayload, ToastMessage } from './types';
 import { normalizePhone, slugId } from './utils';
 import { ToastHost } from './ui/ToastHost';
@@ -635,6 +636,9 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
       .map((notice) => notice.reservationId)
       .filter(Boolean);
     setNotifications((current) => current.map((notice) => !target || target.has(notice.id) ? { ...notice, read: true } : notice));
+    if (!target && 'clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(() => undefined);
+    }
     try {
       await fetch('/api/admin-notifications', {
         method: 'PATCH',
@@ -647,6 +651,7 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
   }, [notifications]);
 
   const logout = useCallback(async () => {
+    await disableAdminPush().catch(() => undefined);
     await fetch('/api/admin-logout', { method: 'POST' }).catch(() => undefined);
     router.replace('/login');
     router.refresh();

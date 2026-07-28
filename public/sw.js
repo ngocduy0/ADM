@@ -1,7 +1,8 @@
 /* DuyT Booking PWA service worker.
  * Admin pages and APIs are intentionally never cached because they contain private data.
+ * Web Push notifications are handled here so iPhone can notify while the PWA is closed.
  */
-const CACHE_NAME = 'duyt-admin-static-v2';
+const CACHE_NAME = 'duyt-admin-static-v3';
 const STATIC_ASSETS = [
   '/offline',
   '/manifest.webmanifest',
@@ -22,6 +23,27 @@ function offlineResponse() {
   ));
 }
 
+function readPushPayload(event) {
+  if (!event.data) return {};
+  try {
+    return event.data.json();
+  } catch {
+    return { body: event.data.text() };
+  }
+}
+
+function safeAdminUrl(rawUrl) {
+  try {
+    const url = new URL(String(rawUrl || '/admin/notifications'), self.location.origin);
+    if (url.origin !== self.location.origin || !url.pathname.startsWith('/admin')) {
+      return new URL('/admin/notifications', self.location.origin).href;
+    }
+    return url.href;
+  } catch {
+    return new URL('/admin/notifications', self.location.origin).href;
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -38,6 +60,56 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim()),
   );
+});
+
+self.addEventListener('push', (event) => {
+  const payload = readPushPayload(event);
+  const title = String(payload.title || 'DuyT Booking');
+  const body = String(payload.body || 'Bạn có thông báo mới.');
+  const url = safeAdminUrl(payload.url);
+
+  event.waitUntil((async () => {
+    await self.registration.showNotification(title, {
+      body,
+      icon: payload.icon || '/icons/pwa-192.png',
+      badge: payload.badge || '/icons/pwa-192.png',
+      tag: payload.tag || `duyt-${Date.now()}`,
+      renotify: true,
+      silent: false,
+      data: {
+        url,
+        kind: payload.kind || 'system',
+        tableColor: payload.tableColor || '',
+      },
+    });
+
+    if (typeof self.registration.setAppBadge === 'function') {
+      await self.registration.setAppBadge(1).catch(() => undefined);
+    }
+  })());
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = safeAdminUrl(event.notification.data && event.notification.data.url);
+
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if ('focus' in client) {
+        if ('navigate' in client) await client.navigate(targetUrl).catch(() => undefined);
+        await client.focus();
+        if (typeof self.registration.setAppBadge === 'function') {
+          await self.registration.clearAppBadge().catch(() => undefined);
+        }
+        return;
+      }
+    }
+    await self.clients.openWindow(targetUrl);
+    if (typeof self.registration.setAppBadge === 'function') {
+      await self.registration.clearAppBadge().catch(() => undefined);
+    }
+  })());
 });
 
 self.addEventListener('fetch', (event) => {

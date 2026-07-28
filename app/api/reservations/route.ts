@@ -7,8 +7,10 @@ import { requireAdminApi } from '@/lib/admin-api';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 import { consumeRateLimit, getClientIp } from '@/lib/request-rate-limit';
 import { readAllData, replaceAllData, upsertBookingNotificationFast, upsertReservationFast, writeSecurityLog } from '@/lib/concierge-repository';
+import { buildBookingPushPayload, sendAdminPush } from '@/lib/admin-push-server';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 function readReservationsPayload(body: unknown): ReservationRequest[] | null {
   if (Array.isArray(body)) return body as ReservationRequest[];
@@ -83,6 +85,11 @@ export async function POST(request: Request) {
 
     const saved = await upsertReservationFast(reservation, current);
     await upsertBookingNotificationFast(saved).catch(() => undefined);
+    if (!isAdmin) {
+      await sendAdminPush(buildBookingPushPayload(saved)).catch((pushError) => {
+        if (process.env.NODE_ENV === 'development') console.warn('[Booking Web Push]', pushError);
+      });
+    }
     void writeSecurityLog('RESERVATION_POST', request, {
       reservationId: saved.id,
       venueId: saved.venueId,

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, writeSecurityLog } from '@/lib/concierge-repository';
 import { consumeRateLimit, getClientIp } from '@/lib/request-rate-limit';
+import { buildContactPushPayload, sendAdminPush } from '@/lib/admin-push-server';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\+[1-9]\d{7,14}$/;
@@ -73,6 +75,15 @@ export async function POST(request: Request) {
     });
 
     if (error) throw error;
+
+    await sendAdminPush(buildContactPushPayload({
+      id: requestId,
+      name,
+      phone,
+      message,
+    })).catch((pushError) => {
+      if (process.env.NODE_ENV === 'development') console.warn('[Contact Web Push]', pushError);
+    });
 
     void writeSecurityLog('CONTACT_REQUEST_POST', request, {
       requestId,

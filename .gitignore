@@ -26,3 +26,5 @@ Thumbs.db
 
 # local QA helpers
 .qa-ts-loader.mjs
+.env*.local
+!.env.example
