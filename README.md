@@ -148,3 +148,43 @@ Nếu vẫn muốn sửa native binding thay vì dùng Webpack, hãy xác nhận
 - Nội dung admin và API không được service worker cache để tránh lưu dữ liệu riêng tư trên thiết bị.
 
 Sau khi cập nhật production, nên đóng PWA rồi mở lại. Nếu iPhone vẫn hiển thị bản cũ, xóa biểu tượng DuyT Admin khỏi Home Screen, mở Safari và thêm lại bằng **Chia sẻ → Thêm vào Màn hình chính**.
+
+## Web Push cho PWA admin trên iPhone
+
+Source đã có đầy đủ luồng đăng ký thiết bị, lưu subscription vào Supabase, gửi push sau booking/liên hệ mới, thông báo thử và xử lý click trong service worker.
+
+### 1. Tạo bảng Supabase
+
+Chạy file sau trong Supabase SQL Editor:
+
+```text
+supabase/migrations/20260728_admin_push_subscriptions.sql
+```
+
+### 2. Tạo VAPID key một lần
+
+```bash
+npm install
+npx web-push generate-vapid-keys --json
+```
+
+Thêm vào `.env.local` và Vercel Environment Variables:
+
+```env
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<publicKey>
+VAPID_PRIVATE_KEY=<privateKey>
+VAPID_SUBJECT=mailto:email-cua-ban@example.com
+SUPABASE_SERVICE_ROLE_KEY=<supabase-service-role-key>
+```
+
+Không commit `.env.local`. Không đổi VAPID key sau khi thiết bị đã đăng ký, trừ khi chấp nhận đăng ký lại toàn bộ thiết bị.
+
+### 3. Deploy và bật trên iPhone
+
+1. Redeploy sau khi thêm biến môi trường.
+2. Mở domain HTTPS bằng Safari và thêm vào Màn hình chính.
+3. Mở từ icon DuyT, đăng nhập.
+4. Vào `Khác → Cài đặt → Thông báo đẩy trên iPhone`.
+5. Nhấn `Bật thông báo`, sau đó `Gửi thông báo thử`.
+
+Các API Web Push đều kiểm tra cookie admin HTTP-only. Bảng subscription chỉ cho `service_role` truy cập.

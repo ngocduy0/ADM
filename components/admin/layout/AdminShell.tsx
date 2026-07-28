@@ -6,6 +6,7 @@ import { useAdminData } from '../AdminDataProvider';
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
 import { MobileAdminChrome } from '../mobile/MobileAdminChrome';
+import { PushNotificationPrompt } from '../push/PushNotificationPrompt';
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -41,6 +42,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+      <PushNotificationPrompt />
     </div>
   );
 }
