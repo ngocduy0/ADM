@@ -76,14 +76,14 @@ export function BookingsPage() {
   const changeTab = (value: 'ALL' | BookingStatus) => { setStatus(value); setPage(1); };
 
   return (
-    <div className="pb-10">
+    <div className="admin-bookings-page pb-10">
       <PageHeader
         title="Danh sách đặt chỗ"
         description="Ưu tiên thông tin khách, số điện thoại, bàn, địa điểm và thời gian để xử lý nhanh."
         actions={<Button onClick={() => setCreateOpen(true)}><Plus size={18} />Đặt chỗ mới</Button>}
       />
 
-      <Card className="mb-7 p-4">
+      <Card className="admin-booking-filters mb-7 p-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="inline-flex w-full overflow-x-auto rounded-2xl bg-slate-100 p-1 lg:w-auto">
             {tabItems.map((tab) => <button key={tab.value} onClick={() => changeTab(tab.value)} className={cn('shrink-0 rounded-xl px-5 py-2.5 text-sm font-black transition', status === tab.value ? 'bg-white text-[#1F3A8A] shadow-sm' : 'text-slate-600 hover:text-slate-950')}>{tab.label}</button>)}
@@ -102,9 +102,9 @@ export function BookingsPage() {
           const tableLabel = booking.preferredTableName || 'Chưa chọn bàn';
           const isFocused = focusBookingId === booking.id;
           return (
-            <Card id={`booking-${booking.id}`} key={booking.id} className={cn('relative overflow-visible rounded-[26px] p-0 transition-all duration-500', isFocused ? 'border-blue-300 ring-4 ring-blue-100 shadow-[0_22px_70px_rgba(37,99,235,0.16)]' : index === 0 && booking.status === BookingStatus.NEW ? 'border-blue-200 ring-2 ring-blue-100' : '')}>
-              <div className="grid gap-5 p-5 md:grid-cols-[minmax(210px,1.1fr)_minmax(220px,1.1fr)_160px_170px_70px] md:items-center lg:p-6">
-                <div className="flex min-w-0 items-center gap-4">
+            <Card id={`booking-${booking.id}`} key={booking.id} className={cn('admin-booking-card relative overflow-visible rounded-[26px] p-0 transition-all duration-500', isFocused ? 'border-blue-300 ring-4 ring-blue-100 shadow-[0_22px_70px_rgba(37,99,235,0.16)]' : index === 0 && booking.status === BookingStatus.NEW ? 'border-blue-200 ring-2 ring-blue-100' : '')}>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 p-4 md:grid-cols-[minmax(210px,1.1fr)_minmax(220px,1.1fr)_160px_170px_70px] md:items-center lg:p-6">
+                <div className="col-span-2 flex min-w-0 items-center gap-3 pr-10 md:col-span-1 md:gap-4 md:pr-0">
                   <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-slate-100 text-[#1F3A8A]"><Users size={22} /></div>
                   <div className="min-w-0">
                     <span className="inline-flex max-w-full rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider" style={{ backgroundColor: `${booking.preferredTableColor || '#1F3A8A'}18`, color: booking.preferredTableColor || '#1F3A8A' }}>{tableLabel}{booking.preferredTableArea ? ` · ${booking.preferredTableArea}` : ''}</span>
@@ -113,23 +113,23 @@ export function BookingsPage() {
                   </div>
                 </div>
 
-                <div className="min-w-0">
-                  <p className="truncate text-base font-bold text-slate-800">{booking.venueName}</p>
+                <div className="col-span-2 min-w-0 rounded-2xl bg-slate-50 p-3 md:col-span-1 md:rounded-none md:bg-transparent md:p-0">
+                  <p className="truncate text-sm font-extrabold text-slate-800 md:text-base">{booking.venueName}</p>
                   <p className="mt-1 text-xs font-semibold text-slate-500">{formatDate(booking.date)} · {booking.arrivalTime}</p>
                   <p className="mt-2 truncate text-[11px] font-medium text-slate-400">Mã: {booking.referenceCode || booking.id}</p>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <p className="flex items-center gap-2 text-sm font-bold text-slate-700"><Users size={16} className="text-slate-400" />{booking.guestCount} người</p>
                   <p className="mt-2 text-sm font-black text-emerald-600">{formatVnd(reservationMinimumSpend(booking, venues))}</p>
                 </div>
 
-                <div>
+                <div className="w-[142px] md:w-auto">
                   <StatusPicker booking={booking} onChange={(next) => updateReservationStatus(booking.id, next)} />
                   <p className="mt-2 pl-1 text-[10px] font-bold text-slate-400">Nguồn: {booking.source}</p>
                 </div>
 
-                <div className="relative flex justify-end">
+                <div className="absolute right-3 top-3 flex justify-end md:relative md:right-auto md:top-auto">
                   <button onClick={() => setMenuId(menuId === booking.id ? null : booking.id)} className="grid h-10 w-10 place-items-center rounded-full text-slate-600 hover:bg-slate-100" aria-label="Thao tác"><MoreVertical size={20} /></button>
                   {menuId === booking.id ? <div className="absolute right-0 top-11 z-30 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
                     <button onClick={() => { setDetail(booking); setMenuId(null); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50"><Eye size={17} />Xem chi tiết</button>

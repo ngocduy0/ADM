@@ -14,6 +14,7 @@ import { Card } from '../ui/Card';
 import { PageHeader } from '../ui/PageHeader';
 import { formatCompact, formatDate, formatVnd, getMonday, addDays, localDateKey, reservationMinimumSpend, statusLabels, statusTone } from '../utils';
 import { isContactNotification } from '../notification-utils';
+import { MobileDashboardPage } from '../mobile/MobileDashboardPage';
 
 export function DashboardPage() {
   const { reservations, venues, customers, notifications } = useAdminData();
@@ -57,7 +58,9 @@ export function DashboardPage() {
   const topVenues = [...venues].sort((a, b) => Number(b.viewCount || 0) - Number(a.viewCount || 0)).slice(0, 4);
 
   return (
-    <div className="pb-10">
+    <>
+      <MobileDashboardPage />
+      <div className="hidden pb-10 md:block">
       <PageHeader
         title="Tổng quan hệ thống"
         description={`Hôm nay, ${formatDate(new Date(), { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`}
@@ -131,8 +134,9 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <BookingFormModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
-    </div>
+        <BookingFormModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
+      </div>
+    </>
   );
 }
 
