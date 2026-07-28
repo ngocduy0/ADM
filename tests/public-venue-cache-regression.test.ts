@@ -28,7 +28,7 @@ test('public venue detail API uses the full public venue reader, not booking/cus
   assert.doesNotMatch(source, /const data = await readAllData\(\);\s*\n\s*const venue = findVenue\(data\.venues, id\)/);
 });
 
-test('floating contact bar is restricted to home, fits its content, and stays hidden below Concierge', () => {
+test('floating contact bar is restricted to home, fits its content, and only docks while Concierge is visible', () => {
   const appSource = read('components/aurelius/App.tsx');
   const shellSource = read('components/aurelius/public/PublicShell.tsx');
   const contactSource = read('components/aurelius/components/FloatingContact.tsx');
@@ -37,11 +37,14 @@ test('floating contact bar is restricted to home, fits its content, and stays hi
 
   assert.match(appSource, /currentView === "HOME" \? <FloatingContact/);
   assert.match(shellSource, /activeView === 'HOME' \? <FloatingContact/);
+  assert.match(homepageSource, /id="concierge-contact-dock"/);
   assert.match(homepageSource, /id="concierge-contact-trigger"/);
-  assert.match(contactSource, /document\.getElementById\("concierge-contact-trigger"\)/);
-  assert.match(contactSource, /rootMargin: "-68% 0px -31% 0px"/);
-  assert.match(contactSource, /entry\.boundingClientRect\.top <= dockLine/);
-  assert.match(contactSource, /w-fit max-w-\[calc\(100vw-20px\)\]/);
+  assert.match(contactSource, /document\.getElementById\("concierge-contact-dock"\)/);
+  assert.match(contactSource, /const bandTop = window\.innerHeight \* 0\.16/);
+  assert.match(contactSource, /const bandBottom = window\.innerHeight \* 0\.82/);
+  assert.match(contactSource, /rect\.bottom > bandTop && rect\.top < bandBottom/);
+  assert.match(contactSource, /rootMargin: "-16% 0px -18% 0px"/);
+  assert.match(contactSource, /w-max max-w-\[calc\(100vw-20px\)\]/);
   assert.match(contactSource, /w-max max-w-full/);
   assert.doesNotMatch(contactSource, /w-\[min\(860px/);
   assert.match(cssSource, /data-panel-visible="true"[\s\S]*visibility: hidden/);

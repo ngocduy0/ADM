@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test:rules": "tsx --test tests/booking-rules.test.ts",
     "qa": "npm run test && npm run lint -- --quiet && npm run build",
     "dev:webpack": "next dev --webpack",
+    "dev:turbopack": "next dev",
+    "build:turbopack": "next build",
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
