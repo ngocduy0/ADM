@@ -1,0 +1,1417 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Bungee&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Aurelius luxury theme */
+
+@theme {
+  --font-sans: "Inter", "Segoe UI", Arial, "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-gold: #D6A85F;
+  --color-gold-light: #F4C377;
+  --color-gold-dark: #7C5816;
+  --color-deep-black: #090B0F;
+  --color-dark-navy: #111318;
+  --color-luxury-grey: #1A1D23;
+  --color-luxury-border: rgba(214, 168, 95, 0.15);
+}
+
+/* Custom global styles for the Aurelius Luxury Theme */
+body {
+  background-color: #090B0F;
+  color: #e2e2e8;
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism custom card */
+.glass-card {
+  background: rgba(17, 19, 24, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(214, 168, 95, 0.15);
+}
+
+.glass-card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  border-color: rgba(214, 168, 95, 0.35);
+  background: rgba(17, 19, 24, 0.8);
+  box-shadow: 0 12px 40px -12px rgba(214, 168, 95, 0.12);
+}
+
+/* Hide default input controls to keep clean lines */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(50%) saturate(600%) hue-rotate(330deg);
+  cursor: pointer;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(50%) saturate(600%) hue-rotate(330deg);
+  cursor: pointer;
+}
+
+/* Custom scrollbar for high-end feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090B0F;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(214, 168, 95, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(214, 168, 95, 0.4);
+}
+
+/* Soft gold glow visual cues */
+.gold-glow-hover {
+  transition: all 0.3s ease;
+}
+.gold-glow-hover:hover {
+  box-shadow: 0 0 25px rgba(214, 168, 95, 0.25);
+  text-shadow: 0 0 10px rgba(214, 168, 95, 0.15);
+}
+
+/* Typography styles */
+.serif-heading {
+  font-family: var(--font-serif);
+}
+
+.sans-label {
+  font-family: var(--font-sans);
+  letter-spacing: 0.12em;
+}
+/* Luxury Concierge Dashboard imported from luxury-concierge-dashboard */
+@theme {
+  --color-luxury-gold: #D6A85F;
+  --color-luxury-bg: #F5F5F7;
+  --color-luxury-card: #FFFFFF;
+}
+
+@keyframes accent-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.85; }
+}
+
+.pulse-accent {
+  animation: accent-pulse 2s infinite ease-in-out;
+}
+
+/* DuyT style refinements */
+.font-serif,
+.serif-heading {
+  font-family: Georgia, 'Times New Roman', ui-serif, serif;
+}
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  button,
+  input,
+  select,
+  textarea,
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:pl-0 {
+    padding-left: 0 !important;
+  }
+  .print\:p-4 {
+    padding: 1rem !important;
+  }
+  .print\:static {
+    position: static !important;
+  }
+  .print\:bg-white {
+    background: #ffffff !important;
+  }
+}
+
+/* Prevent Vietnamese/Thai/Korean headings from breaking words into broken syllables. */
+h1,
+h2,
+h3,
+.font-serif,
+.serif-heading {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
+@media (max-width: 640px) {
+  h1,
+  h2,
+  h3,
+  .font-serif,
+  .serif-heading {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Production mobile refinements */
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  html {
+    scroll-padding-top: 72px;
+  }
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+}
+
+/* Vietnamese production typography: use a Vietnamese-safe sans stack for headings to avoid broken accents. */
+.font-serif,
+.serif-heading {
+  font-family: Inter, 'Segoe UI', Arial, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+:lang(vi) h1,
+:lang(vi) h2,
+:lang(vi) h3,
+:lang(vi) .font-serif,
+:lang(vi) .serif-heading {
+  font-family: Inter, 'Segoe UI', Arial, ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: 0 !important;
+}
+:lang(vi) .tracking-wide.font-serif,
+:lang(vi) .tracking-wider.font-serif,
+:lang(vi) .tracking-widest.font-serif {
+  letter-spacing: 0 !important;
+}
+
+/* === Admin redesign copied from duyt-concierge-dashboard.zip style === */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-surface: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container: #eaedff;
+  --color-on-surface: #e2e2e8;
+  --color-on-surface-variant: #8f96a6;
+  --color-primary: #0066ff;
+  --color-primary-container: #3b82f6;
+  --color-on-primary: #ffffff;
+  --color-outline-variant: #c2c6d8;
+  --color-on-secondary-fixed: #111827;
+  --color-on-secondary-fixed-variant: #2d3043;
+}
+
+.duyt-admin-app {
+  background: #f8f9ff !important;
+  color: #0f1b35 !important;
+  font-family: var(--font-sans) !important;
+}
+
+.duyt-admin-app [class*="text-on-surface"] {
+  color: #0f1b35 !important;
+}
+
+.duyt-admin-app [class*="text-on-surface-variant"] {
+  color: #424656 !important;
+}
+
+.duyt-admin-app .font-mono {
+  font-family: var(--font-mono) !important;
+}
+
+.duyt-admin-app #sidebar-navigation {
+  background-color: #f3f3f8 !important;
+  border-right: 1px solid rgba(194, 198, 216, 0.5) !important;
+  color: #1a1c1f !important;
+}
+
+.duyt-admin-app #top-app-bar {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.duyt-admin-app .bg-white,
+.duyt-admin-app [class*="bg-white"] {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+.duyt-admin-app input,
+.duyt-admin-app select,
+.duyt-admin-app textarea,
+.duyt-admin-app #search-container {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.duyt-admin-app input:focus,
+.duyt-admin-app select:focus,
+.duyt-admin-app textarea:focus,
+.duyt-admin-app #search-container:focus-within {
+  border-color: #0066ff !important;
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.15) !important;
+}
+
+.duyt-admin-app input::placeholder,
+.duyt-admin-app textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.duyt-admin-app .text-\[\#0066ff\],
+.duyt-admin-app .text-\[\#3b82f6\],
+.duyt-admin-app [class*="text-[#0066ff]"] {
+  color: #0066ff !important;
+}
+
+.duyt-admin-app .bg-\[\#0066ff\],
+.duyt-admin-app .bg-primary,
+.duyt-admin-app [class*="bg-primary"] {
+  background-color: #0066ff !important;
+  color: #ffffff !important;
+  border-color: #0052cc !important;
+  box-shadow: 0 4px 14px 0 rgba(0, 102, 255, 0.25) !important;
+}
+
+.duyt-admin-app .bg-on-surface,
+.duyt-admin-app [class*="bg-on-surface"] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.duyt-admin-app .border-black\/10,
+.duyt-admin-app [class*="border-slate-"],
+.duyt-admin-app [class*="border-outline-"] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.duyt-admin-app .rounded-\[32px\],
+.duyt-admin-app .rounded-\[28px\],
+.duyt-admin-app .rounded-\[24px\] {
+  border-radius: 1.5rem !important;
+}
+
+.duyt-admin-app .shadow-sm {
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Stitch Batch 1 admin-shell contract. */
+.admin-shell-content,
+#sidebar-navigation {
+  transition: margin-left 200ms ease, width 200ms ease, transform 200ms ease;
+}
+
+.admin-shell--collapsed #sidebar-navigation {
+  width: 72px !important;
+  padding-inline: 12px !important;
+  align-items: center;
+}
+
+.admin-shell--collapsed .admin-shell-content {
+  margin-left: 72px !important;
+}
+
+.admin-shell--collapsed .admin-sidebar-label,
+.admin-shell--collapsed #sidebar-navigation nav button > span:last-child,
+.admin-shell--collapsed #sidebar-navigation nav button > span + span {
+  display: none;
+}
+
+.admin-shell--collapsed #sidebar-navigation nav button,
+.admin-shell--collapsed #logout-button {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.admin-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.admin-more-sheet {
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+  #sidebar-navigation {
+    width: 280px !important;
+    background: #fff !important;
+    transform: translateX(-100%);
+  }
+
+  #sidebar-navigation.admin-drawer-open {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 767px) {
+  #top-app-bar {
+    height: calc(56px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+.duyt-admin-app .hover\:bg-\[\#f8fafc\]:hover,
+.duyt-admin-app .hover\:bg-slate-50:hover,
+.duyt-admin-app .hover\:bg-gray-50:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.duyt-admin-app .bg-emerald-50,
+.duyt-admin-app .bg-emerald-500\/10 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #059669 !important;
+  font-weight: 700 !important;
+}
+
+.duyt-admin-app .bg-amber-50,
+.duyt-admin-app .bg-orange-50,
+.duyt-admin-app .bg-orange-500\/10 {
+  background-color: #fff7ed !important;
+  border-color: #ffedd5 !important;
+  color: #ea580c !important;
+  font-weight: 700 !important;
+}
+
+.duyt-admin-app .bg-red-50,
+.duyt-admin-app .bg-rose-50,
+.duyt-admin-app .bg-rose-500\/10 {
+  background-color: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+  color: #ef4444 !important;
+  font-weight: 700 !important;
+}
+
+.duyt-admin-app table thead {
+  background: #f8fafc !important;
+}
+
+.duyt-admin-app th {
+  color: #64748b !important;
+  font-weight: 800 !important;
+}
+
+.duyt-admin-app td {
+  color: #0f172a;
+}
+
+.duyt-admin-app ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.duyt-admin-app ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.duyt-admin-app ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+}
+
+.duyt-admin-app ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Route-based DuyT Booking admin (refactored from the legacy single-file dashboard). */
+.duyt-admin-app,
+.duyt-admin-login {
+  font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.duyt-admin-app {
+  color-scheme: light;
+  background: #f7f8fc;
+}
+
+.duyt-admin-app button,
+.duyt-admin-app input,
+.duyt-admin-app select,
+.duyt-admin-app textarea,
+.duyt-admin-login button,
+.duyt-admin-login input {
+  font: inherit;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #d7dce5; border-radius: 999px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #aeb7c5; }
+
+.duyt-admin-app input[type="date"]::-webkit-calendar-picker-indicator,
+.duyt-admin-app input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+@media (max-width: 640px) {
+  .duyt-admin-app table th,
+  .duyt-admin-app table td {
+    white-space: nowrap;
+  }
+}
+
+@keyframes duytContactEnter {
+  0% { opacity: 0; transform: translateY(28px) scale(.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes duytContactItemEnter {
+  0% { opacity: 0; transform: translateY(12px) scale(.88); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes duytContactFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes duytPhoneRing {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  74% { transform: rotate(13deg); }
+  78% { transform: rotate(-12deg); }
+  82% { transform: rotate(9deg); }
+  86% { transform: rotate(-7deg); }
+  90% { transform: rotate(0deg); }
+}
+@keyframes duytPhonePulse {
+  0%, 60%, 100% { opacity: 0; transform: scale(.9); }
+  70% { opacity: .7; transform: scale(1); }
+  90% { opacity: 0; transform: scale(1.55); }
+}
+.duyt-contact-bar {
+  animation: duytContactEnter .42s cubic-bezier(.22,1,.36,1) both;
+}
+.duyt-contact-item { animation: duytContactItemEnter .42s cubic-bezier(.22,1,.36,1) both; }
+.duyt-phone-ring { animation: duytPhoneRing 3.2s ease-in-out infinite; transform-origin: 50% 50%; }
+.duyt-phone-pulse { animation: duytPhonePulse 3.2s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .duyt-contact-bar, .duyt-contact-item, .duyt-phone-ring, .duyt-phone-pulse { animation: none !important; }
+}
+
+
+/* === DuyT Booking public redesign (scoped; admin remains unchanged) === */
+.duyt-public-app {
+  --duyt-public-bg: #020203;
+  --duyt-public-surface-lowest: #050507;
+  --duyt-public-surface-low: #09090d;
+  --duyt-public-surface: #0d0d12;
+  --duyt-public-surface-high: #15151d;
+  --duyt-public-text: #f8f5ff;
+  --duyt-public-muted: #c5becf;
+  --duyt-public-primary: #d0bcff;
+  --duyt-public-primary-soft: #e9ddff;
+  --duyt-public-primary-strong: #a078ff;
+  --duyt-public-primary-dark: #6d3bd7;
+  --duyt-public-outline: #494454;
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  color-scheme: dark;
+  background:
+    radial-gradient(circle at 14% 10%, rgba(125,78,225,.10), transparent 30rem),
+    radial-gradient(circle at 86% 30%, rgba(208,188,255,.045), transparent 34rem),
+    var(--duyt-public-bg) !important;
+  color: var(--duyt-public-text) !important;
+  font-family: Inter, "Segoe UI", Arial, ui-sans-serif, system-ui, sans-serif;
+}
+
+.duyt-public-app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .14;
+  background-image: linear-gradient(rgba(255,255,255,.014) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+.duyt-public-app .font-serif,
+.duyt-public-app .serif-heading,
+.duyt-public-app h1,
+.duyt-public-app h2,
+.duyt-public-app h3 {
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif !important;
+  font-stretch: normal;
+  font-synthesis: none;
+  letter-spacing: -0.018em !important;
+}
+
+.duyt-public-app h1,
+.duyt-public-app h2 {
+  text-wrap: balance;
+  color: #fbf9ff;
+}
+
+.duyt-public-app h1 {
+  font-weight: 650;
+  line-height: .96;
+}
+
+.duyt-public-app h2 {
+  font-weight: 650;
+  line-height: 1;
+}
+
+.duyt-public-app h3 {
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.duyt-public-app h4 {
+  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+  letter-spacing: -.01em;
+}
+
+.duyt-public-app .sans-label {
+  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+}
+
+.duyt-public-app [class*="text-on-surface"] { color: var(--duyt-public-text) !important; }
+.duyt-public-app [class*="text-on-surface-variant"] { color: var(--duyt-public-muted) !important; }
+.duyt-public-app .text-gold,
+.duyt-public-app .text-gold-light,
+.duyt-public-app [class*="text-gold"] { color: var(--duyt-public-primary) !important; }
+.duyt-public-app .fill-gold { fill: var(--duyt-public-primary) !important; }
+.duyt-public-app .border-gold,
+.duyt-public-app [class*="border-gold"] { border-color: rgba(208,188,255,.24) !important; }
+.duyt-public-app .border-gold\/10 { border-color: rgba(208,188,255,.11) !important; }
+.duyt-public-app .border-gold\/15 { border-color: rgba(208,188,255,.15) !important; }
+.duyt-public-app .border-gold\/20 { border-color: rgba(208,188,255,.20) !important; }
+.duyt-public-app .border-gold\/25 { border-color: rgba(208,188,255,.25) !important; }
+.duyt-public-app .border-gold\/30 { border-color: rgba(208,188,255,.30) !important; }
+.duyt-public-app .bg-gold { background: linear-gradient(110deg, var(--duyt-public-primary), var(--duyt-public-primary-dark)) !important; color: #23005c !important; }
+.duyt-public-app .bg-gold\/5 { background-color: rgba(208,188,255,.05) !important; }
+.duyt-public-app .bg-gold\/10 { background-color: rgba(208,188,255,.10) !important; }
+.duyt-public-app .bg-gold\/15 { background-color: rgba(208,188,255,.15) !important; }
+.duyt-public-app .bg-gold\/20 { background-color: rgba(208,188,255,.20) !important; }
+.duyt-public-app .bg-deep-black { background-color: var(--duyt-public-surface-lowest) !important; }
+.duyt-public-app .bg-dark-navy { background-color: var(--duyt-public-surface-low) !important; }
+.duyt-public-app [class*="bg-dark-navy/"] { background-color: rgba(9,9,13,.76) !important; }
+.duyt-public-app [class*="bg-deep-black/"] { background-color: rgba(5,5,7,.82) !important; }
+.duyt-public-app [class*="shadow-gold"] { --tw-shadow-color: rgba(208,188,255,.18) !important; }
+
+.duyt-public-app .glass-card {
+  background: linear-gradient(145deg, rgba(16,16,22,.88), rgba(5,5,8,.88)) !important;
+  border-color: rgba(208,188,255,.13) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.duyt-public-app .glass-card-hover:hover,
+.duyt-public-app .glass-card:hover {
+  border-color: rgba(208,188,255,.38) !important;
+  box-shadow: 0 20px 64px rgba(0,0,0,.32), 0 0 28px rgba(208,188,255,.11) !important;
+}
+
+.duyt-public-app section:not(:first-child) {
+  scroll-margin-top: 92px;
+}
+
+.duyt-public-app .duyt-public-page {
+  position: relative;
+}
+
+.duyt-public-app .duyt-public-page::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  width: min(84vw, 760px);
+  height: 320px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(160,120,255,.055);
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.duyt-public-app article:hover {
+  border-color: rgba(208,188,255,.34) !important;
+}
+
+.duyt-public-app button[class*="bg-gold"],
+.duyt-public-app a[class*="bg-gold"] {
+  box-shadow: 0 0 0 1px rgba(233,221,255,.10), 0 12px 32px rgba(109,59,215,.22) !important;
+}
+
+.duyt-public-app button[class*="bg-gold"]:hover,
+.duyt-public-app a[class*="bg-gold"]:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 0 1px rgba(233,221,255,.22), 0 16px 42px rgba(160,120,255,.32) !important;
+}
+
+.duyt-public-app input,
+.duyt-public-app select,
+.duyt-public-app textarea {
+  background: var(--duyt-public-surface-lowest) !important;
+  border-color: rgba(208,188,255,.16) !important;
+  color: var(--duyt-public-text) !important;
+}
+
+.duyt-public-app input:focus,
+.duyt-public-app select:focus,
+.duyt-public-app textarea:focus {
+  border-color: rgba(208,188,255,.72) !important;
+  box-shadow: 0 0 0 3px rgba(208,188,255,.10) !important;
+}
+
+.duyt-public-app input::placeholder,
+.duyt-public-app textarea::placeholder { color: rgba(220,214,230,.58) !important; }
+
+.duyt-public-app input[type="date"]::-webkit-calendar-picker-indicator,
+.duyt-public-app input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(.82) sepia(.2) saturate(3) hue-rotate(220deg);
+}
+
+.duyt-public-app .duyt-public-footer {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(160,120,255,.08), transparent 22rem),
+    var(--duyt-public-surface-lowest) !important;
+}
+
+.duyt-public-app .duyt-contact-bar {
+  border-color: rgba(208,188,255,.20) !important;
+}
+
+.duyt-public-app ::selection {
+  background: rgba(160,120,255,.38);
+  color: white;
+}
+
+.duyt-public-app ::-webkit-scrollbar-track { background: var(--duyt-public-bg); }
+.duyt-public-app ::-webkit-scrollbar-thumb { background: rgba(208,188,255,.24); }
+.duyt-public-app ::-webkit-scrollbar-thumb:hover { background: rgba(208,188,255,.42); }
+
+@media (max-width: 767px) {
+  .duyt-public-app h1 { line-height: 1.02; }
+  .duyt-public-app .duyt-public-page { padding-top: 2.5rem; }
+  .duyt-public-app article { border-radius: 22px !important; }
+}
+
+
+/* Editorial accents and motion for the public concierge experience. */
+.duyt-public-app .duyt-editorial {
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.022em !important;
+  text-wrap: balance;
+}
+
+@keyframes duytBookPulse {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 22px rgba(160,120,255,.38), 0 10px 30px rgba(0,0,0,.28); }
+  50% { transform: translateY(-1px) scale(1.025); box-shadow: 0 0 38px rgba(208,188,255,.58), 0 14px 38px rgba(0,0,0,.34); }
+}
+@keyframes duytBookShine {
+  0% { transform: translateX(-180%) skewX(-18deg); opacity: 0; }
+  18% { opacity: .65; }
+  48%, 100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+}
+.duyt-book-now { animation: duytBookPulse 2.8s ease-in-out infinite; }
+.duyt-book-now-shine {
+  position: absolute;
+  inset-block: -30%;
+  left: 0;
+  width: 28%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
+  animation: duytBookShine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes duytHeroTitleSheen {
+  0%, 15% { background-position: 180% 50%; }
+  48%, 100% { background-position: -70% 50%; }
+}
+@keyframes duytHeroTitleLift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -2px, 0) scale(1.012); }
+}
+@keyframes duytHeroAuraPulse {
+  0%, 100% { opacity: .42; transform: translate(-50%, -50%) scale(.92); }
+  50% { opacity: .78; transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes duytHeroCaret {
+  0%, 42% { opacity: 1; box-shadow: 0 0 18px rgba(208,188,255,.95); }
+  52%, 100% { opacity: .18; box-shadow: 0 0 5px rgba(208,188,255,.35); }
+}
+@keyframes duytHeroCtaPulse {
+  0%, 100% {
+    transform: translate3d(0,0,0) scale(1);
+    box-shadow: 0 0 0 0 rgba(181,132,255,.35), 0 0 34px rgba(143,82,255,.55), 0 16px 38px rgba(0,0,0,.34);
+  }
+  48% {
+    transform: translate3d(0,-2px,0) scale(1.035);
+    box-shadow: 0 0 0 12px rgba(181,132,255,0), 0 0 52px rgba(212,190,255,.8), 0 20px 46px rgba(0,0,0,.42);
+  }
+}
+@keyframes duytHeroCtaHalo {
+  0%, 100% { opacity: .25; transform: scale(.78); }
+  50% { opacity: .7; transform: scale(1.22); }
+}
+
+.duyt-hero-title-wrap {
+  isolation: isolate;
+}
+.duyt-hero-title-aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(92vw, 980px);
+  height: 132%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(151,82,255,.20) 0%, rgba(92,35,190,.08) 48%, transparent 72%);
+  filter: blur(11px);
+  opacity: .62;
+  animation: duytHeroAuraPulse 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.duyt-hero-title {
+  display: inline-grid;
+  place-items: center;
+  width: min(96vw, 1320px);
+  max-width: 100%;
+  margin-inline: auto;
+
+  font-family:
+    "Plus Jakarta Sans",
+    Inter,
+    "Segoe UI",
+    Arial,
+    ui-sans-serif,
+    system-ui,
+    sans-serif !important;
+  font-size: clamp(3rem, 6.8vw, 7.1rem);
+  font-weight: 800;
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+  text-transform: none;
+  text-wrap: balance;
+
+  transform: none !important;
+  filter: none !important;
+  animation: none !important;
+}
+.duyt-hero-title-glow,
+.duyt-hero-title-face {
+  grid-area: 1 / 1;
+  max-width: 100%;
+}
+/* Viền tím riêng, không blur mặt chữ. */
+.duyt-hero-title-glow {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 5px rgba(139,71,255,.30);
+  filter: drop-shadow(0 0 4px rgba(212,190,255,.72)) drop-shadow(0 0 10px rgba(121,46,235,.62));
+  transform: scale(1.008);
+  opacity: .82;
+  user-select: none;
+  pointer-events: none;
+}
+/* Mặt chữ luôn trắng đặc và sắc nét; tím chỉ nằm ở viền/glow bên ngoài. */
+.duyt-hero-title-face {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  -webkit-text-stroke: 1px rgba(255,255,255,.98);
+  background: none;
+  background-clip: border-box;
+  -webkit-background-clip: border-box;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 3px 0 rgba(91,39,147,.92),
+    0 5px 0 rgba(20,7,35,.90),
+    0 0 4px rgba(255,255,255,.92),
+    0 0 10px rgba(190,132,255,.82),
+    0 0 22px rgba(112,42,226,.62);
+  animation: none;
+}
+
+.duyt-hero-title-wrap::before,
+.duyt-hero-title-wrap::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: clamp(72px, 11vw, 150px);
+  height: clamp(42px, 6vw, 82px);
+  opacity: .48;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 28%, rgba(227,205,255,.9) 0 3px, transparent 4px),
+    radial-gradient(circle at 72% 18%, rgba(166,95,255,.9) 0 4px, transparent 5px),
+    radial-gradient(circle at 42% 72%, rgba(255,255,255,.75) 0 2px, transparent 3px),
+    linear-gradient(112deg, transparent 36%, rgba(151,74,255,.42) 38% 54%, transparent 57%);
+  filter: drop-shadow(0 0 12px rgba(159,82,255,.65));
+}
+.duyt-hero-title-wrap::before { left: 2%; top: 2%; transform: rotate(-12deg); }
+.duyt-hero-title-wrap::after { right: 2%; bottom: 3%; transform: rotate(14deg) scaleX(-1); }
+
+.duyt-hero-caret {
+  animation: duytHeroCaret .9s steps(1,end) infinite;
+}
+.duyt-hero-book-now {
+  isolation: isolate;
+  animation: duytHeroCtaPulse 2.15s cubic-bezier(.4,0,.2,1) infinite;
+}
+.duyt-hero-book-now::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,.18);
+  pointer-events: none;
+}
+.duyt-hero-book-now:hover {
+  animation-play-state: paused;
+  transform: translate3d(0,-4px,0) scale(1.045);
+  box-shadow: 0 0 0 9px rgba(181,132,255,.08), 0 0 58px rgba(220,203,255,.88), 0 22px 48px rgba(0,0,0,.44);
+}
+.duyt-hero-book-now:active {
+  animation: none;
+  transform: translate3d(0,1px,0) scale(.97);
+}
+.duyt-hero-book-halo {
+  position: absolute;
+  inset: -45%;
+  z-index: -1;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(226,207,255,.5), rgba(143,82,255,.18) 42%, transparent 68%);
+  animation: duytHeroCtaHalo 2.15s ease-in-out infinite;
+  pointer-events: none;
+}
+
+
+@keyframes duytLightningFlash {
+  0%, 12%, 100% { opacity: 0; transform: scale(.72) rotate(var(--bolt-rotate)); }
+  14% { opacity: 1; transform: scale(1.08) rotate(var(--bolt-rotate)); }
+  17% { opacity: .18; }
+  20% { opacity: .95; transform: scale(.96) rotate(var(--bolt-rotate)); }
+  27% { opacity: 0; }
+}
+.duyt-lightning-bolt {
+  --bolt-rotate: 0deg;
+  position: absolute;
+  z-index: 3;
+  width: 13px;
+  height: 30px;
+  opacity: 0;
+  background: linear-gradient(180deg, #fff 0%, #e7d6ff 35%, #8f45ff 100%);
+  clip-path: polygon(55% 0, 100% 0, 66% 38%, 94% 38%, 22% 100%, 43% 54%, 8% 54%);
+  filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #9b55ff);
+  animation: duytLightningFlash 2.6s steps(1,end) infinite;
+  pointer-events: none;
+}
+.duyt-lightning-bolt--one { --bolt-rotate: -18deg; left: -10px; top: -10px; }
+.duyt-lightning-bolt--two { --bolt-rotate: 20deg; right: -9px; top: -8px; animation-delay: .62s; }
+.duyt-lightning-bolt--three { --bolt-rotate: 156deg; left: 18%; bottom: -18px; animation-delay: 1.18s; }
+.duyt-lightning-bolt--four { --bolt-rotate: 202deg; right: 17%; bottom: -17px; animation-delay: 1.72s; }
+.duyt-hero-book-now:hover .duyt-lightning-bolt { animation-duration: 1.35s; }
+
+.duyt-contact-float {
+  --duyt-contact-dock-x: 0px;
+  --duyt-contact-dock-y: 14px;
+  --duyt-contact-dock-scale: .92;
+  transform: translate3d(-50%, 0, 0);
+  opacity: 1;
+  contain: layout style;
+  will-change: transform, opacity;
+  width: max-content;
+  max-width: calc(100vw - 20px);
+  visibility: visible;
+  transition: transform .48s cubic-bezier(.22,1,.36,1), opacity .30s ease, visibility 0s linear 0s;
+}
+.duyt-contact-float[data-panel-visible="true"] {
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(calc(-50% + var(--duyt-contact-dock-x)), var(--duyt-contact-dock-y), 0) scale(var(--duyt-contact-dock-scale));
+  transition-delay: 0s, 0s, .30s;
+}
+.duyt-contact-float[data-panel-visible="true"] .duyt-contact-bar {
+  pointer-events: none;
+}
+.duyt-contact-bar {
+  width: max-content;
+  max-width: 100%;
+}
+
+@keyframes duytConciergeCardEnter {
+  0% { opacity: 0; transform: translate3d(0, 18px, 0) scale(.96); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+.duyt-concierge-panel {
+  contain: layout paint style;
+}
+.duyt-concierge-panel[data-contact-active="false"] .duyt-concierge-contact-card {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0) scale(.97);
+  pointer-events: none;
+}
+.duyt-concierge-panel[data-contact-active="true"] .duyt-concierge-contact-card {
+  animation: duytConciergeCardEnter .46s cubic-bezier(.22,1,.36,1) both;
+}
+
+.duyt-deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 780px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duyt-book-now,
+  .duyt-book-now-shine,
+  .duyt-hero-title,
+  .duyt-hero-title-face,
+  .duyt-hero-title-aura,
+  .duyt-hero-caret,
+  .duyt-hero-book-halo,
+  .duyt-lightning-bolt,
+  .duyt-contact-float,
+  .duyt-contact-bar,
+  .duyt-contact-item,
+  .duyt-concierge-contact-card { animation: none !important; transition-duration: .01ms !important; }
+}
+
+
+/* Vietnamese-safe editorial typography.
+   Cormorant keeps the JeongJay-inspired look for Latin locales; Noto Serif is
+   used for Vietnamese because it has complete precomposed and combining-mark
+   coverage in both roman and italic styles. */
+html:lang(vi) .duyt-public-app .font-serif,
+html:lang(vi) .duyt-public-app .serif-heading,
+html:lang(vi) .duyt-public-app .duyt-editorial,
+html:lang(vi) .duyt-public-app h1,
+html:lang(vi) .duyt-public-app h2,
+html:lang(vi) .duyt-public-app h3 {
+  font-family: "Noto Serif", "Times New Roman", Georgia, serif !important;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures contextual;
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1;
+  font-synthesis: none;
+  letter-spacing: 0 !important;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
+  text-rendering: optimizeLegibility;
+}
+
+html:lang(vi) .duyt-public-app .duyt-editorial,
+html:lang(vi) .duyt-public-app h1,
+html:lang(vi) .duyt-public-app h2 {
+  text-wrap: pretty;
+}
+
+
+
+/* Mobile performance budget: avoid fixed blur layers and perpetual motion. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  .duyt-public-app::before,
+  .duyt-public-app .duyt-public-page::before {
+    display: none;
+  }
+
+  .duyt-public-app .glass-card,
+  .duyt-public-app [class*="backdrop-blur"],
+  .duyt-contact-bar {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .duyt-public-app .glass-card {
+    background: rgba(10,10,14,.96) !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.02);
+  }
+
+  .duyt-hero-title-aura {
+    filter: blur(5px);
+    opacity: .38;
+  }
+  .duyt-hero-title {
+    font-size: clamp(1.72rem, 8vw, 2.7rem);
+    transform: none;
+    letter-spacing: .008em;
+    text-rendering: optimizeLegibility;
+  }
+  /* Trên mobile bỏ layer glow phụ để chữ không bị nhòe khi GPU scale video. */
+  .duyt-hero-title-glow {
+    display: none;
+  }
+  .duyt-hero-title-face {
+    -webkit-text-stroke: .85px rgba(255,255,255,1);
+    text-shadow:
+      0 1px 0 rgba(255,255,255,.95),
+      0 2px 0 rgba(90,37,148,.96),
+      0 4px 0 rgba(18,6,30,.94),
+      0 0 4px rgba(255,255,255,.96),
+      0 0 8px rgba(181,113,255,.78),
+      0 0 14px rgba(106,37,218,.54);
+  }
+  .duyt-lightning-bolt { width: 10px; height: 24px; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 8px #8f45ff); }
+
+  .duyt-phone-ring,
+  .duyt-phone-pulse,
+  .duyt-contact-item {
+    animation: none !important;
+  }
+
+  .duyt-contact-item:hover,
+  .duyt-concierge-contact-card:hover,
+  .duyt-public-app article:hover {
+    transform: none !important;
+  }
+
+  .duyt-deferred-section {
+    contain-intrinsic-size: auto 640px;
+  }
+}
+
+/* === iPhone PWA dashboard shell (dashboard route only) === */
+.duyt-mobile-dashboard {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+.duyt-mobile-dashboard button,
+.duyt-mobile-dashboard a {
+  touch-action: manipulation;
+}
+
+@media (display-mode: standalone) and (max-width: 767px) {
+  html,
+  body {
+    background: #f7f8fc;
+  }
+
+  .duyt-mobile-dashboard {
+    min-height: 100dvh;
+  }
+}
+
+@media (max-width: 767px) {
+  body:has(.duyt-mobile-dashboard) {
+    background: #f7f8fc;
+  }
+}
+
+/* === Unified iPhone PWA admin experience for every /admin route === */
+.duyt-admin-app {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.duyt-mobile-admin-topbar,
+.duyt-mobile-admin-bottomnav {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (max-width: 767px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+    background: #f7f8fc;
+  }
+
+  .duyt-admin-app {
+    min-height: 100dvh;
+    background: #f7f8fc;
+    overscroll-behavior-y: contain;
+  }
+
+  .duyt-admin-app button,
+  .duyt-admin-app a {
+    touch-action: manipulation;
+  }
+
+  .duyt-admin-mobile-content > div,
+  .duyt-admin-mobile-content > section,
+  .duyt-admin-mobile-content > form {
+    width: 100%;
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
+  .duyt-admin-mobile-content .duyt-admin-page-header {
+    margin-bottom: 16px;
+    gap: 12px;
+    padding: 8px 2px 0;
+  }
+
+  .duyt-admin-mobile-content .duyt-admin-page-header h1 {
+    font-size: 23px;
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+  }
+
+  .duyt-admin-mobile-content .duyt-admin-page-header p {
+    margin-top: 6px;
+    max-width: 38rem;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .duyt-admin-mobile-content .duyt-admin-page-header > div:last-child {
+    width: 100%;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .duyt-admin-mobile-content .duyt-admin-page-header > div:last-child::-webkit-scrollbar {
+    display: none;
+  }
+
+  .duyt-admin-mobile-content .duyt-admin-page-header button,
+  .duyt-admin-mobile-content .duyt-admin-page-header a {
+    min-height: 44px;
+  }
+
+  .duyt-admin-mobile-content [data-admin-card] {
+    border-color: #e7ebf3;
+    border-radius: 22px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+  }
+
+  .duyt-admin-mobile-content [data-admin-card]:hover {
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+  }
+
+  .duyt-admin-mobile-content input,
+  .duyt-admin-mobile-content select,
+  .duyt-admin-mobile-content textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .duyt-admin-mobile-content button,
+  .duyt-admin-mobile-content a[role="button"] {
+    min-height: 40px;
+  }
+
+  .duyt-admin-mobile-content .admin-booking-filters {
+    margin-bottom: 18px;
+    padding: 14px;
+  }
+
+  .duyt-admin-mobile-content .admin-booking-filters > div {
+    gap: 12px;
+  }
+
+  .duyt-admin-mobile-content .admin-booking-filters [class*="inline-flex"] {
+    scroll-snap-type: x proximity;
+  }
+
+  .duyt-admin-mobile-content .admin-booking-filters [class*="inline-flex"] > button {
+    scroll-snap-align: start;
+  }
+
+  .duyt-admin-mobile-content .admin-booking-card {
+    border-radius: 24px;
+  }
+
+  .duyt-admin-mobile-content .admin-booking-card + .admin-booking-card {
+    margin-top: 12px;
+  }
+
+  .duyt-admin-mobile-content .admin-booking-card a[href^="tel:"] {
+    font-size: 13px;
+  }
+
+  .duyt-admin-mobile-content .custom-scrollbar {
+    scrollbar-width: thin;
+  }
+
+  .duyt-admin-mobile-content table {
+    font-size: 13px;
+  }
+
+  .duyt-admin-mobile-content [class*="xl:sticky"] {
+    position: static;
+  }
+
+  .duyt-admin-mobile-content .pb-10 {
+    padding-bottom: 12px;
+  }
+
+  .duyt-admin-app [role="dialog"] input,
+  .duyt-admin-app [role="dialog"] select,
+  .duyt-admin-app [role="dialog"] textarea {
+    font-size: 16px;
+  }
+}
+
+@media (display-mode: standalone) and (max-width: 767px) {
+  .duyt-mobile-admin-topbar,
+  .duyt-mobile-admin-bottomnav {
+    background: rgba(255, 255, 255, 0.98);
+  }
+}
