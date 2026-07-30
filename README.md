@@ -188,3 +188,31 @@ Không commit `.env.local`. Không đổi VAPID key sau khi thiết bị đã đ
 5. Nhấn `Bật thông báo`, sau đó `Gửi thông báo thử`.
 
 Các API Web Push đều kiểm tra cookie admin HTTP-only. Bảng subscription chỉ cho `service_role` truy cập.
+
+## Cập nhật mobile media & quản trị dữ liệu (28/07/2026)
+
+Bản này bổ sung các sửa đổi production sau:
+
+- Video hero/banner và Reel công khai được mount trên mobile, phát muted + `playsInline`, tự thử phát lại sau tương tác và có điều khiển/chạm để phát khi iOS hoặc trình duyệt chặn autoplay.
+- Service worker không còn clone/cache response runtime, tránh lỗi `Response body is already used` trên Chromium mobile.
+- Tiêu đề thanh trên admin lấy đúng route hiện tại, ví dụ `Yêu cầu`, `Khách hàng`, `Thông báo`, `Sơ đồ bàn`.
+- Favicon, Apple icon và PWA icon đổi sang nền đen/chữ DuyT trắng, kèm version URL để làm mới cache.
+- Đặt lại dữ liệu chỉ xóa booking, lịch sử liên hệ booking, khách hàng và yêu cầu/thông báo vận hành. Địa điểm, ảnh, video, bàn, khu, sơ đồ, cài đặt và đăng ký Web Push được giữ nguyên.
+- Khách hàng có lọc địa điểm, khoảng ngày và phân trang.
+- Yêu cầu, thông báo, Reels, địa điểm và bàn có phân trang.
+- Sơ đồ bàn mobile tách thành ba màn `Danh sách / Sơ đồ / Chi tiết`; danh sách bàn phân trang 20 bàn để không kéo dài vô hạn.
+
+Sau khi cài dependency, chạy:
+
+```bash
+npm run test
+npm run build
+```
+
+Sau khi deploy bản mới, trình duyệt sẽ cập nhật service worker `duyt-admin-static-v5`. Với PWA đã cài từ trước, mở ứng dụng một lần khi có mạng để nhận icon và service worker mới.
+
+## Cloudinary media
+
+Ảnh, banner và reels mới được upload trực tiếp lên Cloudinary bằng signed upload. Supabase tiếp tục dùng cho database/auth/realtime; menu PDF vẫn dùng Supabase Storage.
+
+Xem hướng dẫn cấu hình đầy đủ tại [`docs/CLOUDINARY_SETUP.md`](docs/CLOUDINARY_SETUP.md).

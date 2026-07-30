@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { INITIAL_VENUES } from '@/components/aurelius/data';
 import type { Venue } from '@/components/aurelius/types';
-import { validateVenue } from '@/lib/booking-rules';
+import { validateVenueUpdate } from '@/lib/booking-rules';
 import { requireAdminApi } from '@/lib/admin-api';
 import { deleteVenueFast, readAllData, readPublicVenues, upsertVenueFast, venueExistsFast, venueHasBookingsFast, writeSecurityLog } from '@/lib/concierge-repository';
 
@@ -38,7 +38,8 @@ export async function PATCH(request: Request, { params }: Params) {
       return NextResponse.json({ ok: false, error: 'Payload địa điểm phải chứa đầy đủ dữ liệu và đúng mã địa điểm.' }, { status: 400 });
     }
     if (!(await venueExistsFast(id))) return NextResponse.json({ ok: false, error: 'Không tìm thấy địa điểm.' }, { status: 404 });
-    const validation = validateVenue(candidate);
+    const existing = (await readPublicVenues()).find((venue) => venue.id === id);
+    const validation = validateVenueUpdate(candidate, existing);
     if (!validation.valid) return NextResponse.json({ ok: false, error: validation.issues[0]?.message, issues: validation.issues }, { status: 422 });
     const saved = await upsertVenueFast(candidate);
     void writeSecurityLog('VENUE_PATCH', request, { venueId: id });
