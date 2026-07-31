@@ -71,7 +71,7 @@ export default function LoginPage() {
           <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={unavailable} className="flex h-[50px] items-center justify-center gap-3 rounded-[13px] border border-slate-200 bg-white text-sm font-bold text-slate-800 transition hover:bg-slate-50"><Fingerprint size={20} />Sinh trắc học</button><button type="button" onClick={unavailable} className="flex h-[50px] items-center justify-center gap-3 rounded-[13px] border border-slate-200 bg-white text-sm font-bold text-slate-800 transition hover:bg-slate-50"><ShieldCheck size={20} />Mã xác thực</button></div>
         </form>
 
-        <footer className="mt-8 text-center text-xs font-medium text-slate-500"><p>© {new Date().getFullYear()} DuyT Booking Admin Portal. Phiên bản 3.0.0</p><div className="mt-3 flex justify-center gap-7"><Link href="/vi" className="underline underline-offset-4 hover:text-slate-800">Chính sách bảo mật</Link><button type="button" onClick={() => setError('Hỗ trợ kỹ thuật: kiểm tra cấu hình ADMIN_EMAIL và ADMIN_PASSWORD trên máy chủ.')} className="underline underline-offset-4 hover:text-slate-800">Hỗ trợ kỹ thuật</button></div></footer>
+        <footer className="mt-8 text-center text-xs font-medium text-slate-500"><p>© {new Date().getFullYear()} DuyT Booking Admin Portal. Phiên bản 3.0.0</p><div className="mt-3 flex justify-center gap-7"><Link href="/vi" className="underline underline-offset-4 hover:text-slate-800">Chính sách bảo mật</Link><button type="button" onClick={() => setError('Hỗ trợ kỹ thuật: Duy.')} className="underline underline-offset-4 hover:text-slate-800">Hỗ trợ kỹ thuật</button></div></footer>
       </div>
     </main>
   );

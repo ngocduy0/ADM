@@ -1,5 +1,6 @@
 'use client';
 
+import { enableAdminPush } from "@/lib/admin-push-client";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -37,6 +38,7 @@ import type { AdminNotification, ConciergePayload, ToastMessage } from './types'
 import { normalizePhone, slugId } from './utils';
 import { ToastHost } from './ui/ToastHost';
 import { isContactNotification } from './notification-utils';
+
 
 interface AdminContextValue {
   venues: Venue[];
@@ -295,6 +297,26 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     notificationRefreshInFlight.current = task;
     return task;
   }, [applyNotificationPayload, reportSyncError, reservations]);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  async function registerPush() {
+    try {
+      await enableAdminPush();
+    } catch (err) {
+      console.log("Push chưa được kích hoạt:", err);
+    }
+  }
+
+  if (!cancelled) {
+    registerPush();
+  }
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   useEffect(() => {
     let mounted = true;
