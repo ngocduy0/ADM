@@ -2,7 +2,7 @@
  * Admin pages and APIs are intentionally never cached because they contain private data.
  * Web Push notifications are handled here so iPhone can notify while the PWA is closed.
  */
-const CACHE_NAME = 'duyt-admin-static-v5';
+const CACHE_NAME = 'duyt-admin-static-v6';
 const STATIC_ASSETS = [
   '/offline',
   '/manifest.webmanifest',
@@ -26,7 +26,26 @@ function offlineResponse() {
 function readPushPayload(event) {
   if (!event.data) return {};
   try {
-    return event.data.json();
+    const raw = event.data.json() || {};
+    const notification = raw.notification && typeof raw.notification === 'object'
+      ? raw.notification
+      : {};
+    const data = notification.data && typeof notification.data === 'object'
+      ? notification.data
+      : {};
+
+    // Supports both legacy payloads and the Declarative Web Push shape used as
+    // a lock-screen fallback on newer iOS/iPadOS versions.
+    return {
+      title: notification.title || raw.title,
+      body: notification.body || raw.body,
+      url: data.url || notification.navigate || raw.url,
+      tag: notification.tag || raw.tag,
+      icon: notification.icon || raw.icon,
+      badge: notification.badge || raw.badge,
+      kind: data.kind || raw.kind,
+      tableColor: data.tableColor || raw.tableColor,
+    };
   } catch {
     return { body: event.data.text() };
   }

@@ -5,6 +5,7 @@ import { validateReservation } from '@/lib/booking-rules';
 import { PUBLIC_BOOKING_LEAD_MINUTES } from '@/lib/business-session';
 import { requireAdminApi } from '@/lib/admin-api';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
+import { isExplicitAdminBookingRequest } from '@/lib/reservation-request-mode';
 import { consumeRateLimit, getClientIp } from '@/lib/request-rate-limit';
 import { readAllData, replaceAllData, upsertBookingNotificationFast, upsertReservationFast, writeSecurityLog } from '@/lib/concierge-repository';
 import { buildBookingPushPayload, sendAdminPush } from '@/lib/admin-push-server';
@@ -41,9 +42,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json() as Partial<ReservationRequest>;
-  const isAdmin = isAuthorizedAdminRequest(request);
-  if (!isAdmin) {
+  const body = await request.json().catch(() => null) as Partial<ReservationRequest> | null;
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ ok: false, error: 'Dữ liệu booking không hợp lệ.' }, { status: 400 });
+  }
+  const hasAdminSession = isAuthorizedAdminRequest(request);
+  const isAdminMutation = isExplicitAdminBookingRequest(request, hasAdminSession);
+  if (!isAdminMutation) {
     const rate = consumeRateLimit(`booking:${getClientIp(request)}`, 8, 10 * 60_000);
     if (!rate.allowed) {
       return NextResponse.json({ ok: false, error: 'Bạn đã gửi quá nhiều yêu cầu đặt chỗ. Vui lòng thử lại sau.' }, { status: 429 });
@@ -54,7 +59,7 @@ export async function POST(request: Request) {
     const venue = current.venues.find((item) => item.id === body.venueId);
     const table = venue?.preferredTables.find((item) => item.id === body.preferredTableId || item.name === body.preferredTableName);
     const reservation: ReservationRequest = {
-      id: isAdmin && body.id ? body.id : `res-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+      id: isAdminMutation && body.id ? body.id : `res-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       venueId: body.venueId || '',
       venueName: venue?.name || '',
       fullName: body.fullName || '',
@@ -70,30 +75,33 @@ export async function POST(request: Request) {
       preferredTableCapacity: table?.capacity,
       referenceCode: body.referenceCode || `DUYT-${Date.now().toString().slice(-6)}`,
       notes: String(body.notes || '').slice(0, 500),
-      status: isAdmin && body.status ? body.status : BookingStatus.NEW,
-      createdAt: isAdmin && body.createdAt ? body.createdAt : new Date().toISOString(),
-      source: isAdmin && body.source ? body.source : 'Web Form',
+      status: isAdminMutation && body.status ? body.status : BookingStatus.NEW,
+      createdAt: isAdminMutation && body.createdAt ? body.createdAt : new Date().toISOString(),
+      source: isAdminMutation && body.source ? body.source : 'Web Form',
     };
 
     const validation = validateReservation(
       reservation,
       current.venues,
       current.reservations,
-      { minimumLeadMinutes: isAdmin ? 0 : PUBLIC_BOOKING_LEAD_MINUTES },
+      { minimumLeadMinutes: isAdminMutation ? 0 : PUBLIC_BOOKING_LEAD_MINUTES },
     );
     if (!validation.valid) return validationResponse(validation.issues);
 
     const saved = await upsertReservationFast(reservation, current);
     await upsertBookingNotificationFast(saved).catch(() => undefined);
-    if (!isAdmin) {
-      await sendAdminPush(buildBookingPushPayload(saved)).catch((pushError) => {
+    const pushDelivery = !isAdminMutation
+      ? await sendAdminPush(buildBookingPushPayload(saved)).catch((pushError) => {
         if (process.env.NODE_ENV === 'development') console.warn('[Booking Web Push]', pushError);
-      });
-    }
+        return null;
+      })
+      : null;
     void writeSecurityLog('RESERVATION_POST', request, {
       reservationId: saved.id,
       venueId: saved.venueId,
       guestCount: saved.guestCount,
+      adminMutation: isAdminMutation,
+      pushDelivery,
     });
     return NextResponse.json({ ok: true, source: 'supabase', data: saved }, { status: 201 });
   } catch (error) {

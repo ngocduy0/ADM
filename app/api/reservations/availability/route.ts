@@ -7,10 +7,19 @@ import {
   getBusinessTimeSlots,
 } from "@/lib/business-session";
 import { readAllData } from "@/lib/concierge-repository";
+import { consumeRateLimit, getClientIp } from "@/lib/request-rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const rate = consumeRateLimit(`availability:${getClientIp(request)}`, 120, 5 * 60_000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Bạn đang kiểm tra tình trạng bàn quá nhanh. Vui lòng thử lại sau." },
+      { status: 429, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const url = new URL(request.url);
   const venueId = url.searchParams.get("venueId") || "";
   // `businessDate` is the date on which the venue opens. Keep `date` as a
@@ -88,7 +97,7 @@ export async function GET(request: Request) {
         slotDates,
         tables,
       },
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json(
       {

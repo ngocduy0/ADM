@@ -19,17 +19,11 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // The project only uses next/image for local admin assets. Do not allow a
+  // wildcard remote image optimizer because it can turn /_next/image into an
+  // unnecessary server-side fetch proxy to arbitrary hosts.
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      },
-    ],
+    remotePatterns: [],
   },
 };
 

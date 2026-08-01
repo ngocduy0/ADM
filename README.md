@@ -115,7 +115,7 @@ Service worker chỉ cache icon, manifest, file tĩnh phiên bản hóa và tran
 
 Điều này có chủ đích để booking, khách hàng, số điện thoại và phiên admin không bị lưu vào cache ngoại tuyến.
 
-Web Push chưa được kích hoạt trong gói này vì cần VAPID keys, bảng lưu push subscription và API gửi push riêng. Chuông thông báo trong dashboard vẫn dùng hệ thống `AdminNotification` và Supabase Realtime hiện có.
+Web Push đã được tích hợp cho PWA admin. Cần cấu hình VAPID, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL` và chạy migration subscription như hướng dẫn bên dưới.
 
 ## Ghi chú Windows / SWC
 
@@ -153,6 +153,8 @@ Sau khi cập nhật production, nên đóng PWA rồi mở lại. Nếu iPhone 
 
 Source đã có đầy đủ luồng đăng ký thiết bị, lưu subscription vào Supabase, gửi push sau booking/liên hệ mới, thông báo thử và xử lý click trong service worker.
 
+Bản sửa này tách rõ booking công khai và booking do admin tạo. Vì vậy, ngay cả khi đang đăng nhập admin trên cùng trình duyệt rồi mở trang địa điểm để thử đặt bàn, booking công khai vẫn gửi Web Push. Payload đồng thời dùng định dạng Declarative Web Push làm fallback cho iOS/iPadOS mới và vẫn tương thích service worker cũ.
+
 ### 1. Tạo bảng Supabase
 
 Chạy file sau trong Supabase SQL Editor:
@@ -171,6 +173,7 @@ npx web-push generate-vapid-keys --json
 Thêm vào `.env.local` và Vercel Environment Variables:
 
 ```env
+NEXT_PUBLIC_APP_URL=https://ten-mien-production-cua-ban.vn
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=<publicKey>
 VAPID_PRIVATE_KEY=<privateKey>
 VAPID_SUBJECT=mailto:email-cua-ban@example.com
@@ -209,7 +212,7 @@ npm run test
 npm run build
 ```
 
-Sau khi deploy bản mới, trình duyệt sẽ cập nhật service worker `duyt-admin-static-v5`. Với PWA đã cài từ trước, mở ứng dụng một lần khi có mạng để nhận icon và service worker mới.
+Sau khi deploy bản mới, trình duyệt sẽ cập nhật service worker `duyt-admin-static-v6`. Với PWA đã cài từ trước, mở ứng dụng một lần khi có mạng để nhận icon và service worker mới.
 
 ## Cloudinary media
 

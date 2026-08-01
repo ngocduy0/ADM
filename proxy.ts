@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_COOKIE_NAME = 'duyt_admin_session';
 
+const scriptSources = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'"] : []),
+  'https://www.instagram.com',
+  'https://*.cdninstagram.com',
+].join(' ');
+
 const securityHeaders: Record<string, string> = {
   'X-DNS-Prefetch-Control': 'on',
   'X-Content-Type-Options': 'nosniff',
@@ -11,12 +19,12 @@ const securityHeaders: Record<string, string> = {
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.instagram.com https://*.cdninstagram.com",
+    `script-src ${scriptSources}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob: data: https:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https:",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com",
     "frame-src 'self' https://www.instagram.com https://instagram.com",
     "frame-ancestors 'self'",
     "base-uri 'self'",

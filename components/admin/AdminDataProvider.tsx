@@ -455,7 +455,7 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = existing
         ? await updateReservationOnServer(reservation.id, reservation)
-        : await createReservationOnServer(reservation);
+        : await createReservationOnServer(reservation, { adminMode: true });
       const committedReservations = nextReservations.map((item) => item.id === saved.id ? saved : item);
       setReservations(committedReservations);
       setNotifications((current) => normalizeNotifications(existing ? current : [buildNotification(saved), ...current], committedReservations));

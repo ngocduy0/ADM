@@ -10,6 +10,8 @@ test('web push service worker handles push and deep links without caching admin 
   const source = read('public/sw.js');
   assert.match(source, /addEventListener\('push'/);
   assert.match(source, /showNotification/);
+  assert.match(source, /raw\.notification/);
+  assert.match(source, /notification\.navigate/);
   assert.match(source, /silent:\s*false/);
   assert.match(source, /addEventListener\('notificationclick'/);
   assert.match(source, /openWindow/);
@@ -29,6 +31,8 @@ test('admin push APIs require admin authorization and use subscription table', (
   assert.match(server, /AdminPushSubscription/);
   assert.match(server, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(server, /webpush\.sendNotification/);
+  assert.match(server, /web_push:\s*8030/);
+  assert.match(server, /app_badge:\s*'1'/);
 });
 
 test('booking and contact creation send server-side push notifications', () => {
