@@ -169,6 +169,59 @@ export async function getAdminPushEnabledCount() {
   return count || 0;
 }
 
+
+function configuredAppOrigin() {
+  const candidates = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.APP_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
+  ];
+
+  for (const candidateRaw of candidates) {
+    const candidate = clean(candidateRaw);
+    if (!candidate) continue;
+    const withProtocol = /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`;
+    try {
+      const url = new URL(withProtocol);
+      if (url.protocol === 'https:' || (process.env.NODE_ENV !== 'production' && url.protocol === 'http:')) {
+        return url.origin;
+      }
+    } catch {
+      // Ignore malformed deployment URL and try the next candidate.
+    }
+  }
+  return '';
+}
+
+function buildWirePayload(payload: AdminPushPayload) {
+  const origin = configuredAppOrigin();
+  const navigate = origin ? new URL(payload.url, origin).href : payload.url;
+
+  // Declarative Web Push gives iOS 18.4+ a browser-rendered fallback when the
+  // service worker is suspended, removed by ITP, or fails before showNotification.
+  // The legacy top-level fields remain so older browsers can use sw.js normally.
+  return {
+    web_push: 8030,
+    notification: {
+      title: payload.title,
+      body: payload.body,
+      navigate,
+      silent: false,
+      tag: payload.tag,
+      icon: payload.icon,
+      badge: payload.badge,
+      app_badge: '1',
+      data: {
+        url: payload.url,
+        kind: payload.kind,
+        tableColor: payload.tableColor || '',
+      },
+    },
+    ...payload,
+  };
+}
+
 function statusCodeFromError(error: unknown) {
   if (!error || typeof error !== 'object') return 0;
   const raw = (error as { statusCode?: unknown }).statusCode;
@@ -222,7 +275,7 @@ export async function sendAdminPush(
   }
 
   const payload = sanitizePayload(rawPayload);
-  const serialized = JSON.stringify(payload);
+  const serialized = JSON.stringify(buildWirePayload(payload));
   let delivered = 0;
   let failed = 0;
   let removed = 0;

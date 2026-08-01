@@ -76,13 +76,14 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    await sendAdminPush(buildContactPushPayload({
+    const pushDelivery = await sendAdminPush(buildContactPushPayload({
       id: requestId,
       name,
       phone,
       message,
     })).catch((pushError) => {
       if (process.env.NODE_ENV === 'development') console.warn('[Contact Web Push]', pushError);
+      return null;
     });
 
     void writeSecurityLog('CONTACT_REQUEST_POST', request, {
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
       emailDomain: email.split('@')[1] || '',
       phoneSuffix: phone.slice(-4),
       messageLength: message.length,
+      pushDelivery,
     });
 
     return NextResponse.json({

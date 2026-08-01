@@ -1,5 +1,6 @@
 import { Venue, ReservationRequest, Customer, BookingStatus, VipStatus } from './types';
 
+import { ADMIN_BOOKING_REQUEST_HEADER } from '@/lib/reservation-request-mode';
 export const INITIAL_VENUES: Venue[] = [
   {
     id: 'venue-1',
@@ -422,10 +423,16 @@ export async function saveDataToServer(payload: ConciergeDataPayload): Promise<C
   return sanitizePayloadForStorage(data);
 }
 
-export async function createReservationOnServer(reservation: ReservationRequest): Promise<ReservationRequest> {
+export async function createReservationOnServer(
+  reservation: ReservationRequest,
+  options: { adminMode?: boolean } = {},
+): Promise<ReservationRequest> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (options.adminMode) headers[ADMIN_BOOKING_REQUEST_HEADER] = '1';
+
   const data = await requestApi<ReservationRequest>('/api/reservations', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(reservation),
   }, 'tạo booking');
   return sanitizePayloadForStorage({ venues: [], customers: [], reservations: [data] }).reservations[0];

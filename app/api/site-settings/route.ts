@@ -28,14 +28,14 @@ export async function GET() {
       ok: true,
       source: 'supabase',
       settings: normalizeSiteSettings((data as DbSettingRow | null)?.value || DEFAULT_SITE_SETTINGS),
-    });
+    }, { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' } });
   } catch (error) {
     return NextResponse.json({
       ok: true,
       source: 'fallback',
       warning: error instanceof Error ? error.message : 'Unable to read site settings',
       settings: DEFAULT_SITE_SETTINGS,
-    });
+    }, { headers: { 'Cache-Control': 'public, max-age=30' } });
   }
 }
 

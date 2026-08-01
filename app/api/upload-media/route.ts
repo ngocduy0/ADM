@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { COOKIE_NAME, isValidAdminSession } from '@/lib/admin-auth';
+import { requireAdminApi } from '@/lib/admin-api';
 import {
   createSignedUpload,
   destroyCloudinaryAsset,
@@ -30,10 +30,6 @@ const FIXED_ALLOWED_FOLDERS = new Set([
   'homepage/banner/posters',
   'brand/logo',
 ]);
-
-function isAdmin(request: NextRequest) {
-  return isValidAdminSession(request.cookies.get(COOKIE_NAME)?.value);
-}
 
 function isAllowedFolder(value: string) {
   return FIXED_ALLOWED_FOLDERS.has(value) || /^brand\/contacts\/[a-z0-9-]+$/i.test(value);
@@ -151,12 +147,8 @@ async function uploadMenuPdfToSupabase(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdmin(request)) {
-    return NextResponse.json(
-      { ok: false, error: 'Phiên đăng nhập admin đã hết hạn. Vui lòng đăng nhập lại.' },
-      { status: 401 },
-    );
-  }
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
 
   try {
     const contentType = request.headers.get('content-type') || '';
@@ -187,12 +179,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!isAdmin(request)) {
-    return NextResponse.json(
-      { ok: false, error: 'Phiên đăng nhập admin đã hết hạn. Vui lòng đăng nhập lại.' },
-      { status: 401 },
-    );
-  }
+  const unauthorized = requireAdminApi(request);
+  if (unauthorized) return unauthorized;
 
   try {
     const body = await request.json().catch(() => null);
