@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/admin-api';
 import { clearLegacySupabaseMediaFast, writeSecurityLog } from '@/lib/concierge-repository';
 
+// Compatibility endpoint for older admin bundles/service-worker caches.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -12,13 +13,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await clearLegacySupabaseMediaFast();
-    void writeSecurityLog('MIGRATE_LEGACY_SUPABASE_MEDIA', request, result);
+    void writeSecurityLog('MIGRATE_LEGACY_SUPABASE_MEDIA', request, {
+      ...result,
+      compatibilityEndpoint: true,
+    });
     return NextResponse.json({ ok: true, data: result });
   } catch (error) {
     const message = error instanceof Error
       ? error.message
       : 'Không thể chuyển media Supabase cũ sang Cloudinary.';
-    console.error('[admin-data/clear-supabase-media]', error);
+    console.error('[admin-data-supabase-media]', error);
     return NextResponse.json(
       {
         ok: false,

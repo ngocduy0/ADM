@@ -51,7 +51,7 @@ export function DataFilesPage() {
     const rows = reservations.map((item) => `<tr><td>${item.referenceCode || item.id}</td><td>${item.fullName}</td><td>${item.phoneNumber}</td><td>${item.venueName}</td><td>${item.preferredTableName}</td><td>${item.date}</td><td>${item.arrivalTime}</td><td>${item.status}</td></tr>`).join('');
     downloadText(`duyt-bookings-${new Date().toISOString().slice(0, 10)}.xls`, `<!doctype html><html><head><meta charset="utf-8"></head><body><table border="1"><tr><th>Mã</th><th>Khách hàng</th><th>Điện thoại</th><th>Địa điểm</th><th>Bàn</th><th>Ngày</th><th>Giờ</th><th>Trạng thái</th></tr>${rows}</table></body></html>`, 'application/vnd.ms-excel;charset=utf-8');
   };
-  const exportTemplate = () => downloadText('duyt-booking-import-template.csv', '\uFEFF' + ['fullName', 'phoneNumber', 'venueId', 'guestCount', 'date', 'arrivalTime', 'preferredTableId', 'notes', 'source'].map(csvCell).join(',') + '\n' + ['Nguyễn Văn A', '0901234567', venues[0]?.id || 'venue-1', '4', new Date().toISOString().slice(0, 10), '21:30', venues[0]?.preferredTables[0]?.id || '', 'Sinh nhật', 'Web Form'].map(csvCell).join(','), 'text/csv;charset=utf-8');
+  const exportTemplate = () => downloadText('duyt-booking-import-template.csv', '\uFEFF' + ['fullName', 'phoneNumber', 'venueId', 'guestCount', 'date', 'arrivalTime', 'preferredTableId', 'notes', 'source'].map(csvCell).join(',') + '\n' + ['Nguyễn Văn A', '0  ', venues[0]?.id || 'venue-1', '4', new Date().toISOString().slice(0, 10), '21:30', venues[0]?.preferredTables[0]?.id || '', 'Sinh nhật', 'Web Form'].map(csvCell).join(','), 'text/csv;charset=utf-8');
 
   const importFile = async (file?: File) => {
     if (!file) return;

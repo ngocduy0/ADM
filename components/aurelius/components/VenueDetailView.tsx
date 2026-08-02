@@ -71,7 +71,7 @@ const detailCopy: Record<Locale, DetailCopy> = {
     floorText:
       "Chọn khu vực trước, sau đó chọn bàn hoặc phòng phù hợp. Mỗi khu có mức chi tiêu tối thiểu và sức chứa riêng.",
     selectedTable: "Đang chọn",
-    requestSelected: "Gửi yêu cầu concierge",
+    requestSelected: "Gửi yêu cầu đặt chổ",
     requestText:
       "Concierge sẽ kiểm tra tình trạng bàn/phòng, xác nhận mức chi tiêu tối thiểu và phản hồi qua kênh liên hệ bạn chọn.",
     photo: "Ảnh",
@@ -619,6 +619,23 @@ export default function VenueDetailView({
     };
   }, [showRequestForm]);
 
+  const handleScheduleChange = useCallback(
+    (nextBusinessDate: string, nextArrivalTime: string) => {
+      setBusinessDate((currentBusinessDate) =>
+        currentBusinessDate === nextBusinessDate
+          ? currentBusinessDate
+          : nextBusinessDate,
+      );
+
+      setMapArrivalTime((currentArrivalTime) =>
+        currentArrivalTime === nextArrivalTime
+          ? currentArrivalTime
+          : nextArrivalTime,
+      );
+    },
+    [],
+  );
+
   return (
     <div className="duyt-public-page mx-auto max-w-[1440px] px-6 pt-6 text-left font-sans md:px-16">
       <button
@@ -907,10 +924,7 @@ export default function VenueDetailView({
               initialPreferredTableId={selectedTable?.id}
               initialBusinessDate={businessDate}
               initialArrivalTime={mapArrivalTime}
-              onScheduleChange={(nextBusinessDate, nextArrivalTime) => {
-                setBusinessDate(nextBusinessDate);
-                setMapArrivalTime(nextArrivalTime);
-              }}
+              onScheduleChange={handleScheduleChange}
             />
           </div>
         </div>

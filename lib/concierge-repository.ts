@@ -7,6 +7,7 @@ import {
   encodeBookingNotes,
   parseBookingStorageDateTime,
 } from '@/lib/booking-storage-time';
+import { uploadRemoteAssetToCloudinary, type CloudinaryResourceType } from '@/lib/cloudinary-media';
 
 export const dynamic = 'force-dynamic';
 
@@ -415,6 +416,7 @@ function uniqueRowsByVenueId<T extends { venueId: string }>(rows: T[]) {
 }
 
 export async function replaceAllData(payload: ConciergePayload) {
+  assertNoLegacySupabaseMedia(payload.venues);
   const supabase = getSupabaseAdminClient();
   void savePayloadBackup(supabase, payload);
 
@@ -971,9 +973,42 @@ export async function reorderVenueReelsFast(
 }
 
 
-function isLegacySupabaseMediaUrl(value: unknown) {
+export function isLegacySupabaseMediaUrl(value: unknown) {
   const raw = String(value || '').toLowerCase();
   return raw.includes('.supabase.co/storage/') || raw.includes('/storage/v1/object/');
+}
+
+function assertNoLegacySupabaseMedia(venues: Venue[]) {
+  for (const venue of venues) {
+    const urls = [
+      venue.image,
+      ...(venue.images || []),
+      venue.videoUrl,
+      venue.menuUrl,
+      venue.menuPdfUrl,
+      ...Object.keys(venue.mediaPaths || {}),
+      ...(venue.reels || []).flatMap((reel) => [reel.videoUrl, reel.posterUrl]),
+    ];
+    if (urls.some(isLegacySupabaseMediaUrl)) {
+      throw new Error(`Địa điểm “${venue.name || venue.id}” vẫn chứa URL Supabase Storage. Hãy chuyển media sang Cloudinary trước khi lưu.`);
+    }
+  }
+}
+
+function legacyMediaFileName(value: string, fallback: string, resourceType: CloudinaryResourceType) {
+  try {
+    const url = new URL(value);
+    const lastSegment = decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || '');
+    if (lastSegment) {
+      if (resourceType !== 'raw' || lastSegment.toLowerCase().endsWith('.pdf')) return lastSegment;
+      return `${lastSegment}.pdf`;
+    }
+  } catch {
+    // Fall through to a deterministic safe fallback.
+  }
+  return resourceType === 'raw' && !fallback.toLowerCase().endsWith('.pdf')
+    ? `${fallback}.pdf`
+    : fallback;
 }
 
 export async function clearLegacySupabaseMediaFast() {
@@ -988,35 +1023,147 @@ export async function clearLegacySupabaseMediaFast() {
     { key: string; value?: Record<string, any> | null } | null,
   ];
 
-  let venueVideoCount = 0;
-  let reelCount = 0;
-  const venueUpdates = venueRows.flatMap((row) => {
+  const migrated = {
+    venueImages: 0,
+    venueVideos: 0,
+    menuPdfs: 0,
+    reels: 0,
+    reelPosters: 0,
+    banners: 0,
+    logos: 0,
+    contactIcons: 0,
+  };
+  const migrationCache = new Map<string, Awaited<ReturnType<typeof uploadRemoteAssetToCloudinary>>>();
+  const migrateUrl = async (
+    sourceUrl: string,
+    folder: string,
+    resourceType: CloudinaryResourceType,
+    fallbackName: string,
+  ) => {
+    const cacheKey = `${resourceType}:${sourceUrl}`;
+    const cached = migrationCache.get(cacheKey);
+    if (cached) return cached;
+    const uploaded = await uploadRemoteAssetToCloudinary({
+      sourceUrl,
+      folder,
+      resourceType,
+      fileName: legacyMediaFileName(sourceUrl, fallbackName, resourceType),
+    });
+    migrationCache.set(cacheKey, uploaded);
+    return uploaded;
+  };
+
+  // Migrate legacy venue images first so their new Cloudinary references can be
+  // stored inside each venue's mediaPaths metadata.
+  const migratedImageByOldUrl = new Map<string, { url: string; path: string }>();
+  for (const row of imageRows) {
+    const oldUrl = String(row.imageUrl || '');
+    if (!isLegacySupabaseMediaUrl(oldUrl)) continue;
+    const uploaded = await migrateUrl(oldUrl, 'venues', 'image', `${row.venueId || 'venue'}-${row.id}.jpg`);
+    await checked(
+      supabase.from('VenueImage').update({ imageUrl: uploaded.url }).eq('id', row.id),
+      `migrate VenueImage ${row.id}`,
+    );
+    migratedImageByOldUrl.set(oldUrl, { url: uploaded.url, path: uploaded.path });
+    migrated.venueImages += 1;
+  }
+
+  for (const row of venueRows) {
     const descriptions = splitDescription(row.description);
     const currentMeta = descriptions.meta || {};
-    const nextVideoUrl = isLegacySupabaseMediaUrl(descriptions.videoUrl) ? '' : descriptions.videoUrl;
-    if (descriptions.videoUrl && !nextVideoUrl) venueVideoCount += 1;
+    let nextVideoUrl = descriptions.videoUrl;
+    let nextMenuPdfUrl = String(currentMeta.menuPdfUrl || '');
+    let nextMenuUrl = String(currentMeta.menuUrl || '');
+    let changed = false;
+
+    const mediaPaths: Record<string, string> = Object.fromEntries(
+      Object.entries((currentMeta.mediaPaths || {}) as Record<string, string>)
+        .filter(([url, path]) => !isLegacySupabaseMediaUrl(url) && String(path || '').startsWith('cloudinary://')),
+    );
+
+    for (const imageRow of imageRows) {
+      if (imageRow.venueId !== row.id) continue;
+      const oldUrl = String(imageRow.imageUrl || '');
+      const replacement = migratedImageByOldUrl.get(oldUrl);
+      if (replacement) {
+        mediaPaths[replacement.url] = replacement.path;
+        changed = true;
+      }
+    }
+
+    if (isLegacySupabaseMediaUrl(nextVideoUrl)) {
+      const uploaded = await migrateUrl(nextVideoUrl, 'venues/videos', 'video', `${row.id}-venue.mp4`);
+      nextVideoUrl = uploaded.url;
+      mediaPaths[uploaded.url] = uploaded.path;
+      migrated.venueVideos += 1;
+      changed = true;
+    }
+
+    if (isLegacySupabaseMediaUrl(nextMenuPdfUrl)) {
+      const uploaded = await migrateUrl(nextMenuPdfUrl, 'venues/menus', 'image', `${row.id}-menu.pdf`);
+      nextMenuPdfUrl = uploaded.url;
+      mediaPaths[uploaded.url] = uploaded.path;
+      migrated.menuPdfs += 1;
+      changed = true;
+    }
+
+    if (isLegacySupabaseMediaUrl(nextMenuUrl) && /^https?:\/\/\S+$/i.test(nextMenuUrl.trim()) && !nextMenuUrl.includes(',')) {
+      const isPdf = nextMenuUrl.toLowerCase().includes('.pdf');
+      const uploaded = await migrateUrl(
+        nextMenuUrl,
+        isPdf ? 'venues/menus' : 'venues',
+        'image',
+        isPdf ? `${row.id}-menu-link.pdf` : `${row.id}-menu.jpg`,
+      );
+      nextMenuUrl = uploaded.url;
+      mediaPaths[uploaded.url] = uploaded.path;
+      if (isPdf) migrated.menuPdfs += 1;
+      else migrated.venueImages += 1;
+      changed = true;
+    }
 
     const currentReels = descriptions.reels || [];
-    const nextReels = currentReels.filter((reel) => {
-      const remove = isLegacySupabaseMediaUrl(reel.videoUrl) ||
-        (!reel.videoUrl && isLegacySupabaseMediaUrl(reel.posterUrl));
-      if (remove) reelCount += 1;
-      return !remove;
-    }).map((reel, index) => ({
-      ...reel,
-      posterUrl: isLegacySupabaseMediaUrl(reel.posterUrl) ? '' : reel.posterUrl,
-      posterPath: String(reel.posterPath || '').startsWith('cloudinary://') ? reel.posterPath : '',
-      videoPath: String(reel.videoPath || '').startsWith('cloudinary://') ? reel.videoPath : '',
-      order: index,
-    }));
+    const nextReels = [] as HomepageReel[];
+    for (const [index, reel] of currentReels.entries()) {
+      let nextReel = { ...reel, order: index } as HomepageReel;
+      if (isLegacySupabaseMediaUrl(nextReel.videoUrl)) {
+        const uploaded = await migrateUrl(
+          String(nextReel.videoUrl),
+          'reels',
+          'video',
+          `${row.id}-${nextReel.id || index}.mp4`,
+        );
+        nextReel = {
+          ...nextReel,
+          videoUrl: uploaded.url,
+          videoPath: uploaded.path,
+          posterUrl: uploaded.posterUrl || nextReel.posterUrl || '',
+          posterPath: '',
+        };
+        migrated.reels += 1;
+        changed = true;
+      } else {
+        nextReel.videoPath = String(nextReel.videoPath || '').startsWith('cloudinary://') ? nextReel.videoPath : '';
+        if (isLegacySupabaseMediaUrl(nextReel.posterUrl)) {
+          const uploaded = await migrateUrl(
+            String(nextReel.posterUrl),
+            'reels/posters',
+            'image',
+            `${row.id}-${nextReel.id || index}-poster.jpg`,
+          );
+          nextReel.posterUrl = uploaded.url;
+          nextReel.posterPath = uploaded.path;
+          migrated.reelPosters += 1;
+          changed = true;
+        } else {
+          nextReel.posterPath = String(nextReel.posterPath || '').startsWith('cloudinary://') ? nextReel.posterPath : '';
+        }
+      }
+      nextReels.push(nextReel);
+    }
 
-    const mediaPaths = Object.fromEntries(Object.entries((currentMeta.mediaPaths || {}) as Record<string, string>)
-      .filter(([url, path]) => !isLegacySupabaseMediaUrl(url) && String(path || '').startsWith('cloudinary://')));
-
-    const changed = nextVideoUrl !== descriptions.videoUrl ||
-      nextReels.length !== currentReels.length ||
-      JSON.stringify(mediaPaths) !== JSON.stringify(currentMeta.mediaPaths || {});
-    if (!changed) return [];
+    if (JSON.stringify(mediaPaths) !== JSON.stringify(currentMeta.mediaPaths || {})) changed = true;
+    if (!changed) continue;
 
     const description = buildVenueDescription({
       id: row.id,
@@ -1030,8 +1177,8 @@ export async function clearLegacySupabaseMediaFast() {
       mediaPaths,
       videoUrl: nextVideoUrl || undefined,
       reels: nextReels,
-      menuUrl: String(currentMeta.menuUrl || ''),
-      menuPdfUrl: String(currentMeta.menuPdfUrl || ''),
+      menuUrl: nextMenuUrl,
+      menuPdfUrl: nextMenuPdfUrl,
       openingHours: (currentMeta.openingHours as Venue['openingHours']) || {
         open: '18:00', close: '02:00', label: '18:00 - 02:00',
       },
@@ -1041,61 +1188,150 @@ export async function clearLegacySupabaseMediaFast() {
       reviewsCount: Math.max(0, Number(currentMeta.reviewsCount || 0)),
       translations: (currentMeta.translations || undefined) as Venue['translations'],
     } as Venue);
-    return [checked(supabase.from('Venue').update({ description }).eq('id', row.id), `clear Venue legacy media ${row.id}`)];
-  });
+    await checked(
+      supabase.from('Venue').update({ description }).eq('id', row.id),
+      `migrate Venue legacy media ${row.id}`,
+    );
+  }
 
-  const legacyImageIds = imageRows.filter((row) => isLegacySupabaseMediaUrl(row.imageUrl)).map((row) => row.id);
-  const imageDeletes = legacyImageIds.length
-    ? [checked(supabase.from('VenueImage').delete().in('id', legacyImageIds), 'delete legacy VenueImage')]
-    : [];
-
-  let bannerCount = 0;
-  const settingUpdates: Promise<unknown>[] = [];
   if (settingRow?.value) {
     const value = { ...settingRow.value };
-    for (const key of ['heroVideoUrl', 'heroPosterUrl'] as const) {
-      if (isLegacySupabaseMediaUrl(value[key])) {
-        value[key] = '';
-        bannerCount += 1;
+    const originalValue = JSON.stringify(value);
+
+    if (isLegacySupabaseMediaUrl(value.heroVideoUrl)) {
+      const uploaded = await migrateUrl(String(value.heroVideoUrl), 'homepage/banner', 'video', 'hero-banner.mp4');
+      value.heroVideoUrl = uploaded.url;
+      value.heroVideoPath = uploaded.path;
+      migrated.banners += 1;
+    } else if (!String(value.heroVideoPath || '').startsWith('cloudinary://')) {
+      value.heroVideoPath = '';
+    }
+
+    if (isLegacySupabaseMediaUrl(value.heroPosterUrl)) {
+      const uploaded = await migrateUrl(String(value.heroPosterUrl), 'homepage/banner/posters', 'image', 'hero-poster.jpg');
+      value.heroPosterUrl = uploaded.url;
+      value.heroPosterPath = uploaded.path;
+      migrated.banners += 1;
+    } else if (!String(value.heroPosterPath || '').startsWith('cloudinary://')) {
+      value.heroPosterPath = '';
+    }
+
+    if (isLegacySupabaseMediaUrl(value.logoUrl)) {
+      const uploaded = await migrateUrl(String(value.logoUrl), 'brand/logo', 'image', 'duyt-logo.png');
+      value.logoUrl = uploaded.url;
+      value.logoPath = uploaded.path;
+      migrated.logos += 1;
+    } else if (!String(value.logoPath || '').startsWith('cloudinary://')) {
+      value.logoPath = '';
+    }
+
+    if (Array.isArray(value.contactChannels)) {
+      value.contactChannels = [];
+      for (const rawChannel of settingRow.value.contactChannels as Array<Record<string, any>>) {
+        const channel = { ...rawChannel };
+        if (isLegacySupabaseMediaUrl(channel.icon)) {
+          const uploaded = await migrateUrl(
+            String(channel.icon),
+            `brand/contacts/${String(channel.id || 'contact').replace(/[^a-z0-9-]/gi, '-').toLowerCase()}`,
+            'image',
+            `${channel.id || 'contact'}-icon.png`,
+          );
+          channel.icon = uploaded.url;
+          channel.iconPath = uploaded.path;
+          migrated.contactIcons += 1;
+        } else if (!String(channel.iconPath || '').startsWith('cloudinary://')) {
+          channel.iconPath = '';
+        }
+        value.contactChannels.push(channel);
       }
     }
-    if (!String(value.heroVideoPath || '').startsWith('cloudinary://')) value.heroVideoPath = '';
-    if (!String(value.heroPosterPath || '').startsWith('cloudinary://')) value.heroPosterPath = '';
-    if (bannerCount) {
+
+    if (JSON.stringify(value) !== originalValue) {
       value.updatedAt = new Date().toISOString();
-      settingUpdates.push(checked(
+      await checked(
         supabase.from('SiteSetting').update({ value, updatedAt: value.updatedAt }).eq('key', 'site'),
-        'clear SiteSetting legacy media',
-      ));
+        'migrate SiteSetting legacy media',
+      );
     }
   }
 
-  await Promise.all([...venueUpdates, ...imageDeletes, ...settingUpdates]);
+  // Every referenced legacy object is now on Cloudinary. Storage cleanup is
+  // best-effort: a missing bucket, an exhausted Supabase quota or a temporary
+  // Storage outage must not roll back the successful database migration.
+  const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'duyt-media';
+  const storagePaths = new Set<string>();
+  const storageWarnings: string[] = [];
+  let deletedStorageFiles = 0;
 
-  const storageFolders = ['venues', 'venues/videos', 'reels', 'reels/posters', 'homepage/banner', 'homepage/banner/posters'];
-  const storagePaths: string[] = [];
-  for (const folder of storageFolders) {
-    const { data } = await supabase.storage.from(process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'duyt-media')
-      .list(folder, { limit: 1_000 });
-    for (const item of data || []) {
-      if (item.id) storagePaths.push(`${folder}/${item.name}`);
+  const formatStorageCleanupError = (error: unknown) => {
+    const raw = error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error && 'message' in error
+        ? String((error as { message?: unknown }).message || '')
+        : String(error || '');
+    const message = raw.trim() || 'Supabase Storage không phản hồi.';
+    const lower = message.toLowerCase();
+
+    if (lower.includes('bucket not found') || lower.includes('not found')) {
+      return `Không tìm thấy bucket “${bucket}”. Kiểm tra NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET trong .env.local.`;
     }
-  }
-  if (storagePaths.length) {
-    await supabase.storage.from(process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'duyt-media').remove(storagePaths);
+    if (lower.includes('402') || lower.includes('quota') || lower.includes('usage')) {
+      return 'Supabase đang giới hạn Storage do vượt hạn mức. Dữ liệu đã được chuyển sang Cloudinary nhưng file cũ chỉ có thể xóa sau khi hạn mức được mở lại hoặc nâng gói.';
+    }
+    if (lower.includes('abort') || lower.includes('timeout') || lower.includes('fetch failed')) {
+      return 'Kết nối Supabase Storage bị quá thời gian. Dữ liệu đã được chuyển sang Cloudinary; hãy thử dọn Storage lại sau.';
+    }
+    return `Không thể dọn Supabase Storage: ${message}`;
+  };
+
+  const listFolder = async (folder = ''): Promise<void> => {
+    const pageSize = 100;
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase.storage.from(bucket).list(folder, {
+        limit: pageSize,
+        offset,
+        sortBy: { column: 'name', order: 'asc' },
+      });
+      if (error) throw error;
+      const items = data || [];
+      for (const item of items) {
+        const path = folder ? `${folder}/${item.name}` : item.name;
+        if (item.id) storagePaths.add(path);
+        else if (item.name && item.name !== '.' && item.name !== '..') await listFolder(path);
+      }
+      if (items.length < pageSize) break;
+      offset += pageSize;
+    }
+  };
+
+  try {
+    await listFolder();
+    const allStoragePaths = Array.from(storagePaths);
+    for (let index = 0; index < allStoragePaths.length; index += 100) {
+      const chunk = allStoragePaths.slice(index, index + 100);
+      const { error } = await supabase.storage.from(bucket).remove(chunk);
+      if (error) throw error;
+      deletedStorageFiles += chunk.length;
+    }
+  } catch (error) {
+    storageWarnings.push(formatStorageCleanupError(error));
   }
 
   invalidateConciergeCache();
   return {
-    deletedVenueImages: legacyImageIds.length,
-    clearedVenueVideos: venueVideoCount,
-    removedLegacyReels: reelCount,
-    clearedBannerFields: bannerCount,
-    deletedStorageFiles: storagePaths.length,
+    migratedToCloudinary: migrated,
+    migratedTotal: Object.values(migrated).reduce((sum, count) => sum + count, 0),
+    deletedStorageFiles,
+    discoveredStorageFiles: storagePaths.size,
+    storageCleanupComplete: storageWarnings.length === 0,
+    storageBucket: bucket,
+    warnings: storageWarnings,
   };
 }
 
 export async function upsertVenueFast(venue: Venue): Promise<Venue> {
+  assertNoLegacySupabaseMedia([venue]);
   const supabase = getSupabaseAdminClient();
   await checked(supabase.from('Venue').upsert({
     id: venue.id,

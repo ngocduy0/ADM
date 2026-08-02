@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const ALLOWED_FOLDERS = new Set([
   'venues',
   'venues/videos',
+  'venues/menus',
   'reels',
   'reels/posters',
   'homepage/banner',
@@ -21,7 +22,10 @@ function safeFolder(value: unknown) {
   return ALLOWED_FOLDERS.has(raw) ? raw : 'venues';
 }
 
-function getResourceType(contentType: string): CloudinaryResourceType | null {
+function getResourceType(contentType: string, fileName: string, folder: string): CloudinaryResourceType | null {
+  if (folder === 'venues/menus') {
+    return contentType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf') ? 'image' : null;
+  }
   if (contentType.startsWith('image/')) return 'image';
   if (contentType.startsWith('video/')) return 'video';
   return null;
@@ -30,9 +34,8 @@ function getResourceType(contentType: string): CloudinaryResourceType | null {
 /**
  * Legacy compatibility endpoint.
  *
- * Older admin builds requested a Supabase signed-upload token here. New media
- * is now signed for a direct Cloudinary upload so this route can no longer
- * increase Supabase Cached Egress.
+ * Older admin builds requested a Supabase signed-upload token here. Every
+ * supported file is now signed for direct Cloudinary upload, including PDFs.
  */
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdminApi(request);
@@ -43,11 +46,11 @@ export async function POST(request: NextRequest) {
     const folder = safeFolder(body?.folder);
     const fileName = String(body?.fileName || 'media');
     const contentType = String(body?.contentType || body?.fileType || '');
-    const resourceType = getResourceType(contentType);
+    const resourceType = getResourceType(contentType, fileName, folder);
 
     if (!resourceType) {
       return NextResponse.json(
-        { ok: false, error: 'Endpoint này chỉ ký upload ảnh hoặc video Cloudinary.' },
+        { ok: false, error: 'Endpoint này chỉ ký upload ảnh, video hoặc menu PDF lên Cloudinary.' },
         { status: 400 },
       );
     }

@@ -51,10 +51,18 @@ function safeBaseName(fileName: string) {
     .slice(0, 52) || 'media';
 }
 
-export function createCloudinaryPublicId(folder: string, fileName: string) {
+export function createCloudinaryPublicId(
+  folder: string,
+  fileName: string,
+  resourceType: CloudinaryResourceType = 'image',
+) {
   const suffix = randomBytes(4).toString('hex');
-  return `adm/${folder}/${safeBaseName(fileName)}-${Date.now()}-${suffix}`;
+  const extension = resourceType === 'raw'
+    ? `.${String(fileName).split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin'}`
+    : '';
+  return `adm/${folder}/${safeBaseName(fileName)}-${Date.now()}-${suffix}${extension}`;
 }
+
 
 export function buildCloudinaryRef(resourceType: CloudinaryResourceType, publicId: string) {
   return `cloudinary://${resourceType}/${publicId}`;
@@ -82,7 +90,7 @@ export function createSignedUpload(input: {
 }) {
   const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
   const timestamp = Math.floor(Date.now() / 1000);
-  const publicId = createCloudinaryPublicId(input.folder, input.fileName);
+  const publicId = createCloudinaryPublicId(input.folder, input.fileName, input.resourceType);
   const params = {
     overwrite: false,
     public_id: publicId,
@@ -131,4 +139,53 @@ export async function destroyCloudinaryAsset(reference: CloudinaryReference) {
   }
 
   return json;
+}
+
+export async function uploadRemoteAssetToCloudinary(input: {
+  sourceUrl: string;
+  folder: string;
+  fileName: string;
+  resourceType: CloudinaryResourceType;
+}) {
+  const signed = createSignedUpload({
+    folder: input.folder,
+    fileName: input.fileName,
+    resourceType: input.resourceType,
+  });
+  const form = new FormData();
+  form.append('file', input.sourceUrl);
+  form.append('api_key', signed.apiKey);
+  form.append('timestamp', String(signed.timestamp));
+  form.append('signature', signed.signature);
+  form.append('public_id', signed.publicId);
+  form.append('overwrite', 'false');
+
+  const response = await fetch(signed.uploadUrl, {
+    method: 'POST',
+    body: form,
+    cache: 'no-store',
+  });
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json?.secure_url || !json?.public_id) {
+    throw new Error(String(json?.error?.message || 'Cloudinary không thể nhập media cũ từ Supabase.'));
+  }
+
+  const resourceType = String(json.resource_type || input.resourceType) as CloudinaryResourceType;
+  const originalUrl = String(json.secure_url);
+  const isPdf = String(json.format || '').toLowerCase() === 'pdf' || /\.pdf(?:$|[?#])/i.test(originalUrl);
+  const url = resourceType === 'image' && !isPdf
+    ? originalUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto:eco/')
+    : originalUrl;
+  const posterUrl = resourceType === 'video'
+    ? originalUrl
+        .replace('/video/upload/', '/video/upload/so_0.6,f_jpg,q_auto:eco/')
+        .replace(/\.[a-z0-9]+$/i, '.jpg')
+    : undefined;
+
+  return {
+    url,
+    path: buildCloudinaryRef(resourceType, String(json.public_id)),
+    posterUrl,
+    resourceType,
+  };
 }

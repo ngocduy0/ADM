@@ -49,15 +49,33 @@ export function BookingsPage() {
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    const query = focusBookingId ? '' : searchQuery.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
     const today = localDateKey();
+
     return [...reservations]
-      .filter((item) => Boolean(focusBookingId) || status === 'ALL' || item.status === status)
-      .filter((item) => Boolean(focusBookingId) || venueId === 'ALL' || item.venueId === venueId)
-      .filter((item) => Boolean(focusBookingId) || !todayOnly || item.date === today)
-      .filter((item) => !query || [item.fullName, item.phoneNumber, item.venueName, item.preferredTableName, item.preferredTableArea, item.referenceCode, item.id].join(' ').toLowerCase().includes(query))
-      .sort((a, b) => `${b.date}T${b.arrivalTime}`.localeCompare(`${a.date}T${a.arrivalTime}`));
-  }, [focusBookingId, reservations, searchQuery, status, venueId, todayOnly]);
+      .filter((item) => status === 'ALL' || item.status === status)
+      .filter((item) => venueId === 'ALL' || item.venueId === venueId)
+      .filter((item) => !todayOnly || item.date === today)
+      .filter((item) =>
+        !query ||
+        [
+          item.fullName,
+          item.phoneNumber,
+          item.venueName,
+          item.preferredTableName,
+          item.preferredTableArea,
+          item.referenceCode,
+          item.id,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(query),
+      )
+      .sort((a, b) =>
+        `${b.date}T${b.arrivalTime}`.localeCompare(`${a.date}T${a.arrivalTime}`),
+      );
+  }, [reservations, searchQuery, status, venueId, todayOnly]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const focusedIndex = focusBookingId ? filtered.findIndex((item) => item.id === focusBookingId) : -1;
@@ -116,7 +134,6 @@ export function BookingsPage() {
                 <div className="col-span-2 min-w-0 rounded-2xl bg-slate-50 p-3 md:col-span-1 md:rounded-none md:bg-transparent md:p-0">
                   <p className="truncate text-sm font-extrabold text-slate-800 md:text-base">{booking.venueName}</p>
                   <p className="mt-1 text-xs font-semibold text-slate-500">{formatDate(booking.date)} · {booking.arrivalTime}</p>
-                  <p className="mt-2 truncate text-[11px] font-medium text-slate-400">Mã: {booking.referenceCode || booking.id}</p>
                 </div>
 
                 <div className="min-w-0">

@@ -11,6 +11,8 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Supabase is only retained here to delete legacy Storage objects. New files are
+// never uploaded to Supabase Storage from this route.
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'duyt-media';
@@ -18,7 +20,7 @@ const CLOUDINARY_PROVIDER = 'cloudinary' as const;
 
 const MAX_VIDEO_SIZE = 80 * 1024 * 1024;
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-const MAX_PDF_SIZE = 30 * 1024 * 1024;
+const MAX_PDF_SIZE = 10 * 1024 * 1024;
 
 const FIXED_ALLOWED_FOLDERS = new Set([
   'venues',
@@ -47,22 +49,14 @@ function safeStoragePath(value: unknown) {
   return raw;
 }
 
-function safeFileName(name: string) {
-  const extension = name.split('.').pop()?.toLowerCase() || 'pdf';
-  const base = name
-    .replace(/\.[^/.]+$/, '')
-    .replace(/[Đđ]/g, 'd')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48) || 'menu';
-  return `${base}-${Date.now()}.${extension}`;
+function isPdfFile(fileType: string, fileName: string) {
+  return fileType.toLowerCase() === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
 }
 
-function getResourceType(fileType: string, folder: string): CloudinaryResourceType | null {
-  if (folder === 'venues/menus') return 'raw';
+function getResourceType(fileType: string, fileName: string, folder: string): CloudinaryResourceType | null {
+  // Cloudinary recommends uploading normal PDFs as image assets. This keeps
+  // the original PDF deliverable and also supports PDF page transformations.
+  if (folder === 'venues/menus') return isPdfFile(fileType, fileName) ? 'image' : null;
   if (fileType.startsWith('image/')) return 'image';
   if (fileType.startsWith('video/')) return 'video';
   return null;
@@ -74,76 +68,24 @@ function validateSignedUpload(input: {
   fileType: string;
   fileSize: number;
 }) {
-  const resourceType = getResourceType(input.fileType, input.folder);
-  if (!resourceType || resourceType === 'raw') {
-    throw new Error('Chỉ ảnh và video được upload trực tiếp lên Cloudinary.');
+  const resourceType = getResourceType(input.fileType, input.fileName, input.folder);
+  if (!resourceType) {
+    throw new Error('Chỉ hỗ trợ ảnh, video hoặc menu PDF hợp lệ.');
   }
+  if (input.fileSize <= 0) throw new Error('File upload không hợp lệ.');
 
-  if (resourceType === 'image' && input.fileSize > MAX_IMAGE_SIZE) {
+  const menuPdf = input.folder === 'venues/menus' && isPdfFile(input.fileType, input.fileName);
+  if (menuPdf && input.fileSize > MAX_PDF_SIZE) {
+    throw new Error('PDF quá nặng. Dung lượng tối đa là 10MB.');
+  }
+  if (!menuPdf && resourceType === 'image' && input.fileSize > MAX_IMAGE_SIZE) {
     throw new Error('Ảnh quá nặng. Dung lượng tối đa là 10MB.');
   }
   if (resourceType === 'video' && input.fileSize > MAX_VIDEO_SIZE) {
     throw new Error('Video quá nặng. Dung lượng tối đa là 80MB.');
   }
-  if (input.fileSize <= 0) throw new Error('File upload không hợp lệ.');
 
   return resourceType;
-}
-
-async function uploadMenuPdfToSupabase(request: NextRequest) {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { ok: false, error: 'Thiếu cấu hình Supabase để upload menu PDF.' },
-      { status: 500 },
-    );
-  }
-
-  const form = await request.formData();
-  const file = form.get('file');
-  if (!(file instanceof File)) {
-    return NextResponse.json({ ok: false, error: 'Chưa chọn file PDF.' }, { status: 400 });
-  }
-
-  const folder = safeFolder(form.get('folder'));
-  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-  if (folder !== 'venues/menus' || !isPdf) {
-    return NextResponse.json(
-      { ok: false, error: 'Endpoint multipart này chỉ dùng để upload menu PDF.' },
-      { status: 400 },
-    );
-  }
-  if (file.size > MAX_PDF_SIZE) {
-    return NextResponse.json({ ok: false, error: 'PDF quá nặng. Dung lượng tối đa là 30MB.' }, { status: 413 });
-  }
-
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const path = `${folder}/${safeFileName(file.name)}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const { error } = await supabase.storage.from(BUCKET).upload(path, buffer, {
-    contentType: 'application/pdf',
-    cacheControl: '31536000',
-    upsert: false,
-  });
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  }
-
-  const oldPath = safeStoragePath(form.get('oldPath'));
-  if (oldPath && oldPath !== path && !oldPath.startsWith('cloudinary://')) {
-    await supabase.storage.from(BUCKET).remove([oldPath]).catch(() => undefined);
-  }
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return NextResponse.json({
-    ok: true,
-    provider: 'supabase',
-    url: data.publicUrl,
-    path,
-    type: 'application/pdf',
-    size: file.size,
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -153,7 +95,13 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') || '';
     if (contentType.toLowerCase().includes('multipart/form-data')) {
-      return uploadMenuPdfToSupabase(request);
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Upload multipart lên Supabase đã bị tắt. Hãy dùng signed upload trực tiếp lên Cloudinary.',
+        },
+        { status: 415 },
+      );
     }
 
     const body = await request.json().catch(() => null);
@@ -193,6 +141,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ ok: true, provider: CLOUDINARY_PROVIDER, deleted: true });
     }
 
+    // Delete-only compatibility for old Supabase Storage paths. This operation
+    // does not deliver public media and therefore cannot create Cached Egress.
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
       throw new Error('Thiếu cấu hình Supabase để xóa media cũ.');
     }
@@ -202,7 +152,7 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase.storage.from(BUCKET).remove([path]);
     if (error) throw error;
 
-    return NextResponse.json({ ok: true, provider: 'supabase', deleted: true });
+    return NextResponse.json({ ok: true, provider: 'supabase-delete-only', deleted: true });
   } catch (error) {
     console.error('[upload-media:delete]', error);
     return NextResponse.json(
