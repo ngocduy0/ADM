@@ -32,7 +32,7 @@ const venue: Venue = {
 function reservation(overrides: Partial<ReservationRequest> = {}): ReservationRequest {
   return {
     id: 'res-test', venueId: venue.id, venueName: venue.name, fullName: 'Nguyễn Văn A',
-    phoneNumber: '0901234567', guestCount: 4, date: '2026-07-20', arrivalTime: '21:00',
+    phoneNumber: '0  ', guestCount: 4, date: '2026-07-20', arrivalTime: '21:00',
     preferredTableId: 'table-1', preferredTableName: 'V01', preferredTableArea: 'VIP',
     notes: '', status: BookingStatus.NEW, createdAt: '2026-07-18T00:00:00.000Z', source: 'Web Form',
     ...overrides,
@@ -256,7 +256,7 @@ function customer(overrides: Partial<Customer> = {}): Customer {
   return {
     id: 'cust-test',
     fullName: 'Nguyễn Văn A',
-    phoneNumber: '0901234567',
+    phoneNumber: '0  ',
     notes: '',
     vipStatus: VipStatus.STANDARD,
     favoriteVenueIds: [],

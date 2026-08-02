@@ -133,9 +133,9 @@ export default function FloatingContact({ siteSettings }: { siteSettings?: SiteS
       aria-label={({ vi: "Liên hệ nhanh", en: "Quick contact", ko: "빠른 연락", zh: "快速联系", th: "ติดต่อด่วน", ja: "クイック連絡", hi: "त्वरित संपर्क" } as const)[locale]}
       aria-hidden={panelVisible}
       data-panel-visible={panelVisible ? "true" : "false"}
-      className="duyt-contact-float pointer-events-none fixed bottom-[max(10px,env(safe-area-inset-bottom))] left-1/2 z-40 h-[52px] w-max max-w-[calc(100vw-20px)] md:bottom-4 md:h-14 md:max-w-[calc(100vw-44px)]"
+      className="duyt-contact-float pointer-events-none fixed bottom-[max(12px,env(safe-area-inset-bottom))] left-1/2 z-40 h-[90px] w-max max-w-[calc(100vw-14px)] md:bottom-4 md:h-14 md:max-w-[calc(100vw-44px)]"
     >
-      <div className="duyt-contact-bar pointer-events-auto inline-flex h-full w-max max-w-full items-center justify-start gap-0.5 overflow-x-auto overscroll-x-contain rounded-full border border-[#d0bcff]/20 bg-black/92 px-1.5 py-1 shadow-[0_16px_42px_rgba(0,0,0,.56),0_0_24px_rgba(160,120,255,.10)] hide-scrollbar md:bg-black/86 md:shadow-[0_18px_55px_rgba(0,0,0,.62),0_0_34px_rgba(160,120,255,.13)] md:backdrop-blur-xl"
+      <div className="duyt-contact-bar pointer-events-auto inline-flex h-full w-max max-w-full items-center justify-start gap-1 overflow-x-auto overscroll-x-contain rounded-full border border-[#d0bcff]/20 bg-black/92 px-3 py-2 shadow-[0_16px_42px_rgba(0,0,0,.56),0_0_24px_rgba(160,120,255,.10)] hide-scrollbar md:px-1.5 md:py-1 md:bg-black/86 md:shadow-[0_18px_55px_rgba(0,0,0,.62),0_0_34px_rgba(160,120,255,.13)] md:backdrop-blur-xl"
       >
         {contacts.map((contact, index) => {
           const isPhone = contact.href.startsWith("tel:") || contact.id === "phone";
@@ -148,19 +148,19 @@ export default function FloatingContact({ siteSettings }: { siteSettings?: SiteS
               rel={external ? "noreferrer" : undefined}
               tabIndex={panelVisible ? -1 : undefined}
               className={[
-                "duyt-contact-item group relative flex shrink-0 items-center gap-1.5 rounded-full px-1 py-1 transition-transform duration-200 md:min-w-[106px] md:max-w-[142px] md:px-2.5",
+                "duyt-contact-item group relative flex min-h-[72px] shrink-0 items-center gap-2 rounded-full px-1.5 py-2 transition-transform duration-200 active:scale-95 md:min-h-0 md:min-w-[106px] md:max-w-[142px] md:px-2.5 md:py-1 md:active:scale-100",
                 isPhone ? "bg-[#a078ff]/15 ring-1 ring-[#d0bcff]/35" : "",
               ].join(" ")}
               style={{ animationDelay: `${80 + index * 45}ms` }}
               aria-label={`${contact.name}: ${contact.label}`}
             >
               <span className={[
-                "relative grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full p-1.5",
+                "relative grid h-[54px] w-[54px] shrink-0 place-items-center overflow-hidden rounded-full p-3 md:h-7 md:w-7 md:p-1.5",
                 isPhone ? "bg-gradient-to-br from-[#d0bcff] to-[#6d3bd7] text-[#23005c]" : "bg-white/10",
               ].join(" ")}
               >
                 {isPhone ? (
-                  <PhoneCall className="duyt-phone-ring h-4 w-4" />
+                  <PhoneCall className="duyt-phone-ring h-[30px] w-[30px] md:h-4 md:w-4" />
                 ) : (
                   <img
                     src={contact.icon}

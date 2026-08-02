@@ -163,7 +163,6 @@ export function RequestsPage() {
         <section>
           <div className="mb-3">
             <h2 className="text-base font-black text-slate-950">Yêu cầu đặt chỗ</h2>
-            <p className="mt-1 text-xs font-semibold text-slate-500">Booking từ sơ đồ bàn và biểu mẫu đặt chỗ.</p>
           </div>
           <div className="space-y-4">
             {visibleBookings.map((request) => (

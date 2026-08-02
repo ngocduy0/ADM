@@ -216,6 +216,6 @@ Sau khi deploy bản mới, trình duyệt sẽ cập nhật service worker `duy
 
 ## Cloudinary media
 
-Ảnh, banner và reels mới được upload trực tiếp lên Cloudinary bằng signed upload. Supabase tiếp tục dùng cho database/auth/realtime; menu PDF vẫn dùng Supabase Storage.
+Ảnh, video, banner, reels, logo, icon liên hệ và menu PDF đều được upload trực tiếp lên Cloudinary bằng signed upload. Supabase chỉ tiếp tục dùng cho database, auth, realtime và metadata URL; không còn upload file mới vào Supabase Storage.
 
 Xem hướng dẫn cấu hình đầy đủ tại [`docs/CLOUDINARY_SETUP.md`](docs/CLOUDINARY_SETUP.md).

@@ -119,8 +119,21 @@ export function BannersPage() {
       await refresh();
       setLegacyCleanupOpen(false);
       const data = json.data || {};
-      showToast('success', `Đã dọn media Supabase cũ: ${Number(data.deletedVenueImages || 0)} ảnh, ${Number(data.removedLegacyReels || 0)} reels, ${Number(data.deletedStorageFiles || 0)} file.`);
-      window.setTimeout(() => window.location.reload(), 900);
+      const migratedTotal = Number(data.migratedTotal || 0);
+      const deletedStorageFiles = Number(data.deletedStorageFiles || 0);
+      const warnings = Array.isArray(data.warnings)
+        ? data.warnings.map((item: unknown) => String(item || '').trim()).filter(Boolean)
+        : [];
+
+      if (data.storageCleanupComplete === false || warnings.length) {
+        showToast(
+          'info',
+          `Đã chuyển ${migratedTotal} media sang Cloudinary. Đã xóa ${deletedStorageFiles} file Supabase. ${warnings[0] || 'Storage chưa được dọn hoàn toàn; có thể thử lại sau.'}`,
+        );
+      } else {
+        showToast('success', `Đã chuyển ${migratedTotal} media sang Cloudinary và xóa ${deletedStorageFiles} file khỏi Supabase Storage.`);
+      }
+      window.setTimeout(() => window.location.reload(), 1400);
     } catch (error) {
       showToast('error', error instanceof Error ? error.message : 'Không thể dọn media Supabase cũ.');
     } finally {
@@ -137,8 +150,13 @@ export function BannersPage() {
     <div className="pb-10">
       <PageHeader
         title="Quản lý Banners"
-        description="Video hero chính của homepage người dùng. Ảnh và video mới được lưu trên Cloudinary CDN."
-        actions={<Button onClick={save} disabled={saving || Boolean(uploading)}><Save size={18} />{saving ? 'Đang lưu...' : 'Lưu banner'}</Button>}
+        description="Video hero chính của homepage người dùng. Toàn bộ ảnh, video và PDF mới được lưu trên Cloudinary CDN."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* <Button variant="outline" onClick={() => setLegacyCleanupOpen(true)} disabled={cleaningLegacy || saving || Boolean(uploading)}><Trash2 size={18} />Chuyển & dọn Supabase</Button> */}
+            <Button onClick={save} disabled={saving || Boolean(uploading)}><Save size={18} />{saving ? 'Đang lưu...' : 'Lưu banner'}</Button>
+          </div>
+        }
       />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-6">
@@ -186,15 +204,15 @@ export function BannersPage() {
         <Card className="h-fit p-3 xl:sticky xl:top-24">
           <div className="relative aspect-[9/16] max-h-[720px] overflow-hidden rounded-2xl bg-slate-950">
             {draft.heroVideoUrl ? <video src={draft.heroVideoUrl} poster={draft.heroPosterUrl} controls muted playsInline preload="metadata" className="h-full w-full object-cover" /> : draft.heroPosterUrl ? <img src={draft.heroPosterUrl} alt="Poster banner" className="h-full w-full object-cover" /> : <div className="flex h-full flex-col items-center justify-center text-white/60"><Play size={42} /><p className="mt-3 text-sm font-bold">Chưa có banner</p></div>}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-6 pt-24 text-white"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">DuyT Booking</p><h3 className="mt-2 text-2xl font-black">DUYT Booking FULL MAP ĐÀ NẴNG</h3></div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-6 pt-24 text-white"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">DuyT Booking</p><h3 className="mt-2 text-2xl font-black">DUYT Booking ĐÀ NẴNG</h3></div>
           </div>
         </Card>
       </div>
       <ConfirmDialog
         open={legacyCleanupOpen}
-        title="Xóa media Supabase cũ?"
-        description="Ảnh địa điểm, video, banner và reels đang dùng URL Supabase sẽ bị gỡ khỏi dữ liệu và Storage. Media Cloudinary cùng menu PDF vẫn được giữ nguyên. Thao tác này không thể hoàn tác."
-        confirmLabel={cleaningLegacy ? 'Đang dọn...' : 'Xóa media Supabase cũ'}
+        title="Chuyển media còn sót sang Cloudinary?"
+        description="Hệ thống sẽ tự tìm URL media Supabase còn sót, nhập chúng sang Cloudinary, cập nhật dữ liệu rồi xóa toàn bộ file trong bucket media Supabase. Booking, khách hàng, bàn và dữ liệu nghiệp vụ không bị xóa. Thao tác này không thể hoàn tác."
+        confirmLabel={cleaningLegacy ? 'Đang chuyển...' : 'Chuyển sang Cloudinary'}
         onClose={() => !cleaningLegacy && setLegacyCleanupOpen(false)}
         onConfirm={clearLegacySupabaseMedia}
       />

@@ -490,7 +490,7 @@ export function ContactView() {
               </div>
               <div>
                 <label htmlFor="contact-name" className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">{c.name}</label>
-                <input id="contact-name" type="text" required minLength={2} maxLength={80} autoComplete="name" placeholder="Nguyễn Minh A" value={name} onChange={(e) => setName(e.target.value)} disabled={submitting} className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors disabled:cursor-wait disabled:opacity-60" />
+                <input id="contact-name" type="text" required minLength={2} maxLength={80} autoComplete="name" placeholder=" " value={name} onChange={(e) => setName(e.target.value)} disabled={submitting} className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors disabled:cursor-wait disabled:opacity-60" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>

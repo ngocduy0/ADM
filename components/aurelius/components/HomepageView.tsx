@@ -1421,7 +1421,7 @@ export default function HomepageView({
             </div>
 
             <div className="relative z-10 mx-auto flex w-full max-w-[1180px] flex-col items-center justify-center text-center">
-              <HeroTypewriter text="Booking Full Map Đà Nẵng" />
+              <HeroTypewriter text="Booking Đà Nẵng" />
               <button
                 type="button"
                 onClick={() => onNavigate("CONTACT")}

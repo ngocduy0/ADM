@@ -763,35 +763,28 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [settings, showToast]);
 
-  const uploadMedia = useCallback(async (file: File, folder: string, oldPath?: string) => {
-    const isPdf = folder === 'venues/menus' || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-
-    // Menu PDF tiếp tục đi qua Supabase Storage. Ảnh/video upload trực tiếp
-    // từ trình duyệt lên Cloudinary để không đi qua giới hạn body của hosting.
-    if (isPdf) {
-      const form = new FormData();
-      form.append('file', file);
-      form.append('folder', folder);
-      if (oldPath) form.append('oldPath', oldPath);
-      const response = await fetch('/api/upload-media', { method: 'POST', body: form });
-      const json = await response.json().catch(() => null);
-      if (!response.ok || !json?.ok || !json?.url) throw new Error(json?.error || 'Upload PDF thất bại.');
-      return { url: String(json.url), path: String(json.path || '') };
+  const uploadMedia = useCallback(async (file: File, folder: string, _oldPath?: string) => {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (folder === 'venues/menus' && !isPdf) {
+      throw new Error('Thư mục menu chỉ chấp nhận file PDF.');
     }
+    const fileType = isPdf ? 'application/pdf' : file.type;
 
+    // Tất cả ảnh, video và menu PDF đều upload trực tiếp từ trình duyệt lên
+    // Cloudinary. Supabase chỉ còn lưu database/auth/realtime và metadata URL.
     const signResponse = await fetch('/api/upload-media', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         folder,
         fileName: file.name,
-        fileType: file.type,
+        fileType,
         fileSize: file.size,
       }),
     });
     const signed = await signResponse.json().catch(() => null);
     if (signResponse.status === 401) {
-      throw new Error('Phiên quản trị đã hết hạn. Vui lòng đăng nhập lại trước khi upload video.');
+      throw new Error('Phiên quản trị đã hết hạn. Vui lòng đăng nhập lại trước khi upload media.');
     }
     if (!signResponse.ok || !signed?.ok || !signed?.uploadUrl) {
       throw new Error(signed?.error || 'Không thể chuẩn bị upload Cloudinary.');
@@ -816,7 +809,10 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
 
     const resourceType = String(uploaded.resource_type || signed.resourceType || 'image');
     const originalUrl = String(uploaded.secure_url);
-    const deliveryUrl = resourceType === 'image'
+    // A PDF uploaded as an image resource must keep its original delivery URL.
+    // Adding f_auto/q_auto would transform it instead of serving the PDF file.
+    const uploadedIsPdf = isPdf || String(uploaded.format || '').toLowerCase() === 'pdf';
+    const deliveryUrl = resourceType === 'image' && !uploadedIsPdf
       ? originalUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto:eco/')
       : originalUrl;
     const posterUrl = resourceType === 'video'

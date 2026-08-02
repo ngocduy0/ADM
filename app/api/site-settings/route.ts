@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/admin-api';
-import { getSupabaseAdminClient, writeSecurityLog } from '@/lib/concierge-repository';
+import { getSupabaseAdminClient, isLegacySupabaseMediaUrl, writeSecurityLog } from '@/lib/concierge-repository';
 import { DEFAULT_SITE_SETTINGS, normalizeSiteSettings, type SiteSettings } from '@/components/aurelius/siteSettings';
 
 export const dynamic = 'force-dynamic';
@@ -45,6 +45,18 @@ export async function PUT(request: NextRequest) {
 
   const body = await request.json().catch(() => null);
   const settings = normalizeSiteSettings(body?.settings);
+  const mediaUrls = [
+    settings.logoUrl,
+    settings.heroVideoUrl,
+    settings.heroPosterUrl,
+    ...settings.contactChannels.map((channel) => channel.icon),
+  ];
+  if (mediaUrls.some(isLegacySupabaseMediaUrl)) {
+    return NextResponse.json(
+      { ok: false, error: 'Cài đặt vẫn chứa URL Supabase Storage. Hãy upload media lên Cloudinary trước khi lưu.' },
+      { status: 422 },
+    );
+  }
   settings.updatedAt = new Date().toISOString();
 
   try {

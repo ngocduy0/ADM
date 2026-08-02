@@ -23,7 +23,7 @@ test('Cloudinary upload is signed server-side and sent directly from the admin b
 test('hero typewriter, contact CTA and mobile autoplay safeguards are present', () => {
   const homepage = read('components/aurelius/components/HomepageView.tsx');
 
-  assert.match(homepage, /DUYT Booking FULL MAP ĐÀ NẴNG/);
+  assert.match(homepage, /DUYT Booking ĐÀ NẴNG/);
   assert.match(homepage, /delay = 3000/);
   assert.match(homepage, /onNavigate\("CONTACT"\)/);
   assert.match(homepage, /Book Now/);
@@ -108,4 +108,22 @@ test('public homepage preserves reel order zero so dashboard and website stay al
   assert.doesNotMatch(detail, /Number\(a\.order\) \|\| 999/);
   assert.match(homepage, /Number\.isFinite\(aOrder\)/);
   assert.match(detail, /Number\.isFinite\(aOrder\)/);
+});
+
+test('Supabase Storage is delete-only and menu PDFs upload to Cloudinary raw assets', () => {
+  const route = read('app/api/upload-media/route.ts');
+  const provider = read('components/admin/AdminDataProvider.tsx');
+  const venueForm = read('components/admin/forms/VenueFormModal.tsx');
+  const repository = read('lib/concierge-repository.ts');
+
+  assert.match(route, /folder === 'venues\/menus'/);
+  assert.match(route, /return isPdfFile\(fileType, fileName\) \? 'raw' : null/);
+  assert.doesNotMatch(route, /\.upload\(path, buffer/);
+  assert.doesNotMatch(route, /getPublicUrl/);
+  assert.match(provider, /fileType = isPdf \? 'application\/pdf'/);
+  assert.doesNotMatch(provider, /form\.append\('oldPath'/);
+  assert.match(venueForm, /uploadMedia\(file, 'venues\/menus'\)/);
+  assert.match(venueForm, /Menu PDF \(Cloudinary\)/);
+  assert.match(repository, /uploadRemoteAssetToCloudinary/);
+  assert.match(repository, /migratedToCloudinary/);
 });

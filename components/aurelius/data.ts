@@ -262,15 +262,20 @@ function sanitizeVenuesForStorage(venues: Venue[]): Venue[] {
 
     safeVenue.image = safeMainImage || safeImages[0] || FALLBACK_IMAGE;
     safeVenue.images = safeImages;
-    safeVenue.mediaPaths = Object.fromEntries(
-      Object.entries(safeVenue.mediaPaths || {}).filter(([url, path]) =>
-        safeImages.includes(url) && typeof path === 'string' && path.trim(),
-      ),
-    );
 
-    // Không lưu uploaded video dạng base64 vào localStorage/Supabase fallback
+    // Không lưu uploaded video/PDF dạng base64 vào localStorage/Supabase fallback.
     safeVenue.videoUrl = keepSafeMediaUrl(safeVenue.videoUrl);
     safeVenue.menuPdfUrl = keepSafeMediaUrl(safeVenue.menuPdfUrl);
+    const activeMediaUrls = new Set([
+      ...safeImages,
+      safeVenue.videoUrl,
+      safeVenue.menuPdfUrl,
+    ].filter(Boolean));
+    safeVenue.mediaPaths = Object.fromEntries(
+      Object.entries(safeVenue.mediaPaths || {}).filter(([url, path]) =>
+        activeMediaUrls.has(url) && typeof path === 'string' && path.trim().startsWith('cloudinary://'),
+      ),
+    );
     safeVenue.openingHours = safeVenue.openingHours && /^\d{2}:\d{2}$/.test(safeVenue.openingHours.open || '') && /^\d{2}:\d{2}$/.test(safeVenue.openingHours.close || '')
       ? safeVenue.openingHours
       : DEFAULT_OPENING_HOURS;
