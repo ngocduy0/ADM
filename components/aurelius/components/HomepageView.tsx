@@ -1440,6 +1440,23 @@ export default function HomepageView({
                 <ArrowRight className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                const heroSection = event.currentTarget.closest("section");
+                const nextSection = heroSection?.nextElementSibling;
+                if (nextSection instanceof HTMLElement) {
+                  nextSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                  return;
+                }
+                window.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" });
+              }}
+              className="duyt-hero-scroll-cue absolute bottom-[118px] left-1/2 z-20 grid h-12 w-12 place-items-center rounded-full border border-white/20 bg-black/35 text-white shadow-[0_8px_28px_rgba(0,0,0,.32)] backdrop-blur-sm transition-colors hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0bcff]/80 md:bottom-[88px]"
+              aria-label={locale === "vi" ? "Cuộn xuống nội dung bên dưới" : "Scroll to the next section"}
+            >
+              <ChevronDown className="h-5 w-5" strokeWidth={2.2} aria-hidden="true" />
+            </button>
           </section>
         );
       case "FEATURED_VENUES":

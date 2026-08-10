@@ -1015,6 +1015,18 @@ h3,
 .duyt-hero-caret {
   animation: duytHeroCaret .9s steps(1,end) infinite;
 }
+
+@keyframes duytHeroScrollCue {
+  0%, 100% { transform: translate3d(-50%, 0, 0); }
+  50% { transform: translate3d(-50%, 9px, 0); }
+}
+.duyt-hero-scroll-cue {
+  transform: translate3d(-50%, 0, 0);
+  animation: duytHeroScrollCue 1.75s cubic-bezier(.45, 0, .25, 1) infinite;
+}
+.duyt-hero-scroll-cue:hover {
+  animation-play-state: paused;
+}
 .duyt-hero-book-now {
   isolation: isolate;
   animation: duytHeroCtaPulse 2.15s cubic-bezier(.4,0,.2,1) infinite;
@@ -1129,6 +1141,7 @@ h3,
   .duyt-hero-title-face,
   .duyt-hero-title-aura,
   .duyt-hero-caret,
+  .duyt-hero-scroll-cue,
   .duyt-hero-book-halo,
   .duyt-lightning-bolt,
   .duyt-contact-float,

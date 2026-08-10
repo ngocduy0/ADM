@@ -511,7 +511,7 @@ export function ContactView() {
               </div>
               <div>
                 <label htmlFor="contact-message" className="text-xs sans-label text-gold font-semibold tracking-widest uppercase block mb-1.5">{c.message}</label>
-                <textarea id="contact-message" rows={4} required minLength={10} maxLength={1500} placeholder={c.placeholder} value={msg} onChange={(e) => setMsg(e.target.value)} disabled={submitting} className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors text-on-surface font-light leading-relaxed disabled:cursor-wait disabled:opacity-60" />
+                <textarea id="contact-message" rows={4} maxLength={1500} placeholder={c.placeholder} value={msg} onChange={(e) => setMsg(e.target.value)} disabled={submitting} className="w-full bg-deep-black border border-gold/10 px-3.5 py-3 rounded-xl focus:border-gold focus:outline-none text-sm transition-colors text-on-surface font-light leading-relaxed disabled:cursor-wait disabled:opacity-60" />
                 <p className="mt-1.5 text-right text-[9px] font-medium text-on-surface-variant/70">{msg.length}/1500</p>
               </div>
               {submitError ? (
@@ -520,7 +520,7 @@ export function ContactView() {
                   <span><strong className="block font-bold">{statusCopy.errorTitle}</strong>{submitError}</span>
                 </div>
               ) : null}
-              <button type="submit" disabled={submitting || name.trim().length < 2 || !email.trim() || !phoneNumber.trim() || msg.trim().length < 10} className="w-full min-h-12 py-4 bg-gold hover:bg-gold-light active:scale-98 text-dark-navy text-xs sans-label tracking-widest font-bold uppercase rounded-xl transition-all shadow-lg shadow-gold/10 cursor-pointer disabled:cursor-not-allowed disabled:opacity-55">
+              <button type="submit" disabled={submitting || name.trim().length < 2 || !email.trim() || !phoneNumber.trim()} className="w-full min-h-12 py-4 bg-gold hover:bg-gold-light active:scale-98 text-dark-navy text-xs sans-label tracking-widest font-bold uppercase rounded-xl transition-all shadow-lg shadow-gold/10 cursor-pointer disabled:cursor-not-allowed disabled:opacity-55">
                 <span className="inline-flex items-center justify-center gap-2">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{submitting ? statusCopy.sending : c.button}</span>
               </button>
             </form>

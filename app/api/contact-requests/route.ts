@@ -53,7 +53,6 @@ export async function POST(request: Request) {
   if (name.length < 2) return validationError('Vui lòng nhập tên ít nhất 2 ký tự.', 'name');
   if (!EMAIL_PATTERN.test(email)) return validationError('Email chưa đúng định dạng.', 'email');
   if (!PHONE_PATTERN.test(phone)) return validationError('Số điện thoại chưa hợp lệ. Vui lòng kiểm tra mã vùng và số điện thoại.', 'phone');
-  if (message.length < 10) return validationError('Nội dung yêu cầu cần ít nhất 10 ký tự.', 'message');
 
   const now = new Date();
   const token = crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase();
