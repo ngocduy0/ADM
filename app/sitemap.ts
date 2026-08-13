@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { loadPublicHomeData } from '@/lib/public-home-data';
 import { venuePublicSlug } from '@/components/aurelius/public/routes';
 
-const BASE_URL = 'https://www.duyt.com.vn';
+const BASE_URL = 'https://duyt.com.vn';
 const LOCALES = ['vi', 'en', 'ko', 'zh', 'th', 'ja', 'hi'] as const;
 type Locale = (typeof LOCALES)[number];
 type SitemapEntry = MetadataRoute.Sitemap[number];

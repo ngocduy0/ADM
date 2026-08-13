@@ -4,7 +4,7 @@ import { localizeVenue } from '@/components/aurelius/localize';
 import type { Venue } from '@/components/aurelius/types';
 import { publicPath, venuePublicSlug } from '@/components/aurelius/public/routes';
 
-export const SITE_URL = 'https://www.duyt.com.vn';
+export const SITE_URL = 'https://duyt.com.vn'
 export const SITE_NAME = 'DuyT Booking';
 export const DEFAULT_OG_IMAGE =
   `${SITE_URL}/og/duyt-booking.png`;
