@@ -1407,7 +1407,7 @@ export default function HomepageView({
     switch (section.id) {
       case "HERO":
         return (
-          <section key={section.id} className="relative flex min-h-screen w-full items-center justify-center overflow-hidden px-5 pb-28 pt-24 sm:px-6 md:px-16">
+          <section key={section.id} className="relative flex min-h-[100svh] w-full items-center justify-center overflow-hidden px-4 pb-28 pt-20 sm:min-h-screen sm:px-6 sm:pt-24 md:px-16">
             <div className="absolute inset-0 z-0 overflow-hidden">
               <AdaptiveHeroMedia
                 videoUrl={heroVideoUrl}

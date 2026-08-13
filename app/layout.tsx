@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
-  description: 'DuyT Booking — Dịch vụ concierge hỗ trợ khám phá địa điểm và đặt chỗ nightlife tại Đà Nẵng.',
+  description: 'DuyT Booking — dịch vụ concierge hỗ trợ khám phá địa điểm và đặt chỗ nightlife tại Đà Nẵng.',
   applicationName: SITE_NAME,
   creator: SITE_NAME,
   publisher: SITE_NAME,
@@ -30,23 +30,22 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: 'DuyT Admin',
+    title: SITE_NAME,
     statusBarStyle: 'default',
   },
   formatDetection: {
     telephone: false,
   },
   icons: {
-    icon: [{ url: '/icon.png?v=black-2', type: 'image/png' }],
-    shortcut: '/favicon.ico?v=black-2',
-    apple: '/apple-icon.png?v=black-2',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
   },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: 'cover',
   themeColor: '#F7F8FC',
   colorScheme: 'light',

@@ -637,7 +637,7 @@ export default function VenueDetailView({
   );
 
   return (
-    <div className="duyt-public-page mx-auto max-w-[1440px] px-6 pt-6 text-left font-sans md:px-16">
+    <div className="duyt-public-page mx-auto max-w-[1440px] px-4 pt-4 text-left font-sans sm:px-6 sm:pt-6 md:px-16">
       <button
         onClick={onBack}
         className="mb-8 flex cursor-pointer items-center gap-2 text-xs font-bold uppercase tracking-widest text-gold transition hover:text-gold-light"
@@ -647,7 +647,7 @@ export default function VenueDetailView({
 
       <section className="mb-16 grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-7">
-          <div className="relative h-[480px] overflow-hidden rounded-[24px] border border-gold/10 bg-deep-black">
+          <div className="relative h-[320px] overflow-hidden rounded-[20px] border border-gold/10 bg-deep-black sm:h-[420px] sm:rounded-[24px] lg:h-[480px]">
             <img
               src={activeImage}
               alt={displayVenue.name}
@@ -689,7 +689,7 @@ export default function VenueDetailView({
               <MapPin className="h-4 w-4" />
               <span>{displayVenue.location}</span>
             </div>
-            <h1 className="duyt-editorial mb-4 text-5xl leading-[.94] text-on-surface md:text-7xl">
+            <h1 className="duyt-editorial mb-4 text-4xl leading-[.96] text-on-surface sm:text-5xl md:text-7xl">
               {displayVenue.name}
             </h1>
             <div className="mb-6 flex items-center gap-6">

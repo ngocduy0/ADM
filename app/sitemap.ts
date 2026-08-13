@@ -8,6 +8,7 @@ type Locale = (typeof LOCALES)[number];
 type SitemapEntry = MetadataRoute.Sitemap[number];
 type Alternates = NonNullable<SitemapEntry['alternates']>;
 
+// Keep the sitemap fresh when venues are added/removed in Admin/Supabase.
 export const revalidate = 3600;
 
 function absolute(path: string) {
@@ -39,8 +40,6 @@ function localizedEntries(
 ): MetadataRoute.Sitemap {
   const alternates = languageAlternates(pathForLocale);
 
-  // Google recommends that every language variant lists itself and every
-  // alternate variant, so each localized URL gets its own sitemap entry.
   return LOCALES.map<SitemapEntry>((locale) => ({
     url: absolute(pathForLocale(locale)),
     ...options,
