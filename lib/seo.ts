@@ -6,7 +6,8 @@ import { publicPath, venuePublicSlug } from '@/components/aurelius/public/routes
 
 export const SITE_URL = 'https://www.duyt.com.vn';
 export const SITE_NAME = 'DuyT Booking';
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/opengraph-image`;
+export const DEFAULT_OG_IMAGE =
+  `${SITE_URL}/og/duyt-booking.png`;
 
 export const SEO_LOCALES = ['vi', 'en', 'ko', 'zh', 'th', 'ja', 'hi'] as const;
 export type SeoLocale = (typeof SEO_LOCALES)[number];
