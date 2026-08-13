@@ -1,14 +1,14 @@
 import type { MetadataRoute } from 'next';
-
-const BASE_URL = 'https://www.duyt.com.vn';
+import { SITE_URL } from '@/lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin', '/login', '/api/', '/offline'],
+      disallow: ['/api/'],
     },
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

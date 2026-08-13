@@ -1,17 +1,24 @@
+import type { Metadata } from 'next';
 import HomePageClient from '@/components/aurelius/public/HomePageClient';
 import { notFound } from 'next/navigation';
 import { loadPublicHomeData } from '@/lib/public-home-data';
+import { buildPublicMetadata, isSeoLocale } from '@/lib/seo';
 
 export const revalidate = 30;
 
-const LOCALES = ['en', 'ko', 'zh', 'vi', 'th', 'ja', 'hi'] as const;
-function isLocale(value: string): value is (typeof LOCALES)[number] {
-  return LOCALES.includes(value as (typeof LOCALES)[number]);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isSeoLocale(locale)) return {};
+  return buildPublicMetadata(locale, 'HOME');
 }
 
 export default async function LocaleHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  if (!isLocale(locale)) notFound();
+  if (!isSeoLocale(locale)) notFound();
 
   const { venues, siteSettings } = await loadPublicHomeData();
   return (

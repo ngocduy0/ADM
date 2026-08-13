@@ -11,7 +11,7 @@ function routeSegment(locale: Locale | string, view: PublicView | string) {
 }
 
 /**
- * Creates a readable, stable URL segment from a venue name.
+ * Creates a readable, stable and collision-safe URL segment for a venue.
  * Vietnamese Đ/đ is normalized explicitly because Unicode NFD does not split it.
  */
 export function slugifyVenueName(value: string) {
@@ -27,7 +27,15 @@ export function slugifyVenueName(value: string) {
 }
 
 export function venuePublicSlug(venue: Pick<Venue, 'id' | 'name'>) {
-  return slugifyVenueName(venue.name) || venue.id;
+  const nameSlug = slugifyVenueName(venue.name);
+  const idSlug = slugifyVenueName(venue.id).replace(/^venue-/, '');
+
+  if (!nameSlug) return idSlug || venue.id;
+  if (!idSlug || idSlug === nameSlug || idSlug.includes(nameSlug)) return nameSlug;
+
+  // Venue names are not guaranteed to be unique. Appending the stable id
+  // segment prevents two venues with the same display name from sharing one URL.
+  return `${nameSlug}-${idSlug}`;
 }
 
 export function publicPath(locale: Locale | string, view: PublicView | string, venueSlug?: string) {

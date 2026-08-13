@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { loadPublicHomeData } from '@/lib/public-home-data';
+import { venuePublicSlug } from '@/components/aurelius/public/routes';
 
 const BASE_URL = 'https://www.duyt.com.vn';
 const LOCALES = ['vi', 'en', 'ko', 'zh', 'th', 'ja', 'hi'] as const;
@@ -70,11 +71,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ];
 
-  const uniqueVenueIds = [...new Set(venues.map((venue) => venue.id).filter(Boolean))];
-  const venueEntries = uniqueVenueIds.flatMap((venueId) => {
-    const safeVenueId = encodeURIComponent(venueId);
+  const uniqueVenueSlugs = [
+    ...new Set(venues.map((venue) => venuePublicSlug(venue)).filter(Boolean)),
+  ];
+  const venueEntries = uniqueVenueSlugs.flatMap((venueSlug) => {
+    const safeVenueSlug = encodeURIComponent(venueSlug);
     return localizedEntries(
-      (locale) => `/${locale}/dia-diem/${safeVenueId}`,
+      (locale) => `/${locale}/dia-diem/${safeVenueSlug}`,
       {
         changeFrequency: 'daily',
         priority: 0.8,

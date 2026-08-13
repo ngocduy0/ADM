@@ -56,7 +56,7 @@ test('removed guide routes fall back to the locale home page', () => {
 });
 
 test('venue URLs use readable slugs derived from the venue name', () => {
-  assert.equal(venuePublicSlug({ id: 'venue-2', name: 'Karaoke LasVegas 1' }), 'karaoke-lasvegas-1');
+  assert.equal(venuePublicSlug({ id: 'venue-2', name: 'Karaoke LasVegas 1' }), 'karaoke-lasvegas-1-2');
   assert.equal(publicPath('en', 'VENUE_DETAIL', 'adm-club'), '/en/dia-diem/adm-club');
 });
 

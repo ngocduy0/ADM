@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminDataProvider } from '@/components/admin/AdminDataProvider';
@@ -6,6 +7,16 @@ import { COOKIE_NAME, isValidAdminSession } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+export const metadata: Metadata = {
+  title: 'Quản trị',
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+  },
+};
+
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();

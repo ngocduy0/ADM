@@ -1,15 +1,33 @@
 import type { Metadata, Viewport } from 'next';
 import { ServiceWorkerRegistration } from '@/components/pwa/ServiceWorkerRegistration';
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/seo';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'DuyT Booking',
-    template: '%s | DuyT Booking',
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: 'DuyT Booking - Booking Đà Nẵng',
-  applicationName: 'DuyT Booking Admin',
+  description: 'DuyT Booking — Dịch vụ concierge hỗ trợ khám phá địa điểm và đặt chỗ nightlife tại Đà Nẵng.',
+  applicationName: SITE_NAME,
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
   manifest: '/manifest.webmanifest',
+  openGraph: {
+    type: 'website',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: 'Khám phá địa điểm và đặt chỗ nightlife tại Đà Nẵng cùng DuyT Concierge.',
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_NAME,
+    description: 'Khám phá địa điểm và đặt chỗ nightlife tại Đà Nẵng cùng DuyT Concierge.',
+    images: [DEFAULT_OG_IMAGE],
+  },
   appleWebApp: {
     capable: true,
     title: 'DuyT Admin',

@@ -20,7 +20,7 @@ import {
   SiteSettings,
 } from '../siteSettings';
 import { Venue } from '../types';
-import { venuePublicSlug } from './routes';
+import { slugifyVenueName, venuePublicSlug } from './routes';
 
 type PublicVenuesState = {
   venues: Venue[];
@@ -48,13 +48,20 @@ function normalizeVenueKey(venueId: string) {
 function findVenueLocal(venues: Venue[], venueKey: string) {
   const safeKey = normalizeVenueKey(venueKey).toLowerCase();
   return venues.find(
-    (venue) => venue.id.toLowerCase() === safeKey || venuePublicSlug(venue) === safeKey,
+    (venue) =>
+      venue.id.toLowerCase() === safeKey ||
+      venuePublicSlug(venue) === safeKey ||
+      slugifyVenueName(venue.name) === safeKey,
   ) || null;
 }
 
 function cacheVenueAliases(venue: Venue) {
   venueCache.set(venue.id, venue);
   venueCache.set(venuePublicSlug(venue), venue);
+  // Keep legacy name-only slugs working; canonical navigation uses the unique slug.
+  if (!venueCache.has(slugifyVenueName(venue.name))) {
+    venueCache.set(slugifyVenueName(venue.name), venue);
+  }
 }
 
 async function getPublicSettings() {

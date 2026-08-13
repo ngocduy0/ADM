@@ -1,14 +1,22 @@
+import type { Metadata } from 'next';
 import StaticPageClient from '@/components/aurelius/public/StaticPageClient';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { buildPublicMetadata, isSeoLocale } from '@/lib/seo';
 
-const LOCALES = ['en', 'ko', 'zh', 'vi', 'th', 'ja', 'hi'] as const;
-function isLocale(value: string): value is (typeof LOCALES)[number] {
-  return LOCALES.includes(value as (typeof LOCALES)[number]);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isSeoLocale(locale)) return {};
+  return buildPublicMetadata(locale, 'CONTACT');
 }
 
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  if (!isLocale(locale)) notFound();
+  if (!isSeoLocale(locale)) notFound();
+  if (locale !== 'vi') permanentRedirect(`/${locale}/contact`);
 
   return <StaticPageClient initialLocale={locale} view="CONTACT" />;
 }
