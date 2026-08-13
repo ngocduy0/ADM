@@ -1,18 +1,17 @@
 import type { MetadataRoute } from 'next';
 import { loadPublicHomeData } from '@/lib/public-home-data';
 import { venuePublicSlug } from '@/components/aurelius/public/routes';
+import { SITE_URL } from '@/lib/seo';
 
-const BASE_URL = 'https://duyt.com.vn';
 const LOCALES = ['vi', 'en', 'ko', 'zh', 'th', 'ja', 'hi'] as const;
 type Locale = (typeof LOCALES)[number];
 type SitemapEntry = MetadataRoute.Sitemap[number];
 type Alternates = NonNullable<SitemapEntry['alternates']>;
 
-// Keep the sitemap fresh when venues are added/removed in Admin/Supabase.
 export const revalidate = 3600;
 
 function absolute(path: string) {
-  return `${BASE_URL}${path}`;
+  return `${SITE_URL}${path}`;
 }
 
 function aboutPath(locale: Locale) {
