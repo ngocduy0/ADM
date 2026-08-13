@@ -1,12 +1,86 @@
-import type { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next';
+import { loadPublicHomeData } from '@/lib/public-home-data';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    {
-      url: 'https://www.duyt.com.vn',
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
+const BASE_URL = 'https://www.duyt.com.vn';
+const LOCALES = ['vi', 'en', 'ko', 'zh', 'th', 'ja', 'hi'] as const;
+type Locale = (typeof LOCALES)[number];
+type SitemapEntry = MetadataRoute.Sitemap[number];
+type Alternates = NonNullable<SitemapEntry['alternates']>;
+
+// Keep the sitemap fresh when venues are added/removed in Admin/Supabase.
+export const revalidate = 3600;
+
+function absolute(path: string) {
+  return `${BASE_URL}${path}`;
+}
+
+function aboutPath(locale: Locale) {
+  return locale === 'vi' ? `/${locale}/gioi-thieu` : `/${locale}/about`;
+}
+
+function contactPath(locale: Locale) {
+  return locale === 'vi' ? `/${locale}/lien-he` : `/${locale}/contact`;
+}
+
+function languageAlternates(pathForLocale: (locale: Locale) => string): Alternates {
+  return {
+    languages: {
+      ...Object.fromEntries(
+        LOCALES.map((locale) => [locale, absolute(pathForLocale(locale))]),
+      ),
+      'x-default': absolute(pathForLocale('vi')),
     },
-  ]
+  };
+}
+
+function localizedEntries(
+  pathForLocale: (locale: Locale) => string,
+  options: Pick<SitemapEntry, 'changeFrequency' | 'priority'>,
+): MetadataRoute.Sitemap {
+  const alternates = languageAlternates(pathForLocale);
+
+  // Google recommends that every language variant lists itself and every
+  // alternate variant, so each localized URL gets its own sitemap entry.
+  return LOCALES.map<SitemapEntry>((locale) => ({
+    url: absolute(pathForLocale(locale)),
+    ...options,
+    alternates,
+  }));
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const { venues } = await loadPublicHomeData();
+
+  const staticEntries: MetadataRoute.Sitemap = [
+    ...localizedEntries((locale) => `/${locale}`, {
+      changeFrequency: 'daily',
+      priority: 1,
+    }),
+    ...localizedEntries((locale) => `/${locale}/dia-diem`, {
+      changeFrequency: 'daily',
+      priority: 0.9,
+    }),
+    ...localizedEntries(aboutPath, {
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    }),
+    ...localizedEntries(contactPath, {
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    }),
+  ];
+
+  const uniqueVenueIds = [...new Set(venues.map((venue) => venue.id).filter(Boolean))];
+  const venueEntries = uniqueVenueIds.flatMap((venueId) => {
+    const safeVenueId = encodeURIComponent(venueId);
+    return localizedEntries(
+      (locale) => `/${locale}/dia-diem/${safeVenueId}`,
+      {
+        changeFrequency: 'daily',
+        priority: 0.8,
+      },
+    );
+  });
+
+  return [...staticEntries, ...venueEntries];
 }
