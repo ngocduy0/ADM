@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     default: 'DuyT Booking',
     template: '%s | DuyT Booking',
   },
-  description: 'DuyT Booking - hệ thống đặt chỗ và quản trị địa điểm',
+  description: 'DuyT Booking - Booking Đà Nẵng',
   applicationName: 'DuyT Booking Admin',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
